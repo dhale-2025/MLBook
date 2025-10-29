@@ -1,0 +1,82 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "IAA Predictive Modeling with R and Python",
+    "section": "",
+    "text": "About\nThis book is a companion to the Machine Learning Class. It contains both R and Python Code\nTo learn more about Quarto books visit https://quarto.org/docs/books.",
+    "crumbs": [
+      "About"
+    ]
+  },
+  {
+    "objectID": "introduction.html",
+    "href": "introduction.html",
+    "title": "1  Introduction",
+    "section": "",
+    "text": "2 Introduction to Machine Learning\nMachine Learning (ML) is a branch of artificial intelligence (AI) that focuses on building systems that learn patterns from data and make predictions or decisions without being explicitly programmed to perform specific tasks. Instead of writing rules by hand, a machine learning algorithm “learns” from examples in the data.",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
+    ]
+  },
+  {
+    "objectID": "introduction.html#what-is-machine-learning",
+    "href": "introduction.html#what-is-machine-learning",
+    "title": "1  Introduction",
+    "section": "2.1 What is Machine Learning?",
+    "text": "2.1 What is Machine Learning?\nFormally, machine learning is the process of using data to train a model to make accurate predictions or decisions. The model identifies patterns in the training data and generalizes these patterns to new, unseen data.\nML can be thought of as:\n\nPredictive modeling – learning a function that maps inputs (features) to outputs (targets).\nAutomated decision-making – systems that improve their performance over time without explicit reprogramming.",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
+    ]
+  },
+  {
+    "objectID": "introduction.html#major-types-of-machine-learning",
+    "href": "introduction.html#major-types-of-machine-learning",
+    "title": "1  Introduction",
+    "section": "2.2 Major Types of Machine Learning",
+    "text": "2.2 Major Types of Machine Learning\nMachine learning is commonly categorized into several types based on the nature of the task and availability of labeled data.\n\n2.2.1 1. Supervised Learning\n\nUses labeled data, meaning that each training example has an input and a known output.\nThe goal is to learn a function that maps inputs to outputs accurately.\nTypical tasks:\n\nRegression: Predict a continuous variable (e.g., house prices).\nClassification: Predict a categorical variable (e.g., spam vs. non-spam email).\n\n\n\n\n2.2.2 2. Unsupervised Learning\n\nWorks with unlabeled data, where the output is unknown.\nThe goal is to discover patterns or structure in the data.\nTypical tasks:\n\nClustering: Group similar observations together (e.g., customer segmentation).\nDimensionality reduction: Reduce the number of features while retaining important information (e.g., PCA).\n\n\n\n\n2.2.3 3. Semi-Supervised Learning\n\nCombines a small amount of labeled data with a large amount of unlabeled data.\nUseful when labeling data is expensive or time-consuming.\n\n\n\n2.2.4 4. Reinforcement Learning\n\nFocuses on learning through trial and error.\nAn agent learns to take actions in an environment to maximize cumulative reward.\nExamples: Robotics, game AI, recommendation systems.",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
+    ]
+  },
+  {
+    "objectID": "introduction.html#objectives-of-machine-learning",
+    "href": "introduction.html#objectives-of-machine-learning",
+    "title": "1  Introduction",
+    "section": "2.3 Objectives of Machine Learning",
+    "text": "2.3 Objectives of Machine Learning\nThe main objective of machine learning is to build models that generalize well from historical data to make accurate predictions or decisions on new, unseen data. Key considerations include:\n\nAccuracy – How well does the model predict outcomes?\nGeneralization – Does the model perform well on unseen data, or is it overfitting the training data?\nInterpretability – Can humans understand how the model makes predictions?",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
+    ]
+  },
+  {
+    "objectID": "introduction.html#bias-variance-tradeoff",
+    "href": "introduction.html#bias-variance-tradeoff",
+    "title": "1  Introduction",
+    "section": "2.4 Bias-Variance Tradeoff",
+    "text": "2.4 Bias-Variance Tradeoff\nA fundamental concept in machine learning is the bias-variance tradeoff, which explains the balance between:\n\nBias: Error due to overly simplistic models that underfit the data.\nVariance: Error due to overly complex models that overfit the training data.\n\nThe goal is to find a model that minimizes the total prediction error:\n[ = ^2 + + ]\n\nUnderfitting → High bias, low variance\n\nOverfitting → Low bias, high variance\n\nThe optimal model balances bias and variance for the best predictive performance.",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
+    ]
+  },
+  {
+    "objectID": "introduction.html#the-machine-learning-process",
+    "href": "introduction.html#the-machine-learning-process",
+    "title": "1  Introduction",
+    "section": "2.5 The Machine Learning Process",
+    "text": "2.5 The Machine Learning Process\nA typical workflow in machine learning consists of the following steps:\n\nData Collection\n\nGather data from experiments, databases, or external sources.\n\nData Preprocessing\n\nHandle missing values, outliers, and feature engineering.\n\nModel Selection\n\nChoose an appropriate algorithm (e.g., linear regression, random forest, neural networks).\n\nModel Training\n\nFit the model to the training data.\n\nModel Evaluation\n\nAssess performance using metrics such as RMSE, accuracy, precision, recall, or AUC.\n\nModel Tuning\n\nAdjust hyperparameters to improve performance.\n\nModel Deployment\n\nUse the trained model to make predictions on new data.\n\nMonitoring and Maintenance\n\nContinuously track model performance and retrain if necessary.",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
+    ]
+  },
+  {
+    "objectID": "introduction.html#summary",
+    "href": "introduction.html#summary",
+    "title": "1  Introduction",
+    "section": "2.6 Summary",
+    "text": "2.6 Summary\nMachine learning allows us to build predictive models that learn from data. Understanding the different types of ML, their objectives, and the tradeoffs between bias and variance is critical to applying ML effectively. The remainder of this book explores practical algorithms, their implementation in R and Python, and strategies for model selection and interpretation.",
+    "crumbs": [
+      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
+    ]
+  }
+]
