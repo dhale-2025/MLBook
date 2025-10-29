@@ -1,0 +1,34 @@
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: "IAA Predictive Modeling with R and Python"
+  author: "Don Hale"
+  date: "2025-10-22"
+  chapters:
+    - index.qmd
+    - introduction.qmd
+    - resampling-model-selection.qmd
+    - generalized-additive-models.qmd
+    - tree-based-models.qmd
+    - neural-network-models.qmd
+    - naive-bayes-models.qmd
+    - model-agnostic-interpretability.qmd
+    - support-vector-machines.qmd
+
+format:
+  html:
+    theme: cosmo
+    code-fold: true
+    code-tools: true
+    toc: true
+  pdf:
+    documentclass: scrreprt
+
+execute:
+  echo: true
+  warning: false
+  message: false
+  cache: true
+

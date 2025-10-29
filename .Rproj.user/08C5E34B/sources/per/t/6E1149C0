@@ -1,0 +1,31 @@
+{
+    "id": "6E1149C0",
+    "path": "~/Documents/IAA Machine Learning/AA Machine Learning Book/index.qmd",
+    "project_path": "index.qmd",
+    "type": "quarto_markdown",
+    "hash": "439326622",
+    "contents": "",
+    "dirty": false,
+    "created": 1761159327335.0,
+    "source_on_save": true,
+    "relative_order": 1,
+    "properties": {
+        "rmdVisualMode": "false",
+        "rmdVisualWrapConfigured": "true",
+        "source_window_id": "",
+        "Source": "Source",
+        "docOutlineVisible": "1",
+        "rmdVisualCollapsedChunks": "",
+        "rmdVisualModeLocation": "2:0",
+        "cursorPosition": "6,0",
+        "scrollLine": "0"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1761162588,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1761162588155,
+    "read_only": false,
+    "read_only_alternatives": []
+}

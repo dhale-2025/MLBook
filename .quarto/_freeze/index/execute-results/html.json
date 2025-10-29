@@ -1,0 +1,15 @@
+{
+  "hash": "377a8a103149cccc0e64dd7c1e925527",
+  "result": {
+    "engine": "knitr",
+    "markdown": "# About {.unnumbered}\n\nThis book is a companion to the Machine Learning Class. It contains both R and Python Code\n\nTo learn more about Quarto books visit <https://quarto.org/docs/books>.\n\n\n::: {.cell}\n\n```{.r .cell-code}\n1 + 1\n```\n\n::: {.cell-output .cell-output-stdout}\n\n```\n[1] 2\n```\n\n\n:::\n:::\n\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "support-vector-machines.qmd": {
+    "support-vector-machines.html": "c03731c7"
+  },
+  "index.qmd": {
+    "index.html": "31966da7"
+  },
+  "introduction.qmd": {
+    "introduction.html": "4b88dc23"
+  },
+  "resampling-model-selection.qmd": {
+    "resampling-model-selection.html": "b0f54ad7"
+  },
+  "generalized-additive-models.qmd": {
+    "generalized-additive-models.html": "be05620e"
+  },
+  "tree-based-models.qmd": {
+    "tree-based-models.html": "b0c484ae"
+  },
+  "neural-network-models.qmd": {
+    "neural-network-models.html": "4f756e29"
+  },
+  "naive-bayes-models.qmd": {
+    "naive-bayes-models.html": "6703b604"
+  },
+  "model-agnostic-interpretability.qmd": {
+    "model-agnostic-interpretability.html": "2a36386f"
+  }
+}
