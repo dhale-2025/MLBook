@@ -3,7 +3,7 @@ project:
   output-dir: _book
 
 book:
-  title: "Machine Learnin with R and Python"
+  title: "Machine Learning with R and Python"
   author: "Don Hale"
   date: "09/22/2025"
   chapters:

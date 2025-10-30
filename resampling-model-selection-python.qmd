@@ -3,24 +3,25 @@ title: "Model Selection and Regularization - Python Version"
 format: html
 toc: true
 code-fold: true
+code-tools: false
 ---
 
 ## Overview
 
-This section parallels the R version of Model Selection and Regularization.  
+This section parallels the R version of Model Selection and Regularization.\
 We will:
 
-1. Load the Ames Housing data  
-2. Split into training and test sets  
-3. Perform Ridge, Lasso, and Elastic Net regressions with 10-fold CV  
-4. Visualize RMSE and coefficient shrinkage patterns  
-5. Compare test set performance  
+1.  Load the Ames Housing data\
+2.  Split into training and test sets\
+3.  Perform Ridge, Lasso, and Elastic Net regressions with 10-fold CV\
+4.  Visualize RMSE and coefficient shrinkage patterns\
+5.  Compare test set performance
 
----
+------------------------------------------------------------------------
 
 ## Step 0: Setup and Data
 
-We’ll use scikit-learn for modeling.  
+We’ll use scikit-learn for modeling.\
 If the CSVs `ames_training.csv` and `ames_testing.csv` are not present, you can load Ames Housing via the `fetch_openml` function.
 
 ```{python}
@@ -77,11 +78,11 @@ preprocessor = ColumnTransformer([
 ])
 ```
 
----
+------------------------------------------------------------------------
 
 ## Step 1: Ridge Regression
 
-We’ll use cross-validation to tune λ (alpha).  
+We’ll use cross-validation to tune λ (alpha).\
 Then we visualize RMSE vs log(lambda) and the number of nonzero coefficients.
 
 ```{python}
@@ -101,7 +102,7 @@ ridge_rmse = np.sqrt(mean_squared_error(y_test, ridge_pred))
 print("Test RMSE (Ridge):", ridge_rmse)
 ```
 
----
+------------------------------------------------------------------------
 
 ## Step 2: Lasso Regression
 
@@ -122,7 +123,7 @@ lasso_rmse = np.sqrt(mean_squared_error(y_test, lasso_pred))
 print("Test RMSE (Lasso):", lasso_rmse)
 ```
 
----
+------------------------------------------------------------------------
 
 ## Step 3: Visualize Coefficient Shrinkage and RMSE
 
@@ -155,11 +156,11 @@ plt.legend()
 plt.show()
 ```
 
----
+------------------------------------------------------------------------
 
 ## Step 4: Elastic Net
 
-Elastic Net blends Ridge and Lasso.  
+Elastic Net blends Ridge and Lasso.\
 We’ll vary α (the mix) and visualize the tradeoff.
 
 ```{python}
@@ -178,7 +179,7 @@ en_rmse = np.sqrt(mean_squared_error(y_test, en_pred))
 print("Test RMSE (Elastic Net):", en_rmse)
 ```
 
----
+------------------------------------------------------------------------
 
 ## Step 5: Compare Models
 
@@ -190,11 +191,11 @@ results = pd.DataFrame({
 print(results.sort_values("Test_RMSE"))
 ```
 
----
+------------------------------------------------------------------------
 
 ## Summary
 
-- Ridge stabilizes coefficients by shrinking them.  
-- Lasso enforces sparsity by zeroing weak predictors.  
-- Elastic Net blends both for balance.  
-- Regularization often beats pure stepwise regression on unseen data.
+-   Ridge stabilizes coefficients by shrinking them.\
+-   Lasso enforces sparsity by zeroing weak predictors.\
+-   Elastic Net blends both for balance.\
+-   Regularization often beats pure stepwise regression on unseen data.

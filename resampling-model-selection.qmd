@@ -3,6 +3,7 @@ title: "Model Selection and Regularization - R Version"
 format: html
 toc: true
 code-fold: true
+code-tools: false
 ---
 
 ## Overview

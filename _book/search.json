@@ -2,7 +2,7 @@
   {
     "objectID": "index.html",
     "href": "index.html",
-    "title": "Machine Learnin with R and Python",
+    "title": "Machine Learning with R and Python",
     "section": "",
     "text": "About\nThis book is a companion to the Machine Learning Class. It will be a repository of R and Python Code. The chapters will be updated as we progress through the class.",
     "crumbs": [
@@ -84,7 +84,7 @@
     "href": "resampling-model-selection.html",
     "title": "2  Model Selection and Regularization - R Version",
     "section": "",
-    "text": "2.1 Overview\nIn this guided lesson, we’ll use the Ames Housing dataset to demonstrate model selection and regularization.\nWe’ll cover:",
+    "text": "2.1 Overview\nIn this section, we’ll use the Ames Housing dataset to demonstrate model selection and regularization.\nWe’ll cover:",
     "crumbs": [
       "<span class='chapter-number'>2</span>  <span class='chapter-title'>Model Selection and Regularization - R Version</span>"
     ]
@@ -164,7 +164,7 @@
     "href": "resampling-model-selection-python.html",
     "title": "3  Model Selection and Regularization - Python Version",
     "section": "",
-    "text": "3.1 Overview\nThis Python lesson parallels the R teaching version.\nWe will:",
+    "text": "3.1 Overview\nThis section parallels the R version of Model Selection and Regularization.\nWe will:",
     "crumbs": [
       "<span class='chapter-number'>3</span>  <span class='chapter-title'>Model Selection and Regularization - Python Version</span>"
     ]
