@@ -3,13 +3,14 @@ project:
   output-dir: _book
 
 book:
-  title: "IAA Predictive Modeling with R and Python"
+  title: "Machine Learnin with R and Python"
   author: "Don Hale"
-  date: "2025-10-22"
+  date: "09/22/2025"
   chapters:
     - index.qmd
     - introduction.qmd
     - resampling-model-selection.qmd
+    - resampling-model-selection-python.qmd
     - generalized-additive-models.qmd
     - tree-based-models.qmd
     - neural-network-models.qmd
@@ -31,4 +32,7 @@ execute:
   warning: false
   message: false
   cache: true
+  python:
+  path: "/opt/anaconda3/bin/python"
+
 

@@ -25,5 +25,8 @@
   },
   "model-agnostic-interpretability.qmd": {
     "model-agnostic-interpretability.html": "2a36386f"
+  },
+  "resampling-model-selection-python.qmd": {
+    "resampling-model-selection-python.html": "59a9d2d0"
   }
 }

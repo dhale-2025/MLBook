@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>1&nbsp; Introduction – IAA Predictive Modeling with R and Python</title>
+<title>1&nbsp; Introduction – Machine Learnin with R and Python</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -135,7 +135,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       <a href="./index.html" class="sidebar-logo-link">
       </a>
     <div class="sidebar-title mb-0 py-0">
-      <a href="./">IAA Predictive Modeling with R and Python</a> 
+      <a href="./">Machine Learnin with R and Python</a> 
     </div>
       </div>
         <div class="mt-2 flex-shrink-0 align-items-center">
@@ -160,43 +160,49 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./resampling-model-selection.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">resampling-model-selection</span></span></a>
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Model Selection and Regularization - R Version</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./resampling-model-selection-python.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Model Selection and Regularization - Python Version</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./generalized-additive-models.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">generalized-additive-models</span></span></a>
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">generalized-additive-models</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./tree-based-models.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">tree-based-models</span></span></a>
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">tree-based-models</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./neural-network-models.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">neural-network-models</span></span></a>
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">neural-network-models</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./naive-bayes-models.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">naive-bayes-models</span></span></a>
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">naive-bayes-models</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./model-agnostic-interpretability.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">model-agnostic-interpretability</span></span></a>
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">model-agnostic-interpretability</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./support-vector-machines.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">support-vector-machines</span></span></a>
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">support-vector-machines</span></span></a>
   </div>
 </li>
     </ul>
@@ -209,21 +215,19 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#introduction-to-machine-learning" id="toc-introduction-to-machine-learning" class="nav-link active" data-scroll-target="#introduction-to-machine-learning"><span class="header-section-number">2</span> Introduction to Machine Learning</a>
+  <li><a href="#introduction-to-machine-learning" id="toc-introduction-to-machine-learning" class="nav-link active" data-scroll-target="#introduction-to-machine-learning"><span class="header-section-number">1.1</span> Introduction to Machine Learning</a></li>
+  <li><a href="#what-is-machine-learning" id="toc-what-is-machine-learning" class="nav-link" data-scroll-target="#what-is-machine-learning"><span class="header-section-number">1.2</span> What is Machine Learning?</a></li>
+  <li><a href="#major-types-of-machine-learning" id="toc-major-types-of-machine-learning" class="nav-link" data-scroll-target="#major-types-of-machine-learning"><span class="header-section-number">1.3</span> Major Types of Machine Learning</a>
   <ul class="collapse">
-  <li><a href="#what-is-machine-learning" id="toc-what-is-machine-learning" class="nav-link" data-scroll-target="#what-is-machine-learning"><span class="header-section-number">2.1</span> What is Machine Learning?</a></li>
-  <li><a href="#major-types-of-machine-learning" id="toc-major-types-of-machine-learning" class="nav-link" data-scroll-target="#major-types-of-machine-learning"><span class="header-section-number">2.2</span> Major Types of Machine Learning</a>
-  <ul class="collapse">
-  <li><a href="#supervised-learning" id="toc-supervised-learning" class="nav-link" data-scroll-target="#supervised-learning"><span class="header-section-number">2.2.1</span> 1. Supervised Learning</a></li>
-  <li><a href="#unsupervised-learning" id="toc-unsupervised-learning" class="nav-link" data-scroll-target="#unsupervised-learning"><span class="header-section-number">2.2.2</span> 2. Unsupervised Learning</a></li>
-  <li><a href="#semi-supervised-learning" id="toc-semi-supervised-learning" class="nav-link" data-scroll-target="#semi-supervised-learning"><span class="header-section-number">2.2.3</span> 3. Semi-Supervised Learning</a></li>
-  <li><a href="#reinforcement-learning" id="toc-reinforcement-learning" class="nav-link" data-scroll-target="#reinforcement-learning"><span class="header-section-number">2.2.4</span> 4. Reinforcement Learning</a></li>
+  <li><a href="#supervised-learning" id="toc-supervised-learning" class="nav-link" data-scroll-target="#supervised-learning"><span class="header-section-number">1.3.1</span> 1. Supervised Learning</a></li>
+  <li><a href="#unsupervised-learning" id="toc-unsupervised-learning" class="nav-link" data-scroll-target="#unsupervised-learning"><span class="header-section-number">1.3.2</span> 2. Unsupervised Learning</a></li>
+  <li><a href="#semi-supervised-learning" id="toc-semi-supervised-learning" class="nav-link" data-scroll-target="#semi-supervised-learning"><span class="header-section-number">1.3.3</span> 3. Semi-Supervised Learning</a></li>
+  <li><a href="#reinforcement-learning" id="toc-reinforcement-learning" class="nav-link" data-scroll-target="#reinforcement-learning"><span class="header-section-number">1.3.4</span> 4. Reinforcement Learning</a></li>
   </ul></li>
-  <li><a href="#objectives-of-machine-learning" id="toc-objectives-of-machine-learning" class="nav-link" data-scroll-target="#objectives-of-machine-learning"><span class="header-section-number">2.3</span> Objectives of Machine Learning</a></li>
-  <li><a href="#bias-variance-tradeoff" id="toc-bias-variance-tradeoff" class="nav-link" data-scroll-target="#bias-variance-tradeoff"><span class="header-section-number">2.4</span> Bias-Variance Tradeoff</a></li>
-  <li><a href="#the-machine-learning-process" id="toc-the-machine-learning-process" class="nav-link" data-scroll-target="#the-machine-learning-process"><span class="header-section-number">2.5</span> The Machine Learning Process</a></li>
-  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary"><span class="header-section-number">2.6</span> Summary</a></li>
-  </ul></li>
+  <li><a href="#objectives-of-machine-learning" id="toc-objectives-of-machine-learning" class="nav-link" data-scroll-target="#objectives-of-machine-learning"><span class="header-section-number">1.4</span> Objectives of Machine Learning</a></li>
+  <li><a href="#bias-variance-tradeoff" id="toc-bias-variance-tradeoff" class="nav-link" data-scroll-target="#bias-variance-tradeoff"><span class="header-section-number">1.5</span> Bias-Variance Tradeoff</a></li>
+  <li><a href="#the-machine-learning-process" id="toc-the-machine-learning-process" class="nav-link" data-scroll-target="#the-machine-learning-process"><span class="header-section-number">1.6</span> The Machine Learning Process</a></li>
+  <li><a href="#summary" id="toc-summary" class="nav-link" data-scroll-target="#summary"><span class="header-section-number">1.7</span> Summary</a></li>
   </ul>
 </nav>
     </div>
@@ -249,12 +253,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="introduction-to-machine-learning" class="level1" data-number="2">
-<h1 data-number="2"><span class="header-section-number">2</span> Introduction to Machine Learning</h1>
+<section id="introduction-to-machine-learning" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="introduction-to-machine-learning"><span class="header-section-number">1.1</span> Introduction to Machine Learning</h2>
 <p>Machine Learning (ML) is a branch of artificial intelligence (AI) that focuses on building systems that <strong>learn patterns from data</strong> and make predictions or decisions without being explicitly programmed to perform specific tasks. Instead of writing rules by hand, a machine learning algorithm “learns” from examples in the data.</p>
 <hr>
-<section id="what-is-machine-learning" class="level2" data-number="2.1">
-<h2 data-number="2.1" class="anchored" data-anchor-id="what-is-machine-learning"><span class="header-section-number">2.1</span> What is Machine Learning?</h2>
+</section>
+<section id="what-is-machine-learning" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="what-is-machine-learning"><span class="header-section-number">1.2</span> What is Machine Learning?</h2>
 <p>Formally, machine learning is the process of using data to <strong>train a model</strong> to make accurate predictions or decisions. The model identifies patterns in the training data and generalizes these patterns to new, unseen data.</p>
 <p>ML can be thought of as:</p>
 <ul>
@@ -263,11 +268,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 <hr>
 </section>
-<section id="major-types-of-machine-learning" class="level2" data-number="2.2">
-<h2 data-number="2.2" class="anchored" data-anchor-id="major-types-of-machine-learning"><span class="header-section-number">2.2</span> Major Types of Machine Learning</h2>
+<section id="major-types-of-machine-learning" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="major-types-of-machine-learning"><span class="header-section-number">1.3</span> Major Types of Machine Learning</h2>
 <p>Machine learning is commonly categorized into several types based on the <strong>nature of the task</strong> and <strong>availability of labeled data</strong>.</p>
-<section id="supervised-learning" class="level3" data-number="2.2.1">
-<h3 data-number="2.2.1" class="anchored" data-anchor-id="supervised-learning"><span class="header-section-number">2.2.1</span> 1. Supervised Learning</h3>
+<section id="supervised-learning" class="level3" data-number="1.3.1">
+<h3 data-number="1.3.1" class="anchored" data-anchor-id="supervised-learning"><span class="header-section-number">1.3.1</span> 1. Supervised Learning</h3>
 <ul>
 <li>Uses <strong>labeled data</strong>, meaning that each training example has an input and a known output.</li>
 <li>The goal is to <strong>learn a function</strong> that maps inputs to outputs accurately.</li>
@@ -278,8 +283,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul></li>
 </ul>
 </section>
-<section id="unsupervised-learning" class="level3" data-number="2.2.2">
-<h3 data-number="2.2.2" class="anchored" data-anchor-id="unsupervised-learning"><span class="header-section-number">2.2.2</span> 2. Unsupervised Learning</h3>
+<section id="unsupervised-learning" class="level3" data-number="1.3.2">
+<h3 data-number="1.3.2" class="anchored" data-anchor-id="unsupervised-learning"><span class="header-section-number">1.3.2</span> 2. Unsupervised Learning</h3>
 <ul>
 <li>Works with <strong>unlabeled data</strong>, where the output is unknown.</li>
 <li>The goal is to <strong>discover patterns or structure</strong> in the data.</li>
@@ -290,15 +295,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul></li>
 </ul>
 </section>
-<section id="semi-supervised-learning" class="level3" data-number="2.2.3">
-<h3 data-number="2.2.3" class="anchored" data-anchor-id="semi-supervised-learning"><span class="header-section-number">2.2.3</span> 3. Semi-Supervised Learning</h3>
+<section id="semi-supervised-learning" class="level3" data-number="1.3.3">
+<h3 data-number="1.3.3" class="anchored" data-anchor-id="semi-supervised-learning"><span class="header-section-number">1.3.3</span> 3. Semi-Supervised Learning</h3>
 <ul>
 <li>Combines a small amount of labeled data with a large amount of unlabeled data.</li>
 <li>Useful when labeling data is expensive or time-consuming.</li>
 </ul>
 </section>
-<section id="reinforcement-learning" class="level3" data-number="2.2.4">
-<h3 data-number="2.2.4" class="anchored" data-anchor-id="reinforcement-learning"><span class="header-section-number">2.2.4</span> 4. Reinforcement Learning</h3>
+<section id="reinforcement-learning" class="level3" data-number="1.3.4">
+<h3 data-number="1.3.4" class="anchored" data-anchor-id="reinforcement-learning"><span class="header-section-number">1.3.4</span> 4. Reinforcement Learning</h3>
 <ul>
 <li>Focuses on <strong>learning through trial and error</strong>.</li>
 <li>An agent learns to take actions in an environment to <strong>maximize cumulative reward</strong>.</li>
@@ -307,8 +312,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <hr>
 </section>
 </section>
-<section id="objectives-of-machine-learning" class="level2" data-number="2.3">
-<h2 data-number="2.3" class="anchored" data-anchor-id="objectives-of-machine-learning"><span class="header-section-number">2.3</span> Objectives of Machine Learning</h2>
+<section id="objectives-of-machine-learning" class="level2" data-number="1.4">
+<h2 data-number="1.4" class="anchored" data-anchor-id="objectives-of-machine-learning"><span class="header-section-number">1.4</span> Objectives of Machine Learning</h2>
 <p>The main objective of machine learning is to <strong>build models that generalize well</strong> from historical data to make accurate predictions or decisions on <strong>new, unseen data</strong>. Key considerations include:</p>
 <ol type="1">
 <li><strong>Accuracy</strong> – How well does the model predict outcomes?</li>
@@ -317,8 +322,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ol>
 <hr>
 </section>
-<section id="bias-variance-tradeoff" class="level2" data-number="2.4">
-<h2 data-number="2.4" class="anchored" data-anchor-id="bias-variance-tradeoff"><span class="header-section-number">2.4</span> Bias-Variance Tradeoff</h2>
+<section id="bias-variance-tradeoff" class="level2" data-number="1.5">
+<h2 data-number="1.5" class="anchored" data-anchor-id="bias-variance-tradeoff"><span class="header-section-number">1.5</span> Bias-Variance Tradeoff</h2>
 <p>A fundamental concept in machine learning is the <strong>bias-variance tradeoff</strong>, which explains the balance between:</p>
 <ul>
 <li><strong>Bias</strong>: Error due to overly simplistic models that <strong>underfit</strong> the data.</li>
@@ -334,8 +339,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The optimal model balances bias and variance for the best predictive performance.</p>
 <hr>
 </section>
-<section id="the-machine-learning-process" class="level2" data-number="2.5">
-<h2 data-number="2.5" class="anchored" data-anchor-id="the-machine-learning-process"><span class="header-section-number">2.5</span> The Machine Learning Process</h2>
+<section id="the-machine-learning-process" class="level2" data-number="1.6">
+<h2 data-number="1.6" class="anchored" data-anchor-id="the-machine-learning-process"><span class="header-section-number">1.6</span> The Machine Learning Process</h2>
 <p>A typical workflow in machine learning consists of the following steps:</p>
 <ol type="1">
 <li><strong>Data Collection</strong>
@@ -373,14 +378,13 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ol>
 <hr>
 </section>
-<section id="summary" class="level2" data-number="2.6">
-<h2 data-number="2.6" class="anchored" data-anchor-id="summary"><span class="header-section-number">2.6</span> Summary</h2>
+<section id="summary" class="level2" data-number="1.7">
+<h2 data-number="1.7" class="anchored" data-anchor-id="summary"><span class="header-section-number">1.7</span> Summary</h2>
 <p>Machine learning allows us to build predictive models that <strong>learn from data</strong>. Understanding the different types of ML, their objectives, and the tradeoffs between bias and variance is critical to applying ML effectively. The remainder of this book explores practical algorithms, their implementation in <strong>R and Python</strong>, and strategies for model selection and interpretation.</p>
 
 
 <!-- -->
 
-</section>
 </section>
 
 </main> <!-- /main -->
@@ -842,8 +846,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
       </a>          
   </div>
   <div class="nav-page nav-page-next">
-      <a href="./resampling-model-selection.html" class="pagination-link" aria-label="resampling-model-selection">
-        <span class="nav-page-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">resampling-model-selection</span></span> <i class="bi bi-arrow-right-short"></i>
+      <a href="./resampling-model-selection.html" class="pagination-link" aria-label="Model Selection and Regularization - R Version">
+        <span class="nav-page-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Model Selection and Regularization - R Version</span></span> <i class="bi bi-arrow-right-short"></i>
       </a>
   </div>
 </nav><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
@@ -851,7 +855,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "Introduction"</span></span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu"># Introduction to Machine Learning</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">## Introduction to Machine Learning</span></span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>Machine Learning (ML) is a branch of artificial intelligence (AI) that focuses on building systems that **learn patterns from data** and make predictions or decisions without being explicitly programmed to perform specific tasks. Instead of writing rules by hand, a machine learning algorithm "learns" from examples in the data.</span>
 <span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a></span>

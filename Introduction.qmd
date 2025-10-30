@@ -2,7 +2,7 @@
 title: "Introduction"
 ---
 
-# Introduction to Machine Learning
+## Introduction to Machine Learning
 
 Machine Learning (ML) is a branch of artificial intelligence (AI) that focuses on building systems that **learn patterns from data** and make predictions or decisions without being explicitly programmed to perform specific tasks. Instead of writing rules by hand, a machine learning algorithm "learns" from examples in the data.
 

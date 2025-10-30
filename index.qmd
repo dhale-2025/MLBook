@@ -1,6 +1,3 @@
 # About {.unnumbered}
 
-This book is a companion to the Machine Learning Class. It contains both R and Python Code
-
-To learn more about Quarto books visit <https://quarto.org/docs/books>.
-
+This book is a companion to the Machine Learning Class. It will be a repository of R and Python Code. The chapters will be updated as we progress through the class.

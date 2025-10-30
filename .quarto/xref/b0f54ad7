@@ -1,1 +1,1 @@
-{"entries":[],"headings":[],"options":{"chapters":true}}
+{"entries":[],"headings":["overview","step-0-setup-and-data-preparation","step-1-stepwise-regression-with-10-fold-cross-validation","step-2-ridge-and-lasso-regression","visualizing-rmse-and-model-complexity","step-3-elastic-net-balancing-ridge-and-lasso","visualizing-α-effects","step-4-comparing-all-models-on-the-test-set","key-takeaways"],"options":{"chapters":true}}
