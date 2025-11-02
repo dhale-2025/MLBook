@@ -11,7 +11,8 @@ book:
     - introduction.qmd
     - resampling-model-selection.qmd
     - resampling-model-selection-python.qmd
-    - generalized-additive-models.qmd
+    - generalized-additive-models-r.qmd
+    - generalized-additive-models-python.qmd
     - tree-based-models.qmd
     - neural-network-models.qmd
     - naive-bayes-models.qmd

@@ -198,6 +198,8 @@ best_alpha <- elastic_results %>% arrange(best_RMSE) %>% slice(1) %>% pull(alpha
 cv_en_best <- cv.glmnet(x_train, y_train, alpha = best_alpha, nfolds = 10)
 elastic_pred <- predict(cv_en_best, newx = x_test, s = "lambda.min")
 
+
+
 compare_tbl <- bind_rows(
   Stepwise = as_tibble_row(postResample(step_pred, test$Sale_Price)),
   Ridge = as_tibble_row(postResample(ridge_pred, y_test)),
@@ -211,6 +213,71 @@ compare_tbl <- compare_tbl %>% arrange(RMSE)
 compare_tbl
 ```
 
+```{r}
+# ------------------------------------------------------------
+
+# Display the best cross-validated Lasso, Ridge, and Elastic Net models
+
+
+# ------------------------------------------------------------
+
+library(glmnet)
+library(knitr)
+
+# Helper function to summarize a fitted cv.glmnet model
+
+summarize_glmnet <- function(cvfit, X_train, y_train, X_test, y_test, model_name) {
+  cat("\n============================================\n")
+  cat("Model:", model_name, "\n")
+  cat("============================================\n")
+  
+  # Extract best lambda
+  best_lambda <- cvfit$lambda.min
+  cat("Best Lambda (lambda.min):", round(best_lambda, 6), "\n")
+  
+  # Coefficients (non-zero)
+  coefs <- as.matrix(coef(cvfit, s = "lambda.min"))
+  nonzero <- coefs[coefs != 0, , drop = FALSE]
+  
+  # Print nonzero coefficients
+  cat("\nNonzero Coefficients:\n")
+  print(knitr::kable(as.data.frame(nonzero), digits = 4))
+  
+  # Predictions and performance
+  pred_train <- predict(cvfit, newx = X_train, s = "lambda.min")
+  pred_test  <- predict(cvfit, newx = X_test,  s = "lambda.min")
+  
+  rmse <- function(y, yhat) sqrt(mean((y - yhat)^2))
+  rsq  <- function(y, yhat) 1 - sum((y - yhat)^2) / sum((y - mean(y))^2)
+  
+  train_rmse <- rmse(y_train, pred_train)
+  test_rmse  <- rmse(y_test, pred_test)
+  test_r2    <- rsq(y_test, pred_test)
+  
+  # Return one-row summary
+  data.frame(
+    Model = model_name,
+    Lambda = round(best_lambda, 6),
+    Train_RMSE = round(train_rmse, 2),
+    Test_RMSE = round(test_rmse, 2),
+    Test_R2 = round(test_r2, 3),
+    Nonzero_Coeff = nrow(nonzero)
+  )
+}
+
+# Summarize and display all three models
+results <- rbind(
+  summarize_glmnet(cv_lasso, x_train, y_train, x_test, y_test, "Lasso"),
+  summarize_glmnet(cv_ridge, x_train, y_train, x_test, y_test, "Ridge"),
+  summarize_glmnet(cv_en_best, x_train, y_train, x_test, y_test, "Elastic Net")
+)
+
+# Combined performance table
+cat("\n\n***Model Performance Comparison***\n")
+kable(results, caption = "Performance of Cross-Validated Regularized Models")
+
+
+```
 ---
 
 ## Key Takeaways

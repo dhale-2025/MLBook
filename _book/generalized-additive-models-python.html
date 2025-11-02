@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.25">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>5&nbsp; GAM— Piecewise, LOESS, and GAM Splines - Python Version – Machine Learning with R and Python</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js" integrity="sha384-ZvpUoO/+PpLXR1lu4jmpXWu80pZlYUAfxl5NsBMWOEPSjUn/6Z/hRTt8+pR6L4N2" crossorigin="anonymous"></script><script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./tree-based-models.html" rel="next">
+<link href="./generalized-additive-models-r.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-27c261d06b905028a18691de25d09dde.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+<script src="https://cdn.jsdelivr.net/npm/requirejs@2.3.6/require.min.js" integrity="sha384-c9c+LnTbwQ3aujuU7ULEPVvgLs+Fn6fJUvIGTsuu1ZcCf11fiEubah0ttpca4ntM sha384-6V1/AdqZRWk1KAlWbKBlGhN7VG4iE/yAZcO6NZPMF8od0vukrvr0tg4qY6NSrItx" crossorigin="anonymous"></script>
+
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
+
+
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./generalized-additive-models-python.html"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">GAM— Piecewise, LOESS, and GAM Splines - Python Version</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
+      <a href="./index.html" class="sidebar-logo-link">
+      </a>
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Machine Learning with R and Python</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">About</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./resampling-model-selection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Model Selection and Regularization - R Version</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./resampling-model-selection-python.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Model Selection and Regularization - Python Version</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./generalized-additive-models-r.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">GAM – Piecewise, MARS, LOESS, and Splines - R Version</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./generalized-additive-models-python.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">GAM— Piecewise, LOESS, and GAM Splines - Python Version</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./tree-based-models.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">tree-based-models</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./neural-network-models.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">neural-network-models</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./naive-bayes-models.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">naive-bayes-models</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model-agnostic-interpretability.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">model-agnostic-interpretability</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./support-vector-machines.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">support-vector-machines</span></span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#setup-and-data" id="toc-setup-and-data" class="nav-link active" data-scroll-target="#setup-and-data"><span class="header-section-number">5.1</span> 1. Setup and Data</a></li>
+  <li><a href="#visual-check-for-nonlinearity" id="toc-visual-check-for-nonlinearity" class="nav-link" data-scroll-target="#visual-check-for-nonlinearity"><span class="header-section-number">5.2</span> 2. Visual Check for Nonlinearity</a></li>
+  <li><a href="#piecewise-regression-example" id="toc-piecewise-regression-example" class="nav-link" data-scroll-target="#piecewise-regression-example"><span class="header-section-number">5.3</span> 3. Piecewise Regression Example</a></li>
+  <li><a href="#mars-commented-out-for-reference-only" id="toc-mars-commented-out-for-reference-only" class="nav-link" data-scroll-target="#mars-commented-out-for-reference-only"><span class="header-section-number">5.4</span> 4. MARS (Commented Out — For Reference Only)</a></li>
+  <li><a href="#loess-visualization" id="toc-loess-visualization" class="nav-link" data-scroll-target="#loess-visualization"><span class="header-section-number">5.5</span> 5. LOESS Visualization</a></li>
+  <li><a href="#gam-and-spline-approaches-modern-alternatives" id="toc-gam-and-spline-approaches-modern-alternatives" class="nav-link" data-scroll-target="#gam-and-spline-approaches-modern-alternatives"><span class="header-section-number">5.6</span> 6. GAM and Spline Approaches (Modern Alternatives)</a></li>
+  <li><a href="#regression-spline-example-fallback" id="toc-regression-spline-example-fallback" class="nav-link" data-scroll-target="#regression-spline-example-fallback"><span class="header-section-number">5.7</span> 7. Regression Spline Example (Fallback)</a></li>
+  <li><a href="#model-comparison-piecewise-vs-gam-vs-spline" id="toc-model-comparison-piecewise-vs-gam-vs-spline" class="nav-link" data-scroll-target="#model-comparison-piecewise-vs-gam-vs-spline"><span class="header-section-number">5.8</span> 8. Model Comparison (Piecewise vs GAM vs Spline)</a></li>
+  <li><a href="#predicted-vs-actual-comparison" id="toc-predicted-vs-actual-comparison" class="nav-link" data-scroll-target="#predicted-vs-actual-comparison"><span class="header-section-number">5.9</span> 9. Predicted vs Actual Comparison</a></li>
+  <li><a href="#interpretation-summary" id="toc-interpretation-summary" class="nav-link" data-scroll-target="#interpretation-summary"><span class="header-section-number">5.10</span> 10. Interpretation Summary</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">GAM— Piecewise, LOESS, and GAM Splines - Python Version</span></h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<blockquote class="blockquote">
+<p><strong>Note:</strong> The original MARS section used the <code>sklearn-contrib-py-earth</code> package, which is <strong>no longer actively maintained</strong> and may fail to install on modern Python versions.<br>
+The MARS code is left <strong>commented out</strong> for reference — you can un-comment it if you successfully install <code>py-earth</code> (try <code>conda install -c conda-forge sklearn-contrib-py-earth</code>).<br>
+Equivalent flexibility can be achieved through <strong>GAM</strong> or <strong>spline-based models</strong>, which are shown below.</p>
+</blockquote>
+<section id="setup-and-data" class="level2" data-number="5.1">
+<h2 data-number="5.1" class="anchored" data-anchor-id="setup-and-data"><span class="header-section-number">5.1</span> 1. Setup and Data</h2>
+<div id="8a4f06af" class="cell" data-execution_count="2">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Active Python interpreter:"</span>, sys.executable)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np, pandas <span class="im">as</span> pd</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.compose <span class="im">import</span> ColumnTransformer</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> OneHotEncoder, StandardScaler</span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.pipeline <span class="im">import</span> Pipeline</span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> mean_squared_error, r2_score</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LinearRegression, Ridge</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> inspect</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Fix for SciPy &gt;= 1.13 removing .A from sparse matrices ---</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.sparse <span class="im">as</span> sp</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">not</span> <span class="bu">hasattr</span>(sp.spmatrix, <span class="st">"A"</span>):</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _toarray(<span class="va">self</span>):</span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.toarray()</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    sp.spmatrix.A <span class="op">=</span> <span class="bu">property</span>(_toarray)</span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a><span class="co"># -------------------------------------------------------------</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">4321</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Active Python interpreter: /opt/anaconda3/bin/python</code></pre>
+</div>
+</div>
+<div id="44549ae7" class="cell" data-execution_count="3">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> fetch_openml</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>ames <span class="op">=</span> fetch_openml(name<span class="op">=</span><span class="st">"house_prices"</span>, as_frame<span class="op">=</span><span class="va">True</span>).frame</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>keep <span class="op">=</span> {</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"SalePrice"</span>:<span class="st">"SalePrice"</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"BedroomAbvGr"</span>:<span class="st">"Bedroom_AbvGr"</span>,</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"YearBuilt"</span>:<span class="st">"Year_Built"</span>,</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"MoSold"</span>:<span class="st">"Mo_Sold"</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"LotArea"</span>:<span class="st">"Lot_Area"</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Street"</span>:<span class="st">"Street"</span>,</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    <span class="st">"CentralAir"</span>:<span class="st">"Central_Air"</span>,</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"1stFlrSF"</span>:<span class="st">"First_Flr_SF"</span>,</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2ndFlrSF"</span>:<span class="st">"Second_Flr_SF"</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"FullBath"</span>:<span class="st">"Full_Bath"</span>,</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="st">"HalfBath"</span>:<span class="st">"Half_Bath"</span>,</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Fireplaces"</span>:<span class="st">"Fireplaces"</span>,</span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    <span class="st">"GarageArea"</span>:<span class="st">"Garage_Area"</span>,</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="st">"GrLivArea"</span>:<span class="st">"Gr_Liv_Area"</span>,</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"TotRmsAbvGrd"</span>:<span class="st">"TotRms_AbvGrd"</span></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> ames[<span class="bu">list</span>(keep.keys())].rename(columns<span class="op">=</span>keep).dropna().copy()</span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> df.drop(columns<span class="op">=</span>[<span class="st">"SalePrice"</span>])</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df[<span class="st">"SalePrice"</span>].values</span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>num_cols <span class="op">=</span> X.select_dtypes(include<span class="op">=</span>[np.number]).columns.tolist()</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>cat_cols <span class="op">=</span> [c <span class="cf">for</span> c <span class="kw">in</span> X.columns <span class="cf">if</span> c <span class="kw">not</span> <span class="kw">in</span> num_cols]</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="co"># Handle OneHotEncoder version changes and ensure dense output</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="st">"sparse_output"</span> <span class="kw">in</span> inspect.signature(OneHotEncoder).parameters:</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a>    encoder <span class="op">=</span> OneHotEncoder(drop<span class="op">=</span><span class="st">"first"</span>, handle_unknown<span class="op">=</span><span class="st">"ignore"</span>, sparse_output<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a>    encoder <span class="op">=</span> OneHotEncoder(drop<span class="op">=</span><span class="st">"first"</span>, handle_unknown<span class="op">=</span><span class="st">"ignore"</span>, sparse<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>pre <span class="op">=</span> ColumnTransformer([</span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"num"</span>, StandardScaler(), num_cols),</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"cat"</span>, encoder, cat_cols)</span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>], sparse_threshold<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>X_train, X_test, y_train, y_test <span class="op">=</span> train_test_split(X, y, test_size<span class="op">=</span><span class="fl">0.3</span>, random_state<span class="op">=</span><span class="dv">4321</span>)</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a>df.head()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="2">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">SalePrice</th>
+<th data-quarto-table-cell-role="th">Bedroom_AbvGr</th>
+<th data-quarto-table-cell-role="th">Year_Built</th>
+<th data-quarto-table-cell-role="th">Mo_Sold</th>
+<th data-quarto-table-cell-role="th">Lot_Area</th>
+<th data-quarto-table-cell-role="th">Street</th>
+<th data-quarto-table-cell-role="th">Central_Air</th>
+<th data-quarto-table-cell-role="th">First_Flr_SF</th>
+<th data-quarto-table-cell-role="th">Second_Flr_SF</th>
+<th data-quarto-table-cell-role="th">Full_Bath</th>
+<th data-quarto-table-cell-role="th">Half_Bath</th>
+<th data-quarto-table-cell-role="th">Fireplaces</th>
+<th data-quarto-table-cell-role="th">Garage_Area</th>
+<th data-quarto-table-cell-role="th">Gr_Liv_Area</th>
+<th data-quarto-table-cell-role="th">TotRms_AbvGrd</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">0</th>
+<td>208500</td>
+<td>3</td>
+<td>2003</td>
+<td>2</td>
+<td>8450</td>
+<td>Pave</td>
+<td>Y</td>
+<td>856</td>
+<td>854</td>
+<td>2</td>
+<td>1</td>
+<td>0</td>
+<td>548</td>
+<td>1710</td>
+<td>8</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">1</th>
+<td>181500</td>
+<td>3</td>
+<td>1976</td>
+<td>5</td>
+<td>9600</td>
+<td>Pave</td>
+<td>Y</td>
+<td>1262</td>
+<td>0</td>
+<td>2</td>
+<td>0</td>
+<td>1</td>
+<td>460</td>
+<td>1262</td>
+<td>6</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2</th>
+<td>223500</td>
+<td>3</td>
+<td>2001</td>
+<td>9</td>
+<td>11250</td>
+<td>Pave</td>
+<td>Y</td>
+<td>920</td>
+<td>866</td>
+<td>2</td>
+<td>1</td>
+<td>1</td>
+<td>608</td>
+<td>1786</td>
+<td>6</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">3</th>
+<td>140000</td>
+<td>3</td>
+<td>1915</td>
+<td>2</td>
+<td>9550</td>
+<td>Pave</td>
+<td>Y</td>
+<td>961</td>
+<td>756</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>642</td>
+<td>1717</td>
+<td>7</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">4</th>
+<td>250000</td>
+<td>4</td>
+<td>2000</td>
+<td>12</td>
+<td>14260</td>
+<td>Pave</td>
+<td>Y</td>
+<td>1145</td>
+<td>1053</td>
+<td>2</td>
+<td>1</td>
+<td>1</td>
+<td>836</td>
+<td>2198</td>
+<td>9</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="visual-check-for-nonlinearity" class="level2" data-number="5.2">
+<h2 data-number="5.2" class="anchored" data-anchor-id="visual-check-for-nonlinearity"><span class="header-section-number">5.2</span> 2. Visual Check for Nonlinearity</h2>
+<div id="b80e7bd3" class="cell" data-execution_count="4">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> statsmodels.api <span class="im">as</span> sm</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure()</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>plt.scatter(df[<span class="st">"Gr_Liv_Area"</span>], df[<span class="st">"SalePrice"</span>], s<span class="op">=</span><span class="dv">8</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>low <span class="op">=</span> sm.nonparametric.lowess(df[<span class="st">"SalePrice"</span>], df[<span class="st">"Gr_Liv_Area"</span>], frac<span class="op">=</span><span class="fl">0.3</span>, return_sorted<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>plt.plot(low[:,<span class="dv">0</span>], low[:,<span class="dv">1</span>], linewidth<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"SalePrice vs Gr_Liv_Area (LOESS smoother)"</span>)</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Gr_Liv_Area"</span>)<span class="op">;</span> plt.ylabel(<span class="st">"SalePrice"</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-python_files/figure-html/cell-4-output-1.png" width="661" height="468" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="piecewise-regression-example" class="level2" data-number="5.3">
+<h2 data-number="5.3" class="anchored" data-anchor-id="piecewise-regression-example"><span class="header-section-number">5.3</span> 3. Piecewise Regression Example</h2>
+<div id="e39f345c" class="cell" data-execution_count="5">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PiecewiseLinear:</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, knot<span class="op">=</span><span class="fl">2000.0</span>):</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.knot <span class="op">=</span> knot</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.lin <span class="op">=</span> LinearRegression()</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _transform(<span class="va">self</span>, x):</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>        x1 <span class="op">=</span> np.asarray(x).reshape(<span class="op">-</span><span class="dv">1</span>,<span class="dv">1</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        hx <span class="op">=</span> np.maximum(<span class="dv">0</span>, x1 <span class="op">-</span> <span class="va">self</span>.knot)</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> np.hstack([x1, hx])</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> fit(<span class="va">self</span>, x, y):</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>        Z <span class="op">=</span> <span class="va">self</span>._transform(x)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.lin.fit(Z, y)</span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span></span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> predict(<span class="va">self</span>, x):</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a>        Z <span class="op">=</span> <span class="va">self</span>._transform(x)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.lin.predict(Z)</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-20"><a href="#cb5-20" aria-hidden="true" tabindex="-1"></a>pw <span class="op">=</span> PiecewiseLinear(knot<span class="op">=</span><span class="dv">2000</span>).fit(df[<span class="st">"Gr_Liv_Area"</span>].values, df[<span class="st">"SalePrice"</span>].values)</span>
+<span id="cb5-21"><a href="#cb5-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-22"><a href="#cb5-22" aria-hidden="true" tabindex="-1"></a>grid <span class="op">=</span> np.linspace(df[<span class="st">"Gr_Liv_Area"</span>].<span class="bu">min</span>(), df[<span class="st">"Gr_Liv_Area"</span>].<span class="bu">max</span>(), <span class="dv">200</span>)</span>
+<span id="cb5-23"><a href="#cb5-23" aria-hidden="true" tabindex="-1"></a>pred <span class="op">=</span> pw.predict(grid)</span>
+<span id="cb5-24"><a href="#cb5-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-25"><a href="#cb5-25" aria-hidden="true" tabindex="-1"></a>plt.figure()</span>
+<span id="cb5-26"><a href="#cb5-26" aria-hidden="true" tabindex="-1"></a>plt.scatter(df[<span class="st">"Gr_Liv_Area"</span>], df[<span class="st">"SalePrice"</span>], s<span class="op">=</span><span class="dv">8</span>, alpha<span class="op">=</span><span class="fl">0.2</span>)</span>
+<span id="cb5-27"><a href="#cb5-27" aria-hidden="true" tabindex="-1"></a>plt.plot(grid, pred, linewidth<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb5-28"><a href="#cb5-28" aria-hidden="true" tabindex="-1"></a>plt.axvline(<span class="dv">2000</span>, linestyle<span class="op">=</span><span class="st">"--"</span>)</span>
+<span id="cb5-29"><a href="#cb5-29" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Piecewise Linear Fit at Knot = 2000"</span>)</span>
+<span id="cb5-30"><a href="#cb5-30" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Gr_Liv_Area"</span>)<span class="op">;</span> plt.ylabel(<span class="st">"SalePrice"</span>)</span>
+<span id="cb5-31"><a href="#cb5-31" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-python_files/figure-html/cell-5-output-1.png" width="661" height="468" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="mars-commented-out-for-reference-only" class="level2" data-number="5.4">
+<h2 data-number="5.4" class="anchored" data-anchor-id="mars-commented-out-for-reference-only"><span class="header-section-number">5.4</span> 4. MARS (Commented Out — For Reference Only)</h2>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># The MARS implementation (py-earth) is not actively maintained and may fail to install on modern Python.</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># If you wish to try it, install from conda-forge:</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="co">#     conda install -c conda-forge sklearn-contrib-py-earth</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Example (commented out):</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="co"># from pyearth import Earth</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a><span class="co"># mars = Pipeline([("prep", pre), ("model", Earth(max_degree=2))]).fit(X_train, y_train)</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="co"># print(mars.named_steps["model"].summary())</span></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="co"># xs = np.linspace(X["Garage_Area"].min(), X["Garage_Area"].max(), 200)</span></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="co"># yhat = mars.predict(pd.DataFrame({"Garage_Area": xs}))</span></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="co"># plt.figure()</span></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="co"># plt.scatter(X_train["Garage_Area"], y_train, s=8, alpha=0.2)</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a><span class="co"># plt.plot(xs, yhat, linewidth=2)</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="co"># plt.title("MARS with Garage_Area (Commented Out Example)")</span></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="co"># plt.xlabel("Garage_Area"); plt.ylabel("SalePrice")</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="co"># plt.tight_layout()</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<hr>
+</section>
+<section id="loess-visualization" class="level2" data-number="5.5">
+<h2 data-number="5.5" class="anchored" data-anchor-id="loess-visualization"><span class="header-section-number">5.5</span> 5. LOESS Visualization</h2>
+<div id="16f91ecc" class="cell" data-execution_count="6">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure()</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>plt.scatter(df[<span class="st">"Gr_Liv_Area"</span>], df[<span class="st">"SalePrice"</span>], s<span class="op">=</span><span class="dv">8</span>, alpha<span class="op">=</span><span class="fl">0.2</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>low <span class="op">=</span> sm.nonparametric.lowess(df[<span class="st">"SalePrice"</span>], df[<span class="st">"Gr_Liv_Area"</span>], frac<span class="op">=</span><span class="fl">0.4</span>, return_sorted<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>plt.plot(low[:,<span class="dv">0</span>], low[:,<span class="dv">1</span>], linewidth<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"LOESS Smoother (Visual Aid)"</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Gr_Liv_Area"</span>)<span class="op">;</span> plt.ylabel(<span class="st">"SalePrice"</span>)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-python_files/figure-html/cell-6-output-1.png" width="661" height="468" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="gam-and-spline-approaches-modern-alternatives" class="level2" data-number="5.6">
+<h2 data-number="5.6" class="anchored" data-anchor-id="gam-and-spline-approaches-modern-alternatives"><span class="header-section-number">5.6</span> 6. GAM and Spline Approaches (Modern Alternatives)</h2>
+<div id="417a3c60" class="cell" data-execution_count="7">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pygam <span class="im">import</span> LinearGAM, s</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>gam1 <span class="op">=</span> LinearGAM(s(<span class="dv">0</span>)).fit(X_train[[<span class="st">"Garage_Area"</span>]].values, y_train)</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(gam1.summary())</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>gam2 <span class="op">=</span> LinearGAM(s(<span class="dv">0</span>) <span class="op">+</span> s(<span class="dv">1</span>)).fit(X_train[[<span class="st">"Garage_Area"</span>,<span class="st">"Gr_Liv_Area"</span>]].values, y_train)</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(gam2.summary())</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>num_train <span class="op">=</span> X_train[num_cols].values</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>gam3 <span class="op">=</span> LinearGAM().fit(num_train, y_train)</span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(gam3.summary())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>LinearGAM                                                                                                 
+=============================================== ==========================================================
+Distribution:                        NormalDist Effective DoF:                                     11.7399
+Link Function:                     IdentityLink Log Likelihood:                                -23263.1874
+Number of Samples:                         1022 AIC:                                            46551.8545
+                                                AICc:                                           46552.2017
+                                                GCV:                                       3130152370.8794
+                                                Scale:                                     3065497547.8147
+                                                Pseudo R-Squared:                                   0.4883
+==========================================================================================================
+Feature Function                  Lambda               Rank         EDoF         P &gt; x        Sig. Code   
+================================= ==================== ============ ============ ============ ============
+s(0)                              [0.6]                20           11.7         1.11e-16     ***         
+intercept                                              1            0.0          1.11e-16     ***         
+==========================================================================================================
+Significance codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+WARNING: Fitting splines and a linear function to a feature introduces a model identifiability problem
+         which can cause p-values to appear significant when they are not.
+
+WARNING: p-values calculated in this manner behave correctly for un-penalized models or models with
+         known smoothing parameters, but when smoothing parameters have been estimated, the p-values
+         are typically lower than they should be, meaning that the tests reject the null too readily.
+None
+LinearGAM                                                                                                 
+=============================================== ==========================================================
+Distribution:                        NormalDist Effective DoF:                                     20.8593
+Link Function:                     IdentityLink Log Likelihood:                                -22770.8323
+Number of Samples:                         1022 AIC:                                            45585.3832
+                                                AICc:                                           45586.3834
+                                                GCV:                                       1965630736.4285
+                                                Scale:                                      1893550067.068
+                                                Pseudo R-Squared:                                   0.6868
+==========================================================================================================
+Feature Function                  Lambda               Rank         EDoF         P &gt; x        Sig. Code   
+================================= ==================== ============ ============ ============ ============
+s(0)                              [0.6]                20           12.6         1.11e-16     ***         
+s(1)                              [0.6]                20           8.3          1.11e-16     ***         
+intercept                                              1            0.0          1.11e-16     ***         
+==========================================================================================================
+Significance codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+WARNING: Fitting splines and a linear function to a feature introduces a model identifiability problem
+         which can cause p-values to appear significant when they are not.
+
+WARNING: p-values calculated in this manner behave correctly for un-penalized models or models with
+         known smoothing parameters, but when smoothing parameters have been estimated, the p-values
+         are typically lower than they should be, meaning that the tests reject the null too readily.
+None
+LinearGAM                                                                                                 
+=============================================== ==========================================================
+Distribution:                        NormalDist Effective DoF:                                     89.0836
+Link Function:                     IdentityLink Log Likelihood:                                 -21995.395
+Number of Samples:                         1022 AIC:                                            44170.9574
+                                                AICc:                                           44188.5855
+                                                GCV:                                       1050008766.0212
+                                                Scale:                                      886662002.9642
+                                                Pseudo R-Squared:                                   0.8633
+==========================================================================================================
+Feature Function                  Lambda               Rank         EDoF         P &gt; x        Sig. Code   
+================================= ==================== ============ ============ ============ ============
+s(0)                              [0.6]                20           8.7          6.58e-07     ***         
+s(1)                              [0.6]                20           12.8         1.11e-16     ***         
+s(2)                              [0.6]                20           11.0         5.15e-01                 
+s(3)                              [0.6]                20           8.4          1.11e-16     ***         
+s(4)                              [0.6]                20           8.6          1.11e-16     ***         
+s(5)                              [0.6]                20           10.1         2.17e-03     **          
+s(6)                              [0.6]                20           3.2          9.76e-02     .           
+s(7)                              [0.6]                20           2.2          4.19e-01                 
+s(8)                              [0.6]                20           2.9          3.16e-10     ***         
+s(9)                              [0.6]                20           9.0          1.11e-16     ***         
+s(10)                             [0.6]                20           5.7          1.11e-16     ***         
+s(11)                             [0.6]                20           6.5          3.78e-01                 
+intercept                                              1            0.0          1.11e-16     ***         
+==========================================================================================================
+Significance codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+WARNING: Fitting splines and a linear function to a feature introduces a model identifiability problem
+         which can cause p-values to appear significant when they are not.
+
+WARNING: p-values calculated in this manner behave correctly for un-penalized models or models with
+         known smoothing parameters, but when smoothing parameters have been estimated, the p-values
+         are typically lower than they should be, meaning that the tests reject the null too readily.
+None</code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="regression-spline-example-fallback" class="level2" data-number="5.7">
+<h2 data-number="5.7" class="anchored" data-anchor-id="regression-spline-example-fallback"><span class="header-section-number">5.7</span> 7. Regression Spline Example (Fallback)</h2>
+<div id="25e7571f" class="cell" data-execution_count="8">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> patsy <span class="im">import</span> dmatrix</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>design_tr <span class="op">=</span> dmatrix(<span class="st">"bs(Garage_Area, df=6) + bs(Gr_Liv_Area, df=6)"</span>, data<span class="op">=</span>X_train, return_type<span class="op">=</span><span class="st">"dataframe"</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>design_te <span class="op">=</span> dmatrix(<span class="st">"bs(Garage_Area, df=6) + bs(Gr_Liv_Area, df=6)"</span>, data<span class="op">=</span>X_test, return_type<span class="op">=</span><span class="st">"dataframe"</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>ridge <span class="op">=</span> Ridge(alpha<span class="op">=</span><span class="fl">1.0</span>).fit(design_tr, y_train)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>pred_spline <span class="op">=</span> ridge.predict(design_te)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<hr>
+</section>
+<section id="model-comparison-piecewise-vs-gam-vs-spline" class="level2" data-number="5.8">
+<h2 data-number="5.8" class="anchored" data-anchor-id="model-comparison-piecewise-vs-gam-vs-spline"><span class="header-section-number">5.8</span> 8. Model Comparison (Piecewise vs GAM vs Spline)</h2>
+<div id="b8a894a9" class="cell" data-execution_count="9">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> rmse(y, yhat):</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> mean_squared_error(y, yhat, squared<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">TypeError</span>:</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> np.sqrt(mean_squared_error(y, yhat))</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mse(y, yhat): <span class="cf">return</span> mean_squared_error(y, yhat)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> rsq(y, yhat): <span class="cf">return</span> r2_score(y, yhat)</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>p_piece <span class="op">=</span> pw.predict(X_test[<span class="st">"Gr_Liv_Area"</span>].values)</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    p_gam <span class="op">=</span> gam3.predict(X_test[num_cols].values)</span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">Exception</span>:</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>    p_gam <span class="op">=</span> np.full_like(y_test, np.nan, dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>p_spline <span class="op">=</span> pred_spline</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span> <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Model"</span>: [<span class="st">"Piecewise"</span>, <span class="st">"GAM (pyGAM)"</span> <span class="cf">if</span> <span class="kw">not</span> np.isnan(p_gam).<span class="bu">all</span>() <span class="cf">else</span> <span class="st">"GAM (not available)"</span>, <span class="st">"Regression Spline"</span>],</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>    <span class="st">"RMSE"</span>: [rmse(y_test, p_piece), rmse(y_test, p_gam) <span class="cf">if</span> <span class="kw">not</span> np.isnan(p_gam).<span class="bu">all</span>() <span class="cf">else</span> np.nan, rmse(y_test, p_spline)],</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">"MSE"</span>: [mse(y_test, p_piece), mse(y_test, p_gam) <span class="cf">if</span> <span class="kw">not</span> np.isnan(p_gam).<span class="bu">all</span>() <span class="cf">else</span> np.nan, mse(y_test, p_spline)],</span>
+<span id="cb11-23"><a href="#cb11-23" aria-hidden="true" tabindex="-1"></a>    <span class="st">"R2"</span>: [rsq(y_test, p_piece), rsq(y_test, p_gam) <span class="cf">if</span> <span class="kw">not</span> np.isnan(p_gam).<span class="bu">all</span>() <span class="cf">else</span> np.nan, rsq(y_test, p_spline)]</span>
+<span id="cb11-24"><a href="#cb11-24" aria-hidden="true" tabindex="-1"></a>}).sort_values(<span class="st">"R2"</span>, ascending<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb11-25"><a href="#cb11-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-26"><a href="#cb11-26" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display" data-execution_count="8">
+<div>
+
+
+<table class="dataframe caption-top table table-sm table-striped small" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">Model</th>
+<th data-quarto-table-cell-role="th">RMSE</th>
+<th data-quarto-table-cell-role="th">MSE</th>
+<th data-quarto-table-cell-role="th">R2</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">1</th>
+<td>GAM (pyGAM)</td>
+<td>40805.867162</td>
+<td>1.665119e+09</td>
+<td>0.766556</td>
+</tr>
+<tr class="even">
+<th data-quarto-table-cell-role="th">0</th>
+<td>Piecewise</td>
+<td>58108.537553</td>
+<td>3.376602e+09</td>
+<td>0.526612</td>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th">2</th>
+<td>Regression Spline</td>
+<td>60289.000524</td>
+<td>3.634764e+09</td>
+<td>0.490419</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="predicted-vs-actual-comparison" class="level2" data-number="5.9">
+<h2 data-number="5.9" class="anchored" data-anchor-id="predicted-vs-actual-comparison"><span class="header-section-number">5.9</span> 9. Predicted vs Actual Comparison</h2>
+<div id="31a5b86a" class="cell" data-execution_count="10">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>plt.figure()</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>plt.scatter(y_test, p_piece, s<span class="op">=</span><span class="dv">8</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, label<span class="op">=</span><span class="st">"Piecewise"</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">not</span> np.isnan(p_gam).<span class="bu">all</span>():</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    plt.scatter(y_test, p_gam, s<span class="op">=</span><span class="dv">8</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, label<span class="op">=</span><span class="st">"GAM"</span>)</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>plt.scatter(y_test, p_spline, s<span class="op">=</span><span class="dv">8</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, label<span class="op">=</span><span class="st">"Spline"</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>plt.plot([y_test.<span class="bu">min</span>(), y_test.<span class="bu">max</span>()], [y_test.<span class="bu">min</span>(), y_test.<span class="bu">max</span>()], linestyle<span class="op">=</span><span class="st">"--"</span>)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>plt.legend()</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Predicted vs Actual (Test Set)"</span>)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Actual SalePrice"</span>)<span class="op">;</span> plt.ylabel(<span class="st">"Predicted SalePrice"</span>)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-python_files/figure-html/cell-10-output-1.png" width="661" height="468" class="figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="interpretation-summary" class="level2" data-number="5.10">
+<h2 data-number="5.10" class="anchored" data-anchor-id="interpretation-summary"><span class="header-section-number">5.10</span> 10. Interpretation Summary</h2>
+<ul>
+<li><strong>Piecewise:</strong> adds simple thresholds, easy to explain.<br>
+</li>
+<li><strong>GAMs:</strong> provide smooth, interpretable nonlinearities.<br>
+</li>
+<li><strong>Splines:</strong> flexible approximations that behave like local polynomials.<br>
+</li>
+<li><strong>MARS (optional):</strong> similar conceptually but less maintained in Python; consider using R’s <code>earth</code> instead.</li>
+</ul>
+
+
+<!-- -->
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+        for (let i=0; i<detailsSrc.length; i++) {
+          const details = detailsSrc[i].parentElement;
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./generalized-additive-models-r.html" class="pagination-link" aria-label="GAM – Piecewise, MARS, LOESS, and Splines - R Version">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">GAM – Piecewise, MARS, LOESS, and Splines - R Version</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./tree-based-models.html" class="pagination-link" aria-label="tree-based-models">
+        <span class="nav-page-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">tree-based-models</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb13" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "GAM— Piecewise, LOESS, and GAM Splines - Python Version"</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="co">    number-sections: true</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="co">  pdf: default</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a><span class="an">jupyter:</span><span class="co"> python3</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; **Note:** The original MARS section used the `sklearn-contrib-py-earth` package, which is **no longer actively maintained** and may fail to install on modern Python versions.</span>  </span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; The MARS code is left **commented out** for reference — you can un-comment it if you successfully install </span><span class="in">`py-earth`</span><span class="at"> (try </span><span class="in">`conda install -c conda-forge sklearn-contrib-py-earth`</span><span class="at">).</span>  </span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; Equivalent flexibility can be achieved through **GAM** or **spline-based models**, which are shown below.</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a><span class="fu">## 1. Setup and Data</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Active Python interpreter:"</span>, sys.executable)</span>
+<span id="cb13-22"><a href="#cb13-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-23"><a href="#cb13-23" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np, pandas <span class="im">as</span> pd</span>
+<span id="cb13-24"><a href="#cb13-24" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> matplotlib.pyplot <span class="im">as</span> plt</span>
+<span id="cb13-25"><a href="#cb13-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-26"><a href="#cb13-26" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.model_selection <span class="im">import</span> train_test_split</span>
+<span id="cb13-27"><a href="#cb13-27" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.compose <span class="im">import</span> ColumnTransformer</span>
+<span id="cb13-28"><a href="#cb13-28" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.preprocessing <span class="im">import</span> OneHotEncoder, StandardScaler</span>
+<span id="cb13-29"><a href="#cb13-29" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.pipeline <span class="im">import</span> Pipeline</span>
+<span id="cb13-30"><a href="#cb13-30" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.metrics <span class="im">import</span> mean_squared_error, r2_score</span>
+<span id="cb13-31"><a href="#cb13-31" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.linear_model <span class="im">import</span> LinearRegression, Ridge</span>
+<span id="cb13-32"><a href="#cb13-32" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> inspect</span>
+<span id="cb13-33"><a href="#cb13-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-34"><a href="#cb13-34" aria-hidden="true" tabindex="-1"></a><span class="co"># --- Fix for SciPy &gt;= 1.13 removing .A from sparse matrices ---</span></span>
+<span id="cb13-35"><a href="#cb13-35" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> scipy.sparse <span class="im">as</span> sp</span>
+<span id="cb13-36"><a href="#cb13-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-37"><a href="#cb13-37" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">not</span> <span class="bu">hasattr</span>(sp.spmatrix, <span class="st">"A"</span>):</span>
+<span id="cb13-38"><a href="#cb13-38" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _toarray(<span class="va">self</span>):</span>
+<span id="cb13-39"><a href="#cb13-39" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.toarray()</span>
+<span id="cb13-40"><a href="#cb13-40" aria-hidden="true" tabindex="-1"></a>    sp.spmatrix.A <span class="op">=</span> <span class="bu">property</span>(_toarray)</span>
+<span id="cb13-41"><a href="#cb13-41" aria-hidden="true" tabindex="-1"></a><span class="co"># -------------------------------------------------------------</span></span>
+<span id="cb13-42"><a href="#cb13-42" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-43"><a href="#cb13-43" aria-hidden="true" tabindex="-1"></a>np.random.seed(<span class="dv">4321</span>)</span>
+<span id="cb13-44"><a href="#cb13-44" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb13-45"><a href="#cb13-45" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-48"><a href="#cb13-48" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb13-49"><a href="#cb13-49" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> fetch_openml</span>
+<span id="cb13-50"><a href="#cb13-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-51"><a href="#cb13-51" aria-hidden="true" tabindex="-1"></a>ames <span class="op">=</span> fetch_openml(name<span class="op">=</span><span class="st">"house_prices"</span>, as_frame<span class="op">=</span><span class="va">True</span>).frame</span>
+<span id="cb13-52"><a href="#cb13-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-53"><a href="#cb13-53" aria-hidden="true" tabindex="-1"></a>keep <span class="op">=</span> {</span>
+<span id="cb13-54"><a href="#cb13-54" aria-hidden="true" tabindex="-1"></a>    <span class="st">"SalePrice"</span>:<span class="st">"SalePrice"</span>,</span>
+<span id="cb13-55"><a href="#cb13-55" aria-hidden="true" tabindex="-1"></a>    <span class="st">"BedroomAbvGr"</span>:<span class="st">"Bedroom_AbvGr"</span>,</span>
+<span id="cb13-56"><a href="#cb13-56" aria-hidden="true" tabindex="-1"></a>    <span class="st">"YearBuilt"</span>:<span class="st">"Year_Built"</span>,</span>
+<span id="cb13-57"><a href="#cb13-57" aria-hidden="true" tabindex="-1"></a>    <span class="st">"MoSold"</span>:<span class="st">"Mo_Sold"</span>,</span>
+<span id="cb13-58"><a href="#cb13-58" aria-hidden="true" tabindex="-1"></a>    <span class="st">"LotArea"</span>:<span class="st">"Lot_Area"</span>,</span>
+<span id="cb13-59"><a href="#cb13-59" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Street"</span>:<span class="st">"Street"</span>,</span>
+<span id="cb13-60"><a href="#cb13-60" aria-hidden="true" tabindex="-1"></a>    <span class="st">"CentralAir"</span>:<span class="st">"Central_Air"</span>,</span>
+<span id="cb13-61"><a href="#cb13-61" aria-hidden="true" tabindex="-1"></a>    <span class="st">"1stFlrSF"</span>:<span class="st">"First_Flr_SF"</span>,</span>
+<span id="cb13-62"><a href="#cb13-62" aria-hidden="true" tabindex="-1"></a>    <span class="st">"2ndFlrSF"</span>:<span class="st">"Second_Flr_SF"</span>,</span>
+<span id="cb13-63"><a href="#cb13-63" aria-hidden="true" tabindex="-1"></a>    <span class="st">"FullBath"</span>:<span class="st">"Full_Bath"</span>,</span>
+<span id="cb13-64"><a href="#cb13-64" aria-hidden="true" tabindex="-1"></a>    <span class="st">"HalfBath"</span>:<span class="st">"Half_Bath"</span>,</span>
+<span id="cb13-65"><a href="#cb13-65" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Fireplaces"</span>:<span class="st">"Fireplaces"</span>,</span>
+<span id="cb13-66"><a href="#cb13-66" aria-hidden="true" tabindex="-1"></a>    <span class="st">"GarageArea"</span>:<span class="st">"Garage_Area"</span>,</span>
+<span id="cb13-67"><a href="#cb13-67" aria-hidden="true" tabindex="-1"></a>    <span class="st">"GrLivArea"</span>:<span class="st">"Gr_Liv_Area"</span>,</span>
+<span id="cb13-68"><a href="#cb13-68" aria-hidden="true" tabindex="-1"></a>    <span class="st">"TotRmsAbvGrd"</span>:<span class="st">"TotRms_AbvGrd"</span></span>
+<span id="cb13-69"><a href="#cb13-69" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb13-70"><a href="#cb13-70" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-71"><a href="#cb13-71" aria-hidden="true" tabindex="-1"></a>df <span class="op">=</span> ames[<span class="bu">list</span>(keep.keys())].rename(columns<span class="op">=</span>keep).dropna().copy()</span>
+<span id="cb13-72"><a href="#cb13-72" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-73"><a href="#cb13-73" aria-hidden="true" tabindex="-1"></a>X <span class="op">=</span> df.drop(columns<span class="op">=</span>[<span class="st">"SalePrice"</span>])</span>
+<span id="cb13-74"><a href="#cb13-74" aria-hidden="true" tabindex="-1"></a>y <span class="op">=</span> df[<span class="st">"SalePrice"</span>].values</span>
+<span id="cb13-75"><a href="#cb13-75" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-76"><a href="#cb13-76" aria-hidden="true" tabindex="-1"></a>num_cols <span class="op">=</span> X.select_dtypes(include<span class="op">=</span>[np.number]).columns.tolist()</span>
+<span id="cb13-77"><a href="#cb13-77" aria-hidden="true" tabindex="-1"></a>cat_cols <span class="op">=</span> [c <span class="cf">for</span> c <span class="kw">in</span> X.columns <span class="cf">if</span> c <span class="kw">not</span> <span class="kw">in</span> num_cols]</span>
+<span id="cb13-78"><a href="#cb13-78" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-79"><a href="#cb13-79" aria-hidden="true" tabindex="-1"></a><span class="co"># Handle OneHotEncoder version changes and ensure dense output</span></span>
+<span id="cb13-80"><a href="#cb13-80" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="st">"sparse_output"</span> <span class="kw">in</span> inspect.signature(OneHotEncoder).parameters:</span>
+<span id="cb13-81"><a href="#cb13-81" aria-hidden="true" tabindex="-1"></a>    encoder <span class="op">=</span> OneHotEncoder(drop<span class="op">=</span><span class="st">"first"</span>, handle_unknown<span class="op">=</span><span class="st">"ignore"</span>, sparse_output<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb13-82"><a href="#cb13-82" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb13-83"><a href="#cb13-83" aria-hidden="true" tabindex="-1"></a>    encoder <span class="op">=</span> OneHotEncoder(drop<span class="op">=</span><span class="st">"first"</span>, handle_unknown<span class="op">=</span><span class="st">"ignore"</span>, sparse<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb13-84"><a href="#cb13-84" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-85"><a href="#cb13-85" aria-hidden="true" tabindex="-1"></a>pre <span class="op">=</span> ColumnTransformer([</span>
+<span id="cb13-86"><a href="#cb13-86" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"num"</span>, StandardScaler(), num_cols),</span>
+<span id="cb13-87"><a href="#cb13-87" aria-hidden="true" tabindex="-1"></a>    (<span class="st">"cat"</span>, encoder, cat_cols)</span>
+<span id="cb13-88"><a href="#cb13-88" aria-hidden="true" tabindex="-1"></a>], sparse_threshold<span class="op">=</span><span class="dv">0</span>)</span>
+<span id="cb13-89"><a href="#cb13-89" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-90"><a href="#cb13-90" aria-hidden="true" tabindex="-1"></a>X_train, X_test, y_train, y_test <span class="op">=</span> train_test_split(X, y, test_size<span class="op">=</span><span class="fl">0.3</span>, random_state<span class="op">=</span><span class="dv">4321</span>)</span>
+<span id="cb13-91"><a href="#cb13-91" aria-hidden="true" tabindex="-1"></a>df.head()</span>
+<span id="cb13-92"><a href="#cb13-92" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb13-93"><a href="#cb13-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-94"><a href="#cb13-94" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb13-95"><a href="#cb13-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-96"><a href="#cb13-96" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2. Visual Check for Nonlinearity</span></span>
+<span id="cb13-97"><a href="#cb13-97" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-100"><a href="#cb13-100" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb13-101"><a href="#cb13-101" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> statsmodels.api <span class="im">as</span> sm</span>
+<span id="cb13-102"><a href="#cb13-102" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure()</span>
+<span id="cb13-103"><a href="#cb13-103" aria-hidden="true" tabindex="-1"></a>plt.scatter(df[<span class="st">"Gr_Liv_Area"</span>], df[<span class="st">"SalePrice"</span>], s<span class="op">=</span><span class="dv">8</span>, alpha<span class="op">=</span><span class="fl">0.3</span>)</span>
+<span id="cb13-104"><a href="#cb13-104" aria-hidden="true" tabindex="-1"></a>low <span class="op">=</span> sm.nonparametric.lowess(df[<span class="st">"SalePrice"</span>], df[<span class="st">"Gr_Liv_Area"</span>], frac<span class="op">=</span><span class="fl">0.3</span>, return_sorted<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb13-105"><a href="#cb13-105" aria-hidden="true" tabindex="-1"></a>plt.plot(low[:,<span class="dv">0</span>], low[:,<span class="dv">1</span>], linewidth<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb13-106"><a href="#cb13-106" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"SalePrice vs Gr_Liv_Area (LOESS smoother)"</span>)</span>
+<span id="cb13-107"><a href="#cb13-107" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Gr_Liv_Area"</span>)<span class="op">;</span> plt.ylabel(<span class="st">"SalePrice"</span>)</span>
+<span id="cb13-108"><a href="#cb13-108" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb13-109"><a href="#cb13-109" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb13-110"><a href="#cb13-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-111"><a href="#cb13-111" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb13-112"><a href="#cb13-112" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-113"><a href="#cb13-113" aria-hidden="true" tabindex="-1"></a><span class="fu">## 3. Piecewise Regression Example</span></span>
+<span id="cb13-114"><a href="#cb13-114" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-117"><a href="#cb13-117" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb13-118"><a href="#cb13-118" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> PiecewiseLinear:</span>
+<span id="cb13-119"><a href="#cb13-119" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, knot<span class="op">=</span><span class="fl">2000.0</span>):</span>
+<span id="cb13-120"><a href="#cb13-120" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.knot <span class="op">=</span> knot</span>
+<span id="cb13-121"><a href="#cb13-121" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.lin <span class="op">=</span> LinearRegression()</span>
+<span id="cb13-122"><a href="#cb13-122" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-123"><a href="#cb13-123" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> _transform(<span class="va">self</span>, x):</span>
+<span id="cb13-124"><a href="#cb13-124" aria-hidden="true" tabindex="-1"></a>        x1 <span class="op">=</span> np.asarray(x).reshape(<span class="op">-</span><span class="dv">1</span>,<span class="dv">1</span>)</span>
+<span id="cb13-125"><a href="#cb13-125" aria-hidden="true" tabindex="-1"></a>        hx <span class="op">=</span> np.maximum(<span class="dv">0</span>, x1 <span class="op">-</span> <span class="va">self</span>.knot)</span>
+<span id="cb13-126"><a href="#cb13-126" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> np.hstack([x1, hx])</span>
+<span id="cb13-127"><a href="#cb13-127" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-128"><a href="#cb13-128" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> fit(<span class="va">self</span>, x, y):</span>
+<span id="cb13-129"><a href="#cb13-129" aria-hidden="true" tabindex="-1"></a>        Z <span class="op">=</span> <span class="va">self</span>._transform(x)</span>
+<span id="cb13-130"><a href="#cb13-130" aria-hidden="true" tabindex="-1"></a>        <span class="va">self</span>.lin.fit(Z, y)</span>
+<span id="cb13-131"><a href="#cb13-131" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span></span>
+<span id="cb13-132"><a href="#cb13-132" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-133"><a href="#cb13-133" aria-hidden="true" tabindex="-1"></a>    <span class="kw">def</span> predict(<span class="va">self</span>, x):</span>
+<span id="cb13-134"><a href="#cb13-134" aria-hidden="true" tabindex="-1"></a>        Z <span class="op">=</span> <span class="va">self</span>._transform(x)</span>
+<span id="cb13-135"><a href="#cb13-135" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> <span class="va">self</span>.lin.predict(Z)</span>
+<span id="cb13-136"><a href="#cb13-136" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-137"><a href="#cb13-137" aria-hidden="true" tabindex="-1"></a>pw <span class="op">=</span> PiecewiseLinear(knot<span class="op">=</span><span class="dv">2000</span>).fit(df[<span class="st">"Gr_Liv_Area"</span>].values, df[<span class="st">"SalePrice"</span>].values)</span>
+<span id="cb13-138"><a href="#cb13-138" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-139"><a href="#cb13-139" aria-hidden="true" tabindex="-1"></a>grid <span class="op">=</span> np.linspace(df[<span class="st">"Gr_Liv_Area"</span>].<span class="bu">min</span>(), df[<span class="st">"Gr_Liv_Area"</span>].<span class="bu">max</span>(), <span class="dv">200</span>)</span>
+<span id="cb13-140"><a href="#cb13-140" aria-hidden="true" tabindex="-1"></a>pred <span class="op">=</span> pw.predict(grid)</span>
+<span id="cb13-141"><a href="#cb13-141" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-142"><a href="#cb13-142" aria-hidden="true" tabindex="-1"></a>plt.figure()</span>
+<span id="cb13-143"><a href="#cb13-143" aria-hidden="true" tabindex="-1"></a>plt.scatter(df[<span class="st">"Gr_Liv_Area"</span>], df[<span class="st">"SalePrice"</span>], s<span class="op">=</span><span class="dv">8</span>, alpha<span class="op">=</span><span class="fl">0.2</span>)</span>
+<span id="cb13-144"><a href="#cb13-144" aria-hidden="true" tabindex="-1"></a>plt.plot(grid, pred, linewidth<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb13-145"><a href="#cb13-145" aria-hidden="true" tabindex="-1"></a>plt.axvline(<span class="dv">2000</span>, linestyle<span class="op">=</span><span class="st">"--"</span>)</span>
+<span id="cb13-146"><a href="#cb13-146" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Piecewise Linear Fit at Knot = 2000"</span>)</span>
+<span id="cb13-147"><a href="#cb13-147" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Gr_Liv_Area"</span>)<span class="op">;</span> plt.ylabel(<span class="st">"SalePrice"</span>)</span>
+<span id="cb13-148"><a href="#cb13-148" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb13-149"><a href="#cb13-149" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb13-150"><a href="#cb13-150" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-151"><a href="#cb13-151" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb13-152"><a href="#cb13-152" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-153"><a href="#cb13-153" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. MARS (Commented Out — For Reference Only)</span></span>
+<span id="cb13-154"><a href="#cb13-154" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-155"><a href="#cb13-155" aria-hidden="true" tabindex="-1"></a><span class="in">```python</span></span>
+<span id="cb13-156"><a href="#cb13-156" aria-hidden="true" tabindex="-1"></a><span class="co"># The MARS implementation (py-earth) is not actively maintained and may fail to install on modern Python.</span></span>
+<span id="cb13-157"><a href="#cb13-157" aria-hidden="true" tabindex="-1"></a><span class="co"># If you wish to try it, install from conda-forge:</span></span>
+<span id="cb13-158"><a href="#cb13-158" aria-hidden="true" tabindex="-1"></a><span class="co">#     conda install -c conda-forge sklearn-contrib-py-earth</span></span>
+<span id="cb13-159"><a href="#cb13-159" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb13-160"><a href="#cb13-160" aria-hidden="true" tabindex="-1"></a><span class="co"># Example (commented out):</span></span>
+<span id="cb13-161"><a href="#cb13-161" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb13-162"><a href="#cb13-162" aria-hidden="true" tabindex="-1"></a><span class="co"># from pyearth import Earth</span></span>
+<span id="cb13-163"><a href="#cb13-163" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb13-164"><a href="#cb13-164" aria-hidden="true" tabindex="-1"></a><span class="co"># mars = Pipeline([("prep", pre), ("model", Earth(max_degree=2))]).fit(X_train, y_train)</span></span>
+<span id="cb13-165"><a href="#cb13-165" aria-hidden="true" tabindex="-1"></a><span class="co"># print(mars.named_steps["model"].summary())</span></span>
+<span id="cb13-166"><a href="#cb13-166" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb13-167"><a href="#cb13-167" aria-hidden="true" tabindex="-1"></a><span class="co"># xs = np.linspace(X["Garage_Area"].min(), X["Garage_Area"].max(), 200)</span></span>
+<span id="cb13-168"><a href="#cb13-168" aria-hidden="true" tabindex="-1"></a><span class="co"># yhat = mars.predict(pd.DataFrame({"Garage_Area": xs}))</span></span>
+<span id="cb13-169"><a href="#cb13-169" aria-hidden="true" tabindex="-1"></a><span class="co">#</span></span>
+<span id="cb13-170"><a href="#cb13-170" aria-hidden="true" tabindex="-1"></a><span class="co"># plt.figure()</span></span>
+<span id="cb13-171"><a href="#cb13-171" aria-hidden="true" tabindex="-1"></a><span class="co"># plt.scatter(X_train["Garage_Area"], y_train, s=8, alpha=0.2)</span></span>
+<span id="cb13-172"><a href="#cb13-172" aria-hidden="true" tabindex="-1"></a><span class="co"># plt.plot(xs, yhat, linewidth=2)</span></span>
+<span id="cb13-173"><a href="#cb13-173" aria-hidden="true" tabindex="-1"></a><span class="co"># plt.title("MARS with Garage_Area (Commented Out Example)")</span></span>
+<span id="cb13-174"><a href="#cb13-174" aria-hidden="true" tabindex="-1"></a><span class="co"># plt.xlabel("Garage_Area"); plt.ylabel("SalePrice")</span></span>
+<span id="cb13-175"><a href="#cb13-175" aria-hidden="true" tabindex="-1"></a><span class="co"># plt.tight_layout()</span></span>
+<span id="cb13-176"><a href="#cb13-176" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb13-177"><a href="#cb13-177" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-178"><a href="#cb13-178" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb13-179"><a href="#cb13-179" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-180"><a href="#cb13-180" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. LOESS Visualization</span></span>
+<span id="cb13-181"><a href="#cb13-181" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-184"><a href="#cb13-184" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb13-185"><a href="#cb13-185" aria-hidden="true" tabindex="-1"></a>fig <span class="op">=</span> plt.figure()</span>
+<span id="cb13-186"><a href="#cb13-186" aria-hidden="true" tabindex="-1"></a>plt.scatter(df[<span class="st">"Gr_Liv_Area"</span>], df[<span class="st">"SalePrice"</span>], s<span class="op">=</span><span class="dv">8</span>, alpha<span class="op">=</span><span class="fl">0.2</span>)</span>
+<span id="cb13-187"><a href="#cb13-187" aria-hidden="true" tabindex="-1"></a>low <span class="op">=</span> sm.nonparametric.lowess(df[<span class="st">"SalePrice"</span>], df[<span class="st">"Gr_Liv_Area"</span>], frac<span class="op">=</span><span class="fl">0.4</span>, return_sorted<span class="op">=</span><span class="va">True</span>)</span>
+<span id="cb13-188"><a href="#cb13-188" aria-hidden="true" tabindex="-1"></a>plt.plot(low[:,<span class="dv">0</span>], low[:,<span class="dv">1</span>], linewidth<span class="op">=</span><span class="dv">2</span>)</span>
+<span id="cb13-189"><a href="#cb13-189" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"LOESS Smoother (Visual Aid)"</span>)</span>
+<span id="cb13-190"><a href="#cb13-190" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Gr_Liv_Area"</span>)<span class="op">;</span> plt.ylabel(<span class="st">"SalePrice"</span>)</span>
+<span id="cb13-191"><a href="#cb13-191" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb13-192"><a href="#cb13-192" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb13-193"><a href="#cb13-193" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-194"><a href="#cb13-194" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb13-195"><a href="#cb13-195" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-196"><a href="#cb13-196" aria-hidden="true" tabindex="-1"></a><span class="fu">## 6. GAM and Spline Approaches (Modern Alternatives)</span></span>
+<span id="cb13-197"><a href="#cb13-197" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-200"><a href="#cb13-200" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb13-201"><a href="#cb13-201" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pygam <span class="im">import</span> LinearGAM, s</span>
+<span id="cb13-202"><a href="#cb13-202" aria-hidden="true" tabindex="-1"></a>gam1 <span class="op">=</span> LinearGAM(s(<span class="dv">0</span>)).fit(X_train[[<span class="st">"Garage_Area"</span>]].values, y_train)</span>
+<span id="cb13-203"><a href="#cb13-203" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(gam1.summary())</span>
+<span id="cb13-204"><a href="#cb13-204" aria-hidden="true" tabindex="-1"></a>gam2 <span class="op">=</span> LinearGAM(s(<span class="dv">0</span>) <span class="op">+</span> s(<span class="dv">1</span>)).fit(X_train[[<span class="st">"Garage_Area"</span>,<span class="st">"Gr_Liv_Area"</span>]].values, y_train)</span>
+<span id="cb13-205"><a href="#cb13-205" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(gam2.summary())</span>
+<span id="cb13-206"><a href="#cb13-206" aria-hidden="true" tabindex="-1"></a>num_train <span class="op">=</span> X_train[num_cols].values</span>
+<span id="cb13-207"><a href="#cb13-207" aria-hidden="true" tabindex="-1"></a>gam3 <span class="op">=</span> LinearGAM().fit(num_train, y_train)</span>
+<span id="cb13-208"><a href="#cb13-208" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(gam3.summary())</span>
+<span id="cb13-209"><a href="#cb13-209" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-210"><a href="#cb13-210" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb13-211"><a href="#cb13-211" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-212"><a href="#cb13-212" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb13-213"><a href="#cb13-213" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-214"><a href="#cb13-214" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. Regression Spline Example (Fallback)</span></span>
+<span id="cb13-215"><a href="#cb13-215" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-218"><a href="#cb13-218" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb13-219"><a href="#cb13-219" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> patsy <span class="im">import</span> dmatrix</span>
+<span id="cb13-220"><a href="#cb13-220" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-221"><a href="#cb13-221" aria-hidden="true" tabindex="-1"></a>design_tr <span class="op">=</span> dmatrix(<span class="st">"bs(Garage_Area, df=6) + bs(Gr_Liv_Area, df=6)"</span>, data<span class="op">=</span>X_train, return_type<span class="op">=</span><span class="st">"dataframe"</span>)</span>
+<span id="cb13-222"><a href="#cb13-222" aria-hidden="true" tabindex="-1"></a>design_te <span class="op">=</span> dmatrix(<span class="st">"bs(Garage_Area, df=6) + bs(Gr_Liv_Area, df=6)"</span>, data<span class="op">=</span>X_test, return_type<span class="op">=</span><span class="st">"dataframe"</span>)</span>
+<span id="cb13-223"><a href="#cb13-223" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-224"><a href="#cb13-224" aria-hidden="true" tabindex="-1"></a>ridge <span class="op">=</span> Ridge(alpha<span class="op">=</span><span class="fl">1.0</span>).fit(design_tr, y_train)</span>
+<span id="cb13-225"><a href="#cb13-225" aria-hidden="true" tabindex="-1"></a>pred_spline <span class="op">=</span> ridge.predict(design_te)</span>
+<span id="cb13-226"><a href="#cb13-226" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb13-227"><a href="#cb13-227" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-228"><a href="#cb13-228" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb13-229"><a href="#cb13-229" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-230"><a href="#cb13-230" aria-hidden="true" tabindex="-1"></a><span class="fu">## 8. Model Comparison (Piecewise vs GAM vs Spline)</span></span>
+<span id="cb13-231"><a href="#cb13-231" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-234"><a href="#cb13-234" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb13-235"><a href="#cb13-235" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> rmse(y, yhat):</span>
+<span id="cb13-236"><a href="#cb13-236" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb13-237"><a href="#cb13-237" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> mean_squared_error(y, yhat, squared<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb13-238"><a href="#cb13-238" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">TypeError</span>:</span>
+<span id="cb13-239"><a href="#cb13-239" aria-hidden="true" tabindex="-1"></a>        <span class="cf">return</span> np.sqrt(mean_squared_error(y, yhat))</span>
+<span id="cb13-240"><a href="#cb13-240" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-241"><a href="#cb13-241" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> mse(y, yhat): <span class="cf">return</span> mean_squared_error(y, yhat)</span>
+<span id="cb13-242"><a href="#cb13-242" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> rsq(y, yhat): <span class="cf">return</span> r2_score(y, yhat)</span>
+<span id="cb13-243"><a href="#cb13-243" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-244"><a href="#cb13-244" aria-hidden="true" tabindex="-1"></a>p_piece <span class="op">=</span> pw.predict(X_test[<span class="st">"Gr_Liv_Area"</span>].values)</span>
+<span id="cb13-245"><a href="#cb13-245" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-246"><a href="#cb13-246" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb13-247"><a href="#cb13-247" aria-hidden="true" tabindex="-1"></a>    p_gam <span class="op">=</span> gam3.predict(X_test[num_cols].values)</span>
+<span id="cb13-248"><a href="#cb13-248" aria-hidden="true" tabindex="-1"></a><span class="cf">except</span> <span class="pp">Exception</span>:</span>
+<span id="cb13-249"><a href="#cb13-249" aria-hidden="true" tabindex="-1"></a>    p_gam <span class="op">=</span> np.full_like(y_test, np.nan, dtype<span class="op">=</span><span class="bu">float</span>)</span>
+<span id="cb13-250"><a href="#cb13-250" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-251"><a href="#cb13-251" aria-hidden="true" tabindex="-1"></a>p_spline <span class="op">=</span> pred_spline</span>
+<span id="cb13-252"><a href="#cb13-252" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-253"><a href="#cb13-253" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span> <span class="op">=</span> pd.DataFrame({</span>
+<span id="cb13-254"><a href="#cb13-254" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Model"</span>: [<span class="st">"Piecewise"</span>, <span class="st">"GAM (pyGAM)"</span> <span class="cf">if</span> <span class="kw">not</span> np.isnan(p_gam).<span class="bu">all</span>() <span class="cf">else</span> <span class="st">"GAM (not available)"</span>, <span class="st">"Regression Spline"</span>],</span>
+<span id="cb13-255"><a href="#cb13-255" aria-hidden="true" tabindex="-1"></a>    <span class="st">"RMSE"</span>: [rmse(y_test, p_piece), rmse(y_test, p_gam) <span class="cf">if</span> <span class="kw">not</span> np.isnan(p_gam).<span class="bu">all</span>() <span class="cf">else</span> np.nan, rmse(y_test, p_spline)],</span>
+<span id="cb13-256"><a href="#cb13-256" aria-hidden="true" tabindex="-1"></a>    <span class="st">"MSE"</span>: [mse(y_test, p_piece), mse(y_test, p_gam) <span class="cf">if</span> <span class="kw">not</span> np.isnan(p_gam).<span class="bu">all</span>() <span class="cf">else</span> np.nan, mse(y_test, p_spline)],</span>
+<span id="cb13-257"><a href="#cb13-257" aria-hidden="true" tabindex="-1"></a>    <span class="st">"R2"</span>: [rsq(y_test, p_piece), rsq(y_test, p_gam) <span class="cf">if</span> <span class="kw">not</span> np.isnan(p_gam).<span class="bu">all</span>() <span class="cf">else</span> np.nan, rsq(y_test, p_spline)]</span>
+<span id="cb13-258"><a href="#cb13-258" aria-hidden="true" tabindex="-1"></a>}).sort_values(<span class="st">"R2"</span>, ascending<span class="op">=</span><span class="va">False</span>)</span>
+<span id="cb13-259"><a href="#cb13-259" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-260"><a href="#cb13-260" aria-hidden="true" tabindex="-1"></a><span class="bu">cmp</span></span>
+<span id="cb13-261"><a href="#cb13-261" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb13-262"><a href="#cb13-262" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-263"><a href="#cb13-263" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb13-264"><a href="#cb13-264" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-265"><a href="#cb13-265" aria-hidden="true" tabindex="-1"></a><span class="fu">## 9. Predicted vs Actual Comparison</span></span>
+<span id="cb13-266"><a href="#cb13-266" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-269"><a href="#cb13-269" aria-hidden="true" tabindex="-1"></a><span class="in">```{python}</span></span>
+<span id="cb13-270"><a href="#cb13-270" aria-hidden="true" tabindex="-1"></a>plt.figure()</span>
+<span id="cb13-271"><a href="#cb13-271" aria-hidden="true" tabindex="-1"></a>plt.scatter(y_test, p_piece, s<span class="op">=</span><span class="dv">8</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, label<span class="op">=</span><span class="st">"Piecewise"</span>)</span>
+<span id="cb13-272"><a href="#cb13-272" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> <span class="kw">not</span> np.isnan(p_gam).<span class="bu">all</span>():</span>
+<span id="cb13-273"><a href="#cb13-273" aria-hidden="true" tabindex="-1"></a>    plt.scatter(y_test, p_gam, s<span class="op">=</span><span class="dv">8</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, label<span class="op">=</span><span class="st">"GAM"</span>)</span>
+<span id="cb13-274"><a href="#cb13-274" aria-hidden="true" tabindex="-1"></a>plt.scatter(y_test, p_spline, s<span class="op">=</span><span class="dv">8</span>, alpha<span class="op">=</span><span class="fl">0.4</span>, label<span class="op">=</span><span class="st">"Spline"</span>)</span>
+<span id="cb13-275"><a href="#cb13-275" aria-hidden="true" tabindex="-1"></a>plt.plot([y_test.<span class="bu">min</span>(), y_test.<span class="bu">max</span>()], [y_test.<span class="bu">min</span>(), y_test.<span class="bu">max</span>()], linestyle<span class="op">=</span><span class="st">"--"</span>)</span>
+<span id="cb13-276"><a href="#cb13-276" aria-hidden="true" tabindex="-1"></a>plt.legend()</span>
+<span id="cb13-277"><a href="#cb13-277" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Predicted vs Actual (Test Set)"</span>)</span>
+<span id="cb13-278"><a href="#cb13-278" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Actual SalePrice"</span>)<span class="op">;</span> plt.ylabel(<span class="st">"Predicted SalePrice"</span>)</span>
+<span id="cb13-279"><a href="#cb13-279" aria-hidden="true" tabindex="-1"></a>plt.tight_layout()</span>
+<span id="cb13-280"><a href="#cb13-280" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb13-281"><a href="#cb13-281" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-282"><a href="#cb13-282" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb13-283"><a href="#cb13-283" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-284"><a href="#cb13-284" aria-hidden="true" tabindex="-1"></a><span class="fu">## 10. Interpretation Summary</span></span>
+<span id="cb13-285"><a href="#cb13-285" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-286"><a href="#cb13-286" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Piecewise:** adds simple thresholds, easy to explain.  </span>
+<span id="cb13-287"><a href="#cb13-287" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**GAMs:** provide smooth, interpretable nonlinearities.  </span>
+<span id="cb13-288"><a href="#cb13-288" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Splines:** flexible approximations that behave like local polynomials.  </span>
+<span id="cb13-289"><a href="#cb13-289" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**MARS (optional):** similar conceptually but less maintained in Python; consider using R’s <span class="in">`earth`</span> instead.</span>
+</code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

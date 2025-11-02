@@ -28,5 +28,11 @@
   },
   "resampling-model-selection-python.qmd": {
     "resampling-model-selection-python.html": "59a9d2d0"
+  },
+  "generalized-additive-models-r.qmd": {
+    "generalized-additive-models-r.html": "00a358fe"
+  },
+  "generalized-additive-models-python.qmd": {
+    "generalized-additive-models-python.html": "09ec5eb3"
   }
 }

@@ -1,0 +1,202 @@
+---
+title: "Model Selection and Regularization - Python Version"
+format:
+  html:
+    code-fold: true
+  pdf:
+    code-fold: false
+---
+
+## Overview
+
+This section parallels the R version of Model Selection and Regularization.\
+We will:
+
+1.  Load the Ames Housing data\
+2.  Split into training and test sets\
+3.  Perform Ridge, Lasso, and Elastic Net regressions with 10-fold CV\
+4.  Visualize RMSE and coefficient shrinkage patterns\
+5.  Compare test set performance
+
+------------------------------------------------------------------------
+
+## Step 0: Setup and Data
+
+We’ll use scikit-learn for modeling.\
+If the CSVs `ames_training.csv` and `ames_testing.csv` are not present, you can load Ames Housing via the `fetch_openml` function.
+
+```{python}
+import warnings
+warnings.filterwarnings("ignore")
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.datasets import fetch_openml
+from sklearn.model_selection import train_test_split, KFold, cross_val_score
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import RidgeCV, LassoCV, ElasticNetCV
+from sklearn.metrics import mean_squared_error
+
+# Load Ames dataset directly
+ames = fetch_openml(name="house_prices", as_frame=True)
+df = ames.frame
+
+# Subset variables to match the R version
+keep = [
+    "SalePrice","BedroomAbvGr","YearBuilt","MoSold","LotArea","Street","CentralAir",
+    "1stFlrSF","2ndFlrSF","FullBath","HalfBath","Fireplaces","GarageArea",
+    "GrLivArea","TotRmsAbvGrd"
+]
+df = df[keep].copy()
+
+# Clean up names to match Python variable rules
+df.columns = ["Sale_Price","Bedroom_AbvGr","Year_Built","Mo_Sold","Lot_Area","Street",
+              "Central_Air","First_Flr_SF","Second_Flr_SF","Full_Bath","Half_Bath",
+              "Fireplaces","Garage_Area","Gr_Liv_Area","TotRms_AbvGrd"]
+
+# Drop missing rows
+df = df.dropna()
+
+# Train/test split (70/30)
+train, test = train_test_split(df, test_size=0.3, random_state=123)
+
+# Identify predictors and target
+y_train = train["Sale_Price"]
+y_test  = test["Sale_Price"]
+X_train = train.drop(columns="Sale_Price")
+X_test  = test.drop(columns="Sale_Price")
+
+cat_vars = ["Street","Central_Air"]
+num_vars = [c for c in X_train.columns if c not in cat_vars]
+
+# Preprocess: scale numeric, one-hot encode categorical
+preprocessor = ColumnTransformer([
+    ("num", StandardScaler(), num_vars),
+    ("cat", OneHotEncoder(drop="first"), cat_vars)
+])
+```
+
+------------------------------------------------------------------------
+
+## Step 1: Ridge Regression
+
+We’ll use cross-validation to tune λ (alpha).\
+Then we visualize RMSE vs log(lambda) and the number of nonzero coefficients.
+
+```{python}
+alphas = np.logspace(4, -4, 80)
+ridge = Pipeline([
+    ("prep", preprocessor),
+    ("model", RidgeCV(alphas=alphas, scoring="neg_mean_squared_error", cv=10))
+])
+ridge.fit(X_train, y_train)
+
+ridge_best = ridge.named_steps["model"].alpha_
+print("Best Ridge alpha:", ridge_best)
+
+# Evaluate RMSE on test set
+ridge_pred = ridge.predict(X_test)
+ridge_rmse = np.sqrt(mean_squared_error(y_test, ridge_pred))
+print("Test RMSE (Ridge):", ridge_rmse)
+```
+
+------------------------------------------------------------------------
+
+## Step 2: Lasso Regression
+
+Lasso adds variable selection — some coefficients go exactly to zero.
+
+```{python}
+lasso = Pipeline([
+    ("prep", preprocessor),
+    ("model", LassoCV(alphas=alphas, cv=10, max_iter=20000))
+])
+lasso.fit(X_train, y_train)
+
+lasso_best = lasso.named_steps["model"].alpha_
+print("Best Lasso alpha:", lasso_best)
+
+lasso_pred = lasso.predict(X_test)
+lasso_rmse = np.sqrt(mean_squared_error(y_test, lasso_pred))
+print("Test RMSE (Lasso):", lasso_rmse)
+```
+
+------------------------------------------------------------------------
+
+## Step 3: Visualize Coefficient Shrinkage and RMSE
+
+Let’s visualize how RMSE and model sparsity change with λ.
+
+```{python}
+# Compute RMSE path manually
+def cv_rmse(model_class, X, y, alphas):
+    rmse = []
+    for a in alphas:
+        model = Pipeline([
+            ("prep", preprocessor),
+            ("model", model_class(alpha=a, max_iter=20000))
+        ])
+        scores = cross_val_score(model, X, y, scoring="neg_mean_squared_error", cv=KFold(10, shuffle=True, random_state=123))
+        rmse.append(np.sqrt(-scores.mean()))
+    return np.array(rmse)
+
+from sklearn.linear_model import Ridge, Lasso
+ridge_rmse_path = cv_rmse(Ridge, X_train, y_train, alphas)
+lasso_rmse_path = cv_rmse(Lasso, X_train, y_train, alphas)
+
+plt.figure()
+plt.plot(np.log(alphas), ridge_rmse_path, label="Ridge")
+plt.plot(np.log(alphas), lasso_rmse_path, label="Lasso")
+plt.xlabel("log(lambda)")
+plt.ylabel("Cross-validated RMSE")
+plt.title("RMSE vs log(lambda)")
+plt.legend()
+plt.show()
+```
+
+------------------------------------------------------------------------
+
+## Step 4: Elastic Net
+
+Elastic Net blends Ridge and Lasso.\
+We’ll vary α (the mix) and visualize the tradeoff.
+
+```{python}
+l1_ratios = np.linspace(0, 1, 6)
+en_cv = Pipeline([
+    ("prep", preprocessor),
+    ("model", ElasticNetCV(l1_ratio=l1_ratios, alphas=alphas, cv=10, max_iter=50000))
+])
+en_cv.fit(X_train, y_train)
+
+print("Best Elastic Net alpha:", en_cv.named_steps["model"].alpha_)
+print("Best Elastic Net l1_ratio:", en_cv.named_steps["model"].l1_ratio_)
+
+en_pred = en_cv.predict(X_test)
+en_rmse = np.sqrt(mean_squared_error(y_test, en_pred))
+print("Test RMSE (Elastic Net):", en_rmse)
+```
+
+------------------------------------------------------------------------
+
+## Step 5: Compare Models
+
+```{python}
+results = pd.DataFrame({
+    "Model": ["Ridge", "Lasso", "Elastic Net"],
+    "Test_RMSE": [ridge_rmse, lasso_rmse, en_rmse]
+})
+print(results.sort_values("Test_RMSE"))
+```
+
+------------------------------------------------------------------------
+
+## Summary
+
+-   Ridge stabilizes coefficients by shrinking them.\
+-   Lasso enforces sparsity by zeroing weak predictors.\
+-   Elastic Net blends both for balance.\
+-   Regularization often beats pure stepwise regression on unseen data.
