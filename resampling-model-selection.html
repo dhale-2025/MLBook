@@ -171,38 +171,44 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
-  <a href="./generalized-additive-models.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">generalized-additive-models</span></span></a>
+  <a href="./generalized-additive-models-r.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">GAM – Piecewise, MARS, LOESS, and Splines - R Version</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./generalized-additive-models-python.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">GAM— Piecewise, LOESS, and GAM Splines - Python Version</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./tree-based-models.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">tree-based-models</span></span></a>
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">tree-based-models</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./neural-network-models.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">neural-network-models</span></span></a>
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">neural-network-models</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./naive-bayes-models.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">naive-bayes-models</span></span></a>
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">naive-bayes-models</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./model-agnostic-interpretability.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">model-agnostic-interpretability</span></span></a>
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">model-agnostic-interpretability</span></span></a>
   </div>
 </li>
         <li class="sidebar-item">
   <div class="sidebar-item-container"> 
   <a href="./support-vector-machines.html" class="sidebar-item-text sidebar-link">
- <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">support-vector-machines</span></span></a>
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">support-vector-machines</span></span></a>
   </div>
 </li>
     </ul>
@@ -504,17 +510,19 @@ Elastic Net combines the strengths of Ridge and Lasso: - Ridge for stability. - 
 <span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>cv_en_best <span class="ot">&lt;-</span> <span class="fu">cv.glmnet</span>(x_train, y_train, <span class="at">alpha =</span> best_alpha, <span class="at">nfolds =</span> <span class="dv">10</span>)</span>
 <span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>elastic_pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(cv_en_best, <span class="at">newx =</span> x_test, <span class="at">s =</span> <span class="st">"lambda.min"</span>)</span>
 <span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>compare_tbl <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>  <span class="at">Stepwise =</span> <span class="fu">as_tibble_row</span>(<span class="fu">postResample</span>(step_pred, test<span class="sc">$</span>Sale_Price)),</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  <span class="at">Ridge =</span> <span class="fu">as_tibble_row</span>(<span class="fu">postResample</span>(ridge_pred, y_test)),</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">Lasso =</span> <span class="fu">as_tibble_row</span>(<span class="fu">postResample</span>(lasso_pred, y_test)),</span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">Elastic =</span> <span class="fu">as_tibble_row</span>(<span class="fu">postResample</span>(elastic_pred, y_test)),</span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">.id =</span> <span class="st">"Model"</span></span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(compare_tbl) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Model"</span>, <span class="st">"RMSE"</span>, <span class="st">"Rsquared"</span>, <span class="st">"MAE"</span>)</span>
-<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a>compare_tbl <span class="ot">&lt;-</span> compare_tbl <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(RMSE)</span>
-<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a>compare_tbl</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>compare_tbl <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">Stepwise =</span> <span class="fu">as_tibble_row</span>(<span class="fu">postResample</span>(step_pred, test<span class="sc">$</span>Sale_Price)),</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>  <span class="at">Ridge =</span> <span class="fu">as_tibble_row</span>(<span class="fu">postResample</span>(ridge_pred, y_test)),</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">Lasso =</span> <span class="fu">as_tibble_row</span>(<span class="fu">postResample</span>(lasso_pred, y_test)),</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">Elastic =</span> <span class="fu">as_tibble_row</span>(<span class="fu">postResample</span>(elastic_pred, y_test)),</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">.id =</span> <span class="st">"Model"</span></span>
+<span id="cb12-16"><a href="#cb12-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb12-17"><a href="#cb12-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-18"><a href="#cb12-18" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(compare_tbl) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Model"</span>, <span class="st">"RMSE"</span>, <span class="st">"Rsquared"</span>, <span class="st">"MAE"</span>)</span>
+<span id="cb12-19"><a href="#cb12-19" aria-hidden="true" tabindex="-1"></a>compare_tbl <span class="ot">&lt;-</span> compare_tbl <span class="sc">%&gt;%</span> <span class="fu">arrange</span>(RMSE)</span>
+<span id="cb12-20"><a href="#cb12-20" aria-hidden="true" tabindex="-1"></a>compare_tbl</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 4 × 4
@@ -524,6 +532,197 @@ Elastic Net combines the strengths of Ridge and Lasso: - Ridge for stability. - 
 2 Lasso    38297.    0.767 26045.
 3 Elastic  38301.    0.767 26039.
 4 Ridge    38412.    0.766 26022.</code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Display the best cross-validated Lasso, Ridge, and Elastic Net models</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="co"># ------------------------------------------------------------</span></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(glmnet)</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Helper function to summarize a fitted cv.glmnet model</span></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>summarize_glmnet <span class="ot">&lt;-</span> <span class="cf">function</span>(cvfit, X_train, y_train, X_test, y_test, model_name) {</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">============================================</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Model:"</span>, model_name, <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"============================================</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Extract best lambda</span></span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>  best_lambda <span class="ot">&lt;-</span> cvfit<span class="sc">$</span>lambda.min</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"Best Lambda (lambda.min):"</span>, <span class="fu">round</span>(best_lambda, <span class="dv">6</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Coefficients (non-zero)</span></span>
+<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>  coefs <span class="ot">&lt;-</span> <span class="fu">as.matrix</span>(<span class="fu">coef</span>(cvfit, <span class="at">s =</span> <span class="st">"lambda.min"</span>))</span>
+<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>  nonzero <span class="ot">&lt;-</span> coefs[coefs <span class="sc">!=</span> <span class="dv">0</span>, , drop <span class="ot">=</span> <span class="cn">FALSE</span>]</span>
+<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Print nonzero coefficients</span></span>
+<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a>  <span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n</span><span class="st">Nonzero Coefficients:</span><span class="sc">\n</span><span class="st">"</span>)</span>
+<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a>  <span class="fu">print</span>(knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="fu">as.data.frame</span>(nonzero), <span class="at">digits =</span> <span class="dv">4</span>))</span>
+<span id="cb14-29"><a href="#cb14-29" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb14-30"><a href="#cb14-30" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Predictions and performance</span></span>
+<span id="cb14-31"><a href="#cb14-31" aria-hidden="true" tabindex="-1"></a>  pred_train <span class="ot">&lt;-</span> <span class="fu">predict</span>(cvfit, <span class="at">newx =</span> X_train, <span class="at">s =</span> <span class="st">"lambda.min"</span>)</span>
+<span id="cb14-32"><a href="#cb14-32" aria-hidden="true" tabindex="-1"></a>  pred_test  <span class="ot">&lt;-</span> <span class="fu">predict</span>(cvfit, <span class="at">newx =</span> X_test,  <span class="at">s =</span> <span class="st">"lambda.min"</span>)</span>
+<span id="cb14-33"><a href="#cb14-33" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb14-34"><a href="#cb14-34" aria-hidden="true" tabindex="-1"></a>  rmse <span class="ot">&lt;-</span> <span class="cf">function</span>(y, yhat) <span class="fu">sqrt</span>(<span class="fu">mean</span>((y <span class="sc">-</span> yhat)<span class="sc">^</span><span class="dv">2</span>))</span>
+<span id="cb14-35"><a href="#cb14-35" aria-hidden="true" tabindex="-1"></a>  rsq  <span class="ot">&lt;-</span> <span class="cf">function</span>(y, yhat) <span class="dv">1</span> <span class="sc">-</span> <span class="fu">sum</span>((y <span class="sc">-</span> yhat)<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> <span class="fu">sum</span>((y <span class="sc">-</span> <span class="fu">mean</span>(y))<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb14-36"><a href="#cb14-36" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb14-37"><a href="#cb14-37" aria-hidden="true" tabindex="-1"></a>  train_rmse <span class="ot">&lt;-</span> <span class="fu">rmse</span>(y_train, pred_train)</span>
+<span id="cb14-38"><a href="#cb14-38" aria-hidden="true" tabindex="-1"></a>  test_rmse  <span class="ot">&lt;-</span> <span class="fu">rmse</span>(y_test, pred_test)</span>
+<span id="cb14-39"><a href="#cb14-39" aria-hidden="true" tabindex="-1"></a>  test_r2    <span class="ot">&lt;-</span> <span class="fu">rsq</span>(y_test, pred_test)</span>
+<span id="cb14-40"><a href="#cb14-40" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb14-41"><a href="#cb14-41" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Return one-row summary</span></span>
+<span id="cb14-42"><a href="#cb14-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(</span>
+<span id="cb14-43"><a href="#cb14-43" aria-hidden="true" tabindex="-1"></a>    <span class="at">Model =</span> model_name,</span>
+<span id="cb14-44"><a href="#cb14-44" aria-hidden="true" tabindex="-1"></a>    <span class="at">Lambda =</span> <span class="fu">round</span>(best_lambda, <span class="dv">6</span>),</span>
+<span id="cb14-45"><a href="#cb14-45" aria-hidden="true" tabindex="-1"></a>    <span class="at">Train_RMSE =</span> <span class="fu">round</span>(train_rmse, <span class="dv">2</span>),</span>
+<span id="cb14-46"><a href="#cb14-46" aria-hidden="true" tabindex="-1"></a>    <span class="at">Test_RMSE =</span> <span class="fu">round</span>(test_rmse, <span class="dv">2</span>),</span>
+<span id="cb14-47"><a href="#cb14-47" aria-hidden="true" tabindex="-1"></a>    <span class="at">Test_R2 =</span> <span class="fu">round</span>(test_r2, <span class="dv">3</span>),</span>
+<span id="cb14-48"><a href="#cb14-48" aria-hidden="true" tabindex="-1"></a>    <span class="at">Nonzero_Coeff =</span> <span class="fu">nrow</span>(nonzero)</span>
+<span id="cb14-49"><a href="#cb14-49" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb14-50"><a href="#cb14-50" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb14-51"><a href="#cb14-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-52"><a href="#cb14-52" aria-hidden="true" tabindex="-1"></a><span class="co"># Summarize and display all three models</span></span>
+<span id="cb14-53"><a href="#cb14-53" aria-hidden="true" tabindex="-1"></a>results <span class="ot">&lt;-</span> <span class="fu">rbind</span>(</span>
+<span id="cb14-54"><a href="#cb14-54" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize_glmnet</span>(cv_lasso, x_train, y_train, x_test, y_test, <span class="st">"Lasso"</span>),</span>
+<span id="cb14-55"><a href="#cb14-55" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize_glmnet</span>(cv_ridge, x_train, y_train, x_test, y_test, <span class="st">"Ridge"</span>),</span>
+<span id="cb14-56"><a href="#cb14-56" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize_glmnet</span>(cv_en_best, x_train, y_train, x_test, y_test, <span class="st">"Elastic Net"</span>)</span>
+<span id="cb14-57"><a href="#cb14-57" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+============================================
+Model: Lasso 
+============================================
+Best Lambda (lambda.min): 444.0297 
+
+Nonzero Coefficients:
+
+
+|              |    lambda.min|
+|:-------------|-------------:|
+|(Intercept)   | -1536712.4502|
+|Bedroom_AbvGr |   -12871.7248|
+|Year_Built    |      786.0097|
+|Lot_Area      |        0.3320|
+|StreetPave    |    14782.6929|
+|Central_AirY  |     3463.4742|
+|First_Flr_SF  |       22.9872|
+|Half_Bath     |    -1509.7005|
+|Fireplaces    |    11647.3233|
+|Garage_Area   |       62.2549|
+|Gr_Liv_Area   |       74.6167|
+|TotRms_AbvGrd |     1301.9029|
+
+============================================
+Model: Ridge 
+============================================
+Best Lambda (lambda.min): 5603.019 
+
+Nonzero Coefficients:
+
+
+|              |    lambda.min|
+|:-------------|-------------:|
+|(Intercept)   | -1398127.9251|
+|Bedroom_AbvGr |   -13051.9562|
+|Year_Built    |      706.9534|
+|Mo_Sold       |      105.9352|
+|Lot_Area      |        0.4001|
+|StreetPave    |    22908.4375|
+|Central_AirY  |     6951.0203|
+|First_Flr_SF  |       45.3168|
+|Second_Flr_SF |       21.9030|
+|Full_Bath     |     4203.4612|
+|Half_Bath     |      -26.1950|
+|Fireplaces    |    12666.1199|
+|Garage_Area   |       64.5695|
+|Gr_Liv_Area   |       42.3845|
+|TotRms_AbvGrd |     3067.4622|
+
+============================================
+Model: Elastic Net 
+============================================
+Best Lambda (lambda.min): 592.0396 
+
+Nonzero Coefficients:
+
+
+|              |    lambda.min|
+|:-------------|-------------:|
+|(Intercept)   | -1532932.2050|
+|Bedroom_AbvGr |   -12808.7530|
+|Year_Built    |      783.9250|
+|Lot_Area      |        0.3319|
+|StreetPave    |    14821.6671|
+|Central_AirY  |     3497.9772|
+|First_Flr_SF  |       23.2544|
+|Half_Bath     |    -1319.3051|
+|Fireplaces    |    11686.0135|
+|Garage_Area   |       62.4230|
+|Gr_Liv_Area   |       73.9778|
+|TotRms_AbvGrd |     1388.0576|</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Combined performance table</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"</span><span class="sc">\n\n</span><span class="st">***Model Performance Comparison***</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+
+***Model Performance Comparison***</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(results, <span class="at">caption =</span> <span class="st">"Performance of Cross-Validated Regularized Models"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Performance of Cross-Validated Regularized Models</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Model</th>
+<th style="text-align: right;">Lambda</th>
+<th style="text-align: right;">Train_RMSE</th>
+<th style="text-align: right;">Test_RMSE</th>
+<th style="text-align: right;">Test_R2</th>
+<th style="text-align: right;">Nonzero_Coeff</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Lasso</td>
+<td style="text-align: right;">444.0297</td>
+<td style="text-align: right;">41745.42</td>
+<td style="text-align: right;">38296.94</td>
+<td style="text-align: right;">0.764</td>
+<td style="text-align: right;">12</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Ridge</td>
+<td style="text-align: right;">5603.0194</td>
+<td style="text-align: right;">41830.59</td>
+<td style="text-align: right;">38411.78</td>
+<td style="text-align: right;">0.763</td>
+<td style="text-align: right;">15</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Elastic Net</td>
+<td style="text-align: right;">592.0396</td>
+<td style="text-align: right;">41748.11</td>
+<td style="text-align: right;">38300.92</td>
+<td style="text-align: right;">0.764</td>
+<td style="text-align: right;">12</td>
+</tr>
+</tbody>
+</table>
 </div>
 </div>
 <hr>

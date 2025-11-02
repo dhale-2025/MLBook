@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.25">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>4&nbsp; GAM – Piecewise, MARS, LOESS, and Splines - R Version – Machine Learning with R and Python</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="site_libs/quarto-nav/headroom.min.js"></script>
+<script src="site_libs/clipboard/clipboard.min.js"></script>
+<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="site_libs/quarto-search/fuse.min.js"></script>
+<script src="site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="./">
+<link href="./generalized-additive-models-python.html" rel="next">
+<link href="./resampling-model-selection-python.html" rel="prev">
+<script src="site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="site_libs/quarto-html/popper.min.js"></script>
+<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="site_libs/quarto-html/anchor.min.js"></script>
+<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="site_libs/quarto-html/quarto-syntax-highlighting-7b89279ff1a6dce999919e0e67d4d9ec.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="site_libs/bootstrap/bootstrap-27c261d06b905028a18691de25d09dde.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "sidebar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "start",
+  "type": "textbox",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+</head>
+
+<body class="nav-sidebar floating quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+  <nav class="quarto-secondary-nav">
+    <div class="container-fluid d-flex">
+      <button type="button" class="quarto-btn-toggle btn" data-bs-toggle="collapse" role="button" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+        <i class="bi bi-layout-text-sidebar-reverse"></i>
+      </button>
+        <nav class="quarto-page-breadcrumbs" aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item"><a href="./generalized-additive-models-r.html"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">GAM – Piecewise, MARS, LOESS, and Splines - R Version</span></a></li></ol></nav>
+        <a class="flex-grow-1" role="navigation" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item" aria-controls="quarto-sidebar" aria-expanded="false" aria-label="Toggle sidebar navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">      
+        </a>
+      <button type="button" class="btn quarto-search-button" aria-label="Search" onclick="window.quartoOpenSearch();">
+        <i class="bi bi-search"></i>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
+<!-- sidebar -->
+  <nav id="quarto-sidebar" class="sidebar collapse collapse-horizontal quarto-sidebar-collapse-item sidebar-navigation floating overflow-auto">
+    <div class="pt-lg-2 mt-2 text-left sidebar-header sidebar-header-stacked">
+      <a href="./index.html" class="sidebar-logo-link">
+      </a>
+    <div class="sidebar-title mb-0 py-0">
+      <a href="./">Machine Learning with R and Python</a> 
+    </div>
+      </div>
+        <div class="mt-2 flex-shrink-0 align-items-center">
+        <div class="sidebar-search">
+        <div id="quarto-search" class="" title="Search"></div>
+        </div>
+        </div>
+    <div class="sidebar-menu-container"> 
+    <ul class="list-unstyled mt-1">
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./index.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">About</span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./introduction.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">1</span>&nbsp; <span class="chapter-title">Introduction</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./resampling-model-selection.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">2</span>&nbsp; <span class="chapter-title">Model Selection and Regularization - R Version</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./resampling-model-selection-python.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Model Selection and Regularization - Python Version</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./generalized-additive-models-r.html" class="sidebar-item-text sidebar-link active">
+ <span class="menu-text"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">GAM – Piecewise, MARS, LOESS, and Splines - R Version</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./generalized-additive-models-python.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">GAM— Piecewise, LOESS, and GAM Splines - Python Version</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./tree-based-models.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">6</span>&nbsp; <span class="chapter-title">tree-based-models</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./neural-network-models.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">7</span>&nbsp; <span class="chapter-title">neural-network-models</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./naive-bayes-models.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">8</span>&nbsp; <span class="chapter-title">naive-bayes-models</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./model-agnostic-interpretability.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">9</span>&nbsp; <span class="chapter-title">model-agnostic-interpretability</span></span></a>
+  </div>
+</li>
+        <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./support-vector-machines.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text"><span class="chapter-number">10</span>&nbsp; <span class="chapter-title">support-vector-machines</span></span></a>
+  </div>
+</li>
+    </ul>
+    </div>
+</nav>
+<div id="quarto-sidebar-glass" class="quarto-sidebar-collapse-item" data-bs-toggle="collapse" data-bs-target=".quarto-sidebar-collapse-item"></div>
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#setup-and-data" id="toc-setup-and-data" class="nav-link active" data-scroll-target="#setup-and-data"><span class="header-section-number">4.1</span> 1. Setup and Data</a></li>
+  <li><a href="#quick-visual-nonlinearity-is-common" id="toc-quick-visual-nonlinearity-is-common" class="nav-link" data-scroll-target="#quick-visual-nonlinearity-is-common"><span class="header-section-number">4.2</span> 2. Quick Visual: Nonlinearity is Common</a></li>
+  <li><a href="#piecewise-regression" id="toc-piecewise-regression" class="nav-link" data-scroll-target="#piecewise-regression"><span class="header-section-number">4.3</span> 3. Piecewise Regression</a></li>
+  <li><a href="#mars-earth-from-simple-to-interactions" id="toc-mars-earth-from-simple-to-interactions" class="nav-link" data-scroll-target="#mars-earth-from-simple-to-interactions"><span class="header-section-number">4.4</span> 4. MARS (earth) – From Simple to Interactions</a>
+  <ul class="collapse">
+  <li><a href="#a.-univariate-mars-garage_area" id="toc-a.-univariate-mars-garage_area" class="nav-link" data-scroll-target="#a.-univariate-mars-garage_area"><span class="header-section-number">4.4.1</span> 4A. Univariate MARS (Garage_Area)</a></li>
+  <li><a href="#b.-additive-mars-degree-1-no-interactions" id="toc-b.-additive-mars-degree-1-no-interactions" class="nav-link" data-scroll-target="#b.-additive-mars-degree-1-no-interactions"><span class="header-section-number">4.4.2</span> 4B. Additive MARS (degree = 1; no interactions)</a></li>
+  <li><a href="#c.-mars-with-2-way-interactions-degree-2" id="toc-c.-mars-with-2-way-interactions-degree-2" class="nav-link" data-scroll-target="#c.-mars-with-2-way-interactions-degree-2"><span class="header-section-number">4.4.3</span> 4C. MARS with 2-way Interactions (degree = 2)</a></li>
+  </ul></li>
+  <li><a href="#loess-visual-local-regression" id="toc-loess-visual-local-regression" class="nav-link" data-scroll-target="#loess-visual-local-regression"><span class="header-section-number">4.5</span> 5. LOESS (Visual local regression)</a></li>
+  <li><a href="#gam-splines-with-mgcv-simple-complex" id="toc-gam-splines-with-mgcv-simple-complex" class="nav-link" data-scroll-target="#gam-splines-with-mgcv-simple-complex"><span class="header-section-number">4.6</span> 6. GAM Splines with <code>mgcv</code> – Simple → Complex</a>
+  <ul class="collapse">
+  <li><a href="#a.-univariate-gam-sale_price-sgarage_area" id="toc-a.-univariate-gam-sale_price-sgarage_area" class="nav-link" data-scroll-target="#a.-univariate-gam-sale_price-sgarage_area"><span class="header-section-number">4.6.1</span> 6A. Univariate GAM: <code>Sale_Price ~ s(Garage_Area)</code></a></li>
+  <li><a href="#b.-two-smooth-additive-gam-sgarage_area-sgr_liv_area" id="toc-b.-two-smooth-additive-gam-sgarage_area-sgr_liv_area" class="nav-link" data-scroll-target="#b.-two-smooth-additive-gam-sgarage_area-sgr_liv_area"><span class="header-section-number">4.6.2</span> 6B. Two-smooth Additive GAM: <code>s(Garage_Area) + s(Gr_Liv_Area)</code></a></li>
+  <li><a href="#c.-full-multivariate-gam-selected-smooths-factors" id="toc-c.-full-multivariate-gam-selected-smooths-factors" class="nav-link" data-scroll-target="#c.-full-multivariate-gam-selected-smooths-factors"><span class="header-section-number">4.6.3</span> 6C. Full Multivariate GAM (selected smooths + factors)</a></li>
+  </ul></li>
+  <li><a href="#model-comparison-r²-rmse-mse" id="toc-model-comparison-r²-rmse-mse" class="nav-link" data-scroll-target="#model-comparison-r²-rmse-mse"><span class="header-section-number">4.7</span> 7. Model Comparison (R², RMSE, MSE)</a></li>
+  <li><a href="#final-plot-predicted-vs-actual-test-set" id="toc-final-plot-predicted-vs-actual-test-set" class="nav-link" data-scroll-target="#final-plot-predicted-vs-actual-test-set"><span class="header-section-number">4.8</span> 8. Final Plot: Predicted vs Actual (Test Set)</a></li>
+  <li><a href="#how-to-explain" id="toc-how-to-explain" class="nav-link" data-scroll-target="#how-to-explain"><span class="header-section-number">4.9</span> 9. How to Explain</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<div class="quarto-title-block"><div><h1 class="title"><span class="chapter-number">4</span>&nbsp; <span class="chapter-title">GAM – Piecewise, MARS, LOESS, and Splines - R Version</span></h1><button type="button" class="btn code-tools-button dropdown-toggle" id="quarto-code-tools-menu" data-bs-toggle="dropdown" aria-expanded="false"><i class="bi"></i> Code</button><ul class="dropdown-menu dropdown-menu-end" aria-labelelledby="quarto-code-tools-menu"><li><a id="quarto-show-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Show All Code</a></li><li><a id="quarto-hide-all-code" class="dropdown-item" href="javascript:void(0)" role="button">Hide All Code</a></li><li><hr class="dropdown-divider"></li><li><a id="quarto-view-source" class="dropdown-item" href="javascript:void(0)" role="button">View Source</a></li></ul></div></div>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<blockquote class="blockquote">
+<p><strong>Goal:</strong> Predict <code>Sale_Price</code> from a focused set of Ames features using increasingly flexible methods in the GAM framework.</p>
+</blockquote>
+<section id="setup-and-data" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="setup-and-data"><span class="header-section-number">4.1</span> 1. Setup and Data</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">4321</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(AmesHousing)   <span class="co"># make_ordinal_ames()</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(earth)         <span class="co"># MARS</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(segmented)     <span class="co"># piecewise (segmented) regression</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(splines)       <span class="co"># regression splines (bs, ns) - kept for reference</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)          <span class="co"># smoothing splines via GAM</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(caret)         <span class="co"># data splitting / utilities</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Metrics)       <span class="co"># rmse, mse helpers (plus we'll compute R2 manually)</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_minimal</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Limit to requested columns</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Sale_Price"</span>,<span class="st">"Bedroom_AbvGr"</span>,<span class="st">"Year_Built"</span>,<span class="st">"Mo_Sold"</span>,<span class="st">"Lot_Area"</span>,<span class="st">"Street"</span>,</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>          <span class="st">"Central_Air"</span>,<span class="st">"First_Flr_SF"</span>,<span class="st">"Second_Flr_SF"</span>,<span class="st">"Full_Bath"</span>,<span class="st">"Half_Bath"</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>          <span class="st">"Fireplaces"</span>,<span class="st">"Garage_Area"</span>,<span class="st">"Gr_Liv_Area"</span>,<span class="st">"TotRms_AbvGrd"</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>ames <span class="ot">&lt;-</span> <span class="fu">make_ordinal_ames</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(dplyr<span class="sc">::</span><span class="fu">all_of</span>(cols)) <span class="sc">|&gt;</span> </span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">drop_na</span>()</span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Train/test split</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">4321</span>)</span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>idx <span class="ot">&lt;-</span> <span class="fu">sample.int</span>(<span class="fu">nrow</span>(ames), <span class="at">size =</span> <span class="fu">floor</span>(<span class="fl">0.7</span><span class="sc">*</span><span class="fu">nrow</span>(ames)))</span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>train <span class="ot">&lt;-</span> ames[idx,]</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>test  <span class="ot">&lt;-</span> ames[<span class="sc">-</span>idx,]</span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(train)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 2,051
+Columns: 15
+$ Sale_Price    &lt;int&gt; 274000, 75200, 329900, 145400, 108000, 184000, 176000, 1…
+$ Bedroom_AbvGr &lt;int&gt; 3, 2, 4, 3, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 3, 2, 3, 3, 2,…
+$ Year_Built    &lt;int&gt; 2001, 1922, 2005, 1926, 1949, 1999, 1962, 1915, 1999, 19…
+$ Mo_Sold       &lt;int&gt; 1, 9, 8, 5, 5, 6, 5, 6, 9, 6, 8, 5, 7, 7, 4, 8, 5, 11, 5…
+$ Lot_Area      &lt;int&gt; 9720, 3672, 11643, 7000, 8777, 5858, 19296, 8094, 3768, …
+$ Street        &lt;fct&gt; Pave, Pave, Pave, Pave, Pave, Pave, Pave, Pave, Pave, Pa…
+$ Central_Air   &lt;fct&gt; Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y, Y,…
+$ First_Flr_SF  &lt;int&gt; 1366, 816, 1544, 861, 1126, 1337, 1382, 1048, 713, 792, …
+$ Second_Flr_SF &lt;int&gt; 581, 0, 814, 424, 0, 0, 0, 720, 739, 725, 0, 1151, 695, …
+$ Full_Bath     &lt;int&gt; 2, 1, 2, 1, 2, 2, 1, 2, 2, 1, 1, 2, 2, 2, 1, 2, 2, 1, 1,…
+$ Half_Bath     &lt;int&gt; 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0,…
+$ Fireplaces    &lt;int&gt; 1, 0, 1, 0, 0, 1, 1, 0, 0, 2, 0, 1, 2, 1, 0, 1, 0, 0, 1,…
+$ Garage_Area   &lt;dbl&gt; 725, 100, 784, 506, 520, 511, 884, 576, 506, 400, 0, 434…
+$ Gr_Liv_Area   &lt;int&gt; 1947, 816, 2358, 1285, 1126, 1337, 1382, 1768, 1452, 151…
+$ TotRms_AbvGrd &lt;int&gt; 7, 5, 10, 6, 5, 5, 6, 8, 6, 7, 5, 8, 7, 5, 6, 7, 6, 6, 5…</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(train<span class="sc">$</span>Sale_Price)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  12789  130000  161000  180897  215000  755000 </code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="quick-visual-nonlinearity-is-common" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="quick-visual-nonlinearity-is-common"><span class="header-section-number">4.2</span> 2. Quick Visual: Nonlinearity is Common</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(train, <span class="fu">aes</span>(Gr_Liv_Area, Sale_Price)) <span class="sc">+</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha=</span>.<span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method=</span><span class="st">"loess"</span>, <span class="at">se=</span><span class="cn">FALSE</span>) <span class="sc">+</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Sale_Price vs Gr_Liv_Area (LOESS smoother)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Takeaway:</strong> The relationship bends—nonlinear methods can help.</p>
+<hr>
+</section>
+<section id="piecewise-regression" class="level2" data-number="4.3">
+<h2 data-number="4.3" class="anchored" data-anchor-id="piecewise-regression"><span class="header-section-number">4.3</span> 3. Piecewise Regression</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>m_lin <span class="ot">&lt;-</span> <span class="fu">lm</span>(Sale_Price <span class="sc">~</span> Gr_Liv_Area, <span class="at">data=</span>train)</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>m_seg_init <span class="ot">&lt;-</span> <span class="fu">lm</span>(Sale_Price <span class="sc">~</span> Gr_Liv_Area, <span class="at">data=</span>train)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>m_seg <span class="ot">&lt;-</span> <span class="fu">segmented</span>(m_seg_init, <span class="at">seg.Z =</span> <span class="sc">~</span> Gr_Liv_Area, <span class="at">psi =</span> <span class="fu">list</span>(<span class="at">Gr_Liv_Area =</span> <span class="dv">2000</span>))</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m_seg)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    ***Regression Model with Segmented Relationship(s)***
+
+Call: 
+segmented.lm(obj = m_seg_init, seg.Z = ~Gr_Liv_Area, psi = list(Gr_Liv_Area = 2000))
+
+Estimated Break-Point(s):
+                  Est.  St.Err
+psi1.Gr_Liv_Area 2466 332.881
+
+Coefficients of the linear terms:
+               Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)    7901.186   4698.641   1.682   0.0928 .  
+Gr_Liv_Area     115.705      3.171  36.488   &lt;2e-16 ***
+U1.Gr_Liv_Area  -23.479     12.436  -1.888       NA    
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 55110 on 2047 degrees of freedom
+Multiple R-Squared: 0.5124,  Adjusted R-squared: 0.5116 
+
+Boot restarting based on 6 samples. Last fit:
+Convergence attained in 1 iterations (rel. change 0)</code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(train<span class="sc">$</span>Gr_Liv_Area, train<span class="sc">$</span>Sale_Price, <span class="at">pch=</span><span class="dv">16</span>, <span class="at">cex=</span>.<span class="dv">5</span>,</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab=</span><span class="st">"Gr_Liv_Area"</span>, <span class="at">ylab=</span><span class="st">"Sale_Price"</span>, <span class="at">main=</span><span class="st">"Piecewise fit at estimated knot"</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m_seg, <span class="at">add=</span><span class="cn">TRUE</span>, <span class="at">col=</span><span class="dv">2</span>, <span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> m_seg<span class="sc">$</span>psi[,<span class="st">"Est."</span>], <span class="at">lty=</span><span class="dv">2</span>, <span class="at">col=</span><span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Interpretation (piecewise):</strong> Two linear slopes before/after a knot. Useful when you expect a threshold effect.</p>
+<hr>
+</section>
+<section id="mars-earth-from-simple-to-interactions" class="level2" data-number="4.4">
+<h2 data-number="4.4" class="anchored" data-anchor-id="mars-earth-from-simple-to-interactions"><span class="header-section-number">4.4</span> 4. MARS (earth) – From Simple to Interactions</h2>
+<p>MARS = <em>Multivariate Adaptive Regression Splines</em>. It builds <strong>hinge</strong> basis functions like <code>h(x - c) = max(0, x - c)</code> and can <strong>interact</strong> them.<br>
+- A term such as <code>h(Gr_Liv_Area - 1500)</code> means <em>once</em> <code>Gr_Liv_Area</code> exceeds 1500, the fitted line’s slope can change.<br>
+- An interaction like <code>h(Gr_Liv_Area - 1500) * Central_AirY</code> means the slope change applies when <code>Central_Air == "Y"</code>.</p>
+<section id="a.-univariate-mars-garage_area" class="level3" data-number="4.4.1">
+<h3 data-number="4.4.1" class="anchored" data-anchor-id="a.-univariate-mars-garage_area"><span class="header-section-number">4.4.1</span> 4A. Univariate MARS (Garage_Area)</h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>mars1 <span class="ot">&lt;-</span> <span class="fu">earth</span>(Sale_Price <span class="sc">~</span> Garage_Area, <span class="at">data=</span>train)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mars1)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call: earth(formula=Sale_Price~Garage_Area, data=train)
+
+                    coefficients
+(Intercept)           124159.039
+h(286-Garage_Area)       -60.257
+h(Garage_Area-286)       297.277
+h(Garage_Area-521)      -483.642
+h(Garage_Area-576)       733.859
+h(Garage_Area-758)      -356.460
+h(Garage_Area-1043)     -490.873
+
+Selected 7 of 7 terms, and 1 of 1 predictors
+Termination condition: RSq changed by less than 0.001 at 7 terms
+Importance: Garage_Area
+Number of terms at each degree of interaction: 1 6 (additive model)
+GCV 3427475346    RSS 6.94092e+12    GRSq 0.4492014    RSq 0.4556309</code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>grid <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">Garage_Area =</span> <span class="fu">seq</span>(<span class="fu">min</span>(train<span class="sc">$</span>Garage_Area), <span class="fu">max</span>(train<span class="sc">$</span>Garage_Area), <span class="at">length.out=</span><span class="dv">200</span>))</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>grid<span class="sc">$</span>pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(mars1, <span class="at">newdata=</span>grid)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(train, <span class="fu">aes</span>(Garage_Area, Sale_Price)) <span class="sc">+</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha=</span>.<span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data=</span>grid, <span class="fu">aes</span>(Garage_Area, pred), <span class="at">color=</span><span class="st">"blue"</span>, <span class="at">linewidth=</span><span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Step 1: MARS with One Predictor (Garage_Area)"</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle=</span><span class="st">"Piecewise linear fit with automatically chosen knots"</span>,</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>       <span class="at">y=</span><span class="st">"Predicted Sale_Price"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="b.-additive-mars-degree-1-no-interactions" class="level3" data-number="4.4.2">
+<h3 data-number="4.4.2" class="anchored" data-anchor-id="b.-additive-mars-degree-1-no-interactions"><span class="header-section-number">4.4.2</span> 4B. Additive MARS (degree = 1; no interactions)</h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>mars2 <span class="ot">&lt;-</span> <span class="fu">earth</span>(Sale_Price <span class="sc">~</span> Bedroom_AbvGr <span class="sc">+</span> Year_Built <span class="sc">+</span> Mo_Sold <span class="sc">+</span> Lot_Area <span class="sc">+</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>                 Street <span class="sc">+</span> Central_Air <span class="sc">+</span> First_Flr_SF <span class="sc">+</span> Second_Flr_SF <span class="sc">+</span> Full_Bath <span class="sc">+</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>                 Half_Bath <span class="sc">+</span> Fireplaces <span class="sc">+</span> Garage_Area <span class="sc">+</span> Gr_Liv_Area <span class="sc">+</span> TotRms_AbvGrd,</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>               <span class="at">data=</span>train, <span class="at">degree=</span><span class="dv">1</span>, <span class="at">nfold=</span><span class="dv">5</span>)</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mars2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call: earth(formula=Sale_Price~Bedroom_AbvGr+Year_Built+Mo_Sold+Lot_Ar...),
+            data=train, degree=1, nfold=5)
+
+                      coefficients
+(Intercept)              319493.46
+Central_AirY              20289.49
+h(4-Bedroom_AbvGr)         9214.66
+h(Bedroom_AbvGr-4)       -23009.05
+h(Year_Built-1977)         1275.57
+h(2004-Year_Built)         -336.64
+h(Year_Built-2004)         5315.57
+h(13869-Lot_Area)            -2.09
+h(Lot_Area-13869)             0.22
+h(First_Flr_SF-1600)        104.91
+h(2402-First_Flr_SF)        -71.56
+h(First_Flr_SF-2402)       -176.61
+h(1523-Second_Flr_SF)       -53.13
+h(Second_Flr_SF-1523)       426.63
+h(Half_Bath-1)           -45378.31
+h(2-Fireplaces)          -14408.56
+h(Fireplaces-2)          -26072.58
+h(Garage_Area-539)          101.97
+h(Garage_Area-1043)        -294.30
+h(Gr_Liv_Area-2049)          65.21
+h(Gr_Liv_Area-3194)        -159.79
+
+Selected 21 of 24 terms, and 10 of 14 predictors
+Termination condition: Reached nk 29
+Importance: First_Flr_SF, Second_Flr_SF, Year_Built, Garage_Area, ...
+Number of terms at each degree of interaction: 1 20 (additive model)
+GCV 1033819964  RSS 2.036439e+12  GRSq 0.8338641  RSq 0.8402842  CVRSq 0.7978671
+
+Note: the cross-validation sd's below are standard deviations across folds
+
+Cross validation:   nterms 21.00 sd 0.71    nvars 9.20 sd 0.84
+
+     CVRSq    sd     MaxErr     sd
+     0.798 0.043    -428941 282429</code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>ev2 <span class="ot">&lt;-</span> <span class="fu">evimp</span>(mars2); <span class="fu">plot</span>(ev2, <span class="at">main=</span><span class="st">"Step 2: Variable Importance (degree=1, additive)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">2</span>)); <span class="fu">plotmo</span>(mars2, <span class="at">type=</span><span class="st">"response"</span>, <span class="at">nresponse=</span><span class="dv">1</span>, <span class="at">do.par=</span><span class="cn">FALSE</span>); <span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">1</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code> plotmo grid:    Bedroom_AbvGr Year_Built Mo_Sold Lot_Area Street Central_Air
+                             3       1974       6     9480   Pave           Y
+ First_Flr_SF Second_Flr_SF Full_Bath Half_Bath Fireplaces Garage_Area
+         1092             0         2         0          1         480
+ Gr_Liv_Area TotRms_AbvGrd
+        1442             6</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-9-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-9-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-9-4.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="c.-mars-with-2-way-interactions-degree-2" class="level3" data-number="4.4.3">
+<h3 data-number="4.4.3" class="anchored" data-anchor-id="c.-mars-with-2-way-interactions-degree-2"><span class="header-section-number">4.4.3</span> 4C. MARS with 2-way Interactions (degree = 2)</h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>mars3 <span class="ot">&lt;-</span> <span class="fu">earth</span>(Sale_Price <span class="sc">~</span> Bedroom_AbvGr <span class="sc">+</span> Year_Built <span class="sc">+</span> Mo_Sold <span class="sc">+</span> Lot_Area <span class="sc">+</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>                 Street <span class="sc">+</span> Central_Air <span class="sc">+</span> First_Flr_SF <span class="sc">+</span> Second_Flr_SF <span class="sc">+</span> Full_Bath <span class="sc">+</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>                 Half_Bath <span class="sc">+</span> Fireplaces <span class="sc">+</span> Garage_Area <span class="sc">+</span> Gr_Liv_Area <span class="sc">+</span> TotRms_AbvGrd,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>               <span class="at">data=</span>train, <span class="at">degree=</span><span class="dv">2</span>, <span class="at">nfold=</span><span class="dv">5</span>)</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mars3)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>Call: earth(formula=Sale_Price~Bedroom_AbvGr+Year_Built+Mo_Sold+Lot_Ar...),
+            data=train, degree=2, nfold=5)
+
+                                           coefficients
+(Intercept)                                   411949.27
+h(Year_Built-2004)                            169869.37
+h(14803-Lot_Area)                                 -1.75
+h(Lot_Area-14803)                                  0.48
+h(1570-First_Flr_SF)                            -150.79
+h(First_Flr_SF-1570)                             224.90
+h(1523-Second_Flr_SF)                            -86.91
+h(Second_Flr_SF-1523)                            156.02
+h(1-Half_Bath)                                 -7743.19
+h(Half_Bath-1)                                -54819.24
+h(2-Fireplaces)                               -10516.92
+h(1043-Garage_Area)                              -70.97
+h(Garage_Area-1043)                             -141.86
+h(Gr_Liv_Area-3194)                              106.27
+h(3-Bedroom_AbvGr) * h(1523-Second_Flr_SF)         7.01
+h(Bedroom_AbvGr-3) * h(1523-Second_Flr_SF)        -9.61
+h(2004-Year_Built) * h(First_Flr_SF-876)          -1.86
+h(2004-Year_Built) * h(3194-Gr_Liv_Area)          -0.17
+h(Year_Built-2004) * h(Gr_Liv_Area-2320)        -159.80
+h(Year_Built-2004) * h(2320-Gr_Liv_Area)         156.64
+h(Year_Built-2004) * h(3194-Gr_Liv_Area)        -173.05
+h(First_Flr_SF-1778) * h(2-Fireplaces)           -78.19
+h(1043-Garage_Area) * h(2122-Gr_Liv_Area)          0.05
+
+Selected 23 of 29 terms, and 9 of 14 predictors
+Termination condition: Reached nk 29
+Importance: First_Flr_SF, Second_Flr_SF, Year_Built, Gr_Liv_Area, ...
+Number of terms at each degree of interaction: 1 13 9
+GCV 795873462  RSS 1.544416e+12  GRSq 0.8721024  RSq 0.8788731  CVRSq 0.7824362
+
+Note: the cross-validation sd's below are standard deviations across folds
+
+Cross validation:   nterms 22.60 sd 1.82    nvars 9.40 sd 1.14
+
+     CVRSq    sd     MaxErr     sd
+     0.782 0.114    -945502 422348</code></pre>
+</div>
+</div>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>ev3 <span class="ot">&lt;-</span> <span class="fu">evimp</span>(mars3); <span class="fu">plot</span>(ev3, <span class="at">main=</span><span class="st">"Step 3: Variable Importance (degree=2, interactions)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">2</span>)); <span class="fu">plotmo</span>(mars3, <span class="at">type=</span><span class="st">"response"</span>, <span class="at">nresponse=</span><span class="dv">1</span>, <span class="at">do.par=</span><span class="cn">FALSE</span>); <span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">1</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code> plotmo grid:    Bedroom_AbvGr Year_Built Mo_Sold Lot_Area Street Central_Air
+                             3       1974       6     9480   Pave           Y
+ First_Flr_SF Second_Flr_SF Full_Bath Half_Bath Fireplaces Garage_Area
+         1092             0         2         0          1         480
+ Gr_Liv_Area TotRms_AbvGrd
+        1442             6</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-11-2.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-11-3.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-11-4.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-11-5.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Interpreting MARS terms:</strong><br>
+Look for <code>h()</code> pieces and products. Coefficients on <code>h(x-c)</code> indicate how slope changes after the knot <code>c</code>. Interaction products mean “the slope change depends on another variable”.</p>
+<hr>
+</section>
+</section>
+<section id="loess-visual-local-regression" class="level2" data-number="4.5">
+<h2 data-number="4.5" class="anchored" data-anchor-id="loess-visual-local-regression"><span class="header-section-number">4.5</span> 5. LOESS (Visual local regression)</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>loess_fit <span class="ot">&lt;-</span> <span class="fu">loess</span>(Sale_Price <span class="sc">~</span> Gr_Liv_Area, <span class="at">data=</span>train, <span class="at">span=</span><span class="fl">0.4</span>)</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>grid_lo <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">Gr_Liv_Area =</span> <span class="fu">seq</span>(<span class="fu">min</span>(train<span class="sc">$</span>Gr_Liv_Area), <span class="fu">max</span>(train<span class="sc">$</span>Gr_Liv_Area), <span class="at">length.out=</span><span class="dv">200</span>))</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>grid_lo<span class="sc">$</span>pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(loess_fit, <span class="at">newdata=</span>grid_lo)</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data=</span>train, <span class="fu">aes</span>(Gr_Liv_Area, Sale_Price), <span class="at">alpha=</span>.<span class="dv">25</span>) <span class="sc">+</span></span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data=</span>grid_lo, <span class="fu">aes</span>(Gr_Liv_Area, pred), <span class="at">linewidth=</span><span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"LOESS fit (span=0.4)"</span>, <span class="at">y=</span><span class="st">"Predicted Sale_Price"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-12-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><em>We keep LOESS as a visualization-oriented smoother (not used in the multivariate comparison below).</em></p>
+<hr>
+</section>
+<section id="gam-splines-with-mgcv-simple-complex" class="level2" data-number="4.6">
+<h2 data-number="4.6" class="anchored" data-anchor-id="gam-splines-with-mgcv-simple-complex"><span class="header-section-number">4.6</span> 6. GAM Splines with <code>mgcv</code> – Simple → Complex</h2>
+<p>GAM smooths are written <code>s(x)</code> and estimated with penalized splines. The <strong>edf</strong> (effective degrees of freedom) in the summary tells you the smooth’s complexity (larger edf ⇒ wigglier function).</p>
+<section id="a.-univariate-gam-sale_price-sgarage_area" class="level3" data-number="4.6.1">
+<h3 data-number="4.6.1" class="anchored" data-anchor-id="a.-univariate-gam-sale_price-sgarage_area"><span class="header-section-number">4.6.1</span> 6A. Univariate GAM: <code>Sale_Price ~ s(Garage_Area)</code></h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>gam1 <span class="ot">&lt;-</span> <span class="fu">gam</span>(Sale_Price <span class="sc">~</span> <span class="fu">s</span>(Garage_Area, <span class="at">k=</span><span class="dv">9</span>), <span class="at">data=</span>train, <span class="at">method=</span><span class="st">"REML"</span>)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gam1)  <span class="co"># inspect edf and significance</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Family: gaussian 
+Link function: identity 
+
+Formula:
+Sale_Price ~ s(Garage_Area, k = 9)
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)   180897       1292     140   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+                 edf Ref.df     F p-value    
+s(Garage_Area) 7.078  7.719 217.1  &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =   0.45   Deviance explained = 45.2%
+-REML =  25418  Scale est. = 3.4232e+09  n = 2051</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(gam1, <span class="at">pages=</span><span class="dv">1</span>, <span class="at">shade=</span><span class="cn">TRUE</span>, <span class="at">scheme=</span><span class="dv">1</span>, <span class="at">scale=</span><span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="b.-two-smooth-additive-gam-sgarage_area-sgr_liv_area" class="level3" data-number="4.6.2">
+<h3 data-number="4.6.2" class="anchored" data-anchor-id="b.-two-smooth-additive-gam-sgarage_area-sgr_liv_area"><span class="header-section-number">4.6.2</span> 6B. Two-smooth Additive GAM: <code>s(Garage_Area) + s(Gr_Liv_Area)</code></h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>gam2 <span class="ot">&lt;-</span> <span class="fu">gam</span>(Sale_Price <span class="sc">~</span> <span class="fu">s</span>(Garage_Area, <span class="at">k=</span><span class="dv">9</span>) <span class="sc">+</span> <span class="fu">s</span>(Gr_Liv_Area, <span class="at">k=</span><span class="dv">9</span>), <span class="at">data=</span>train, <span class="at">method=</span><span class="st">"REML"</span>)</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gam2)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Family: gaussian 
+Link function: identity 
+
+Formula:
+Sale_Price ~ s(Garage_Area, k = 9) + s(Gr_Liv_Area, k = 9)
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)   180897       1026   176.2   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+                 edf Ref.df     F p-value    
+s(Garage_Area) 6.446  7.293 103.3  &lt;2e-16 ***
+s(Gr_Liv_Area) 7.585  7.941 152.6  &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =  0.653   Deviance explained = 65.5%
+-REML =  24949  Scale est. = 2.1608e+09  n = 2051</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(gam2, <span class="at">pages=</span><span class="dv">1</span>, <span class="at">shade=</span><span class="cn">TRUE</span>, <span class="at">scheme=</span><span class="dv">1</span>, <span class="at">scale=</span><span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="c.-full-multivariate-gam-selected-smooths-factors" class="level3" data-number="4.6.3">
+<h3 data-number="4.6.3" class="anchored" data-anchor-id="c.-full-multivariate-gam-selected-smooths-factors"><span class="header-section-number">4.6.3</span> 6C. Full Multivariate GAM (selected smooths + factors)</h3>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>gam3 <span class="ot">&lt;-</span> <span class="fu">gam</span>(Sale_Price <span class="sc">~</span> </span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>              <span class="fu">s</span>(Garage_Area, <span class="at">k=</span><span class="dv">9</span>) <span class="sc">+</span> </span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>              <span class="fu">s</span>(Gr_Liv_Area, <span class="at">k=</span><span class="dv">9</span>) <span class="sc">+</span> </span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>              <span class="fu">s</span>(Year_Built, <span class="at">k=</span><span class="dv">7</span>) <span class="sc">+</span></span>
+<span id="cb30-5"><a href="#cb30-5" aria-hidden="true" tabindex="-1"></a>              <span class="fu">s</span>(Lot_Area, <span class="at">k=</span><span class="dv">7</span>) <span class="sc">+</span></span>
+<span id="cb30-6"><a href="#cb30-6" aria-hidden="true" tabindex="-1"></a>              Bedroom_AbvGr <span class="sc">+</span> Mo_Sold <span class="sc">+</span> </span>
+<span id="cb30-7"><a href="#cb30-7" aria-hidden="true" tabindex="-1"></a>              Street <span class="sc">+</span> Central_Air <span class="sc">+</span> </span>
+<span id="cb30-8"><a href="#cb30-8" aria-hidden="true" tabindex="-1"></a>              First_Flr_SF <span class="sc">+</span> Second_Flr_SF <span class="sc">+</span> </span>
+<span id="cb30-9"><a href="#cb30-9" aria-hidden="true" tabindex="-1"></a>              Full_Bath <span class="sc">+</span> Half_Bath <span class="sc">+</span> </span>
+<span id="cb30-10"><a href="#cb30-10" aria-hidden="true" tabindex="-1"></a>              Fireplaces <span class="sc">+</span> TotRms_AbvGrd,</span>
+<span id="cb30-11"><a href="#cb30-11" aria-hidden="true" tabindex="-1"></a>            <span class="at">data=</span>train, <span class="at">method=</span><span class="st">"REML"</span>)</span>
+<span id="cb30-12"><a href="#cb30-12" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gam3)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Family: gaussian 
+Link function: identity 
+
+Formula:
+Sale_Price ~ s(Garage_Area, k = 9) + s(Gr_Liv_Area, k = 9) + 
+    s(Year_Built, k = 7) + s(Lot_Area, k = 7) + Bedroom_AbvGr + 
+    Mo_Sold + Street + Central_Air + First_Flr_SF + Second_Flr_SF + 
+    Full_Bath + Half_Bath + Fireplaces + TotRms_AbvGrd
+
+Parametric coefficients:
+               Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)   -21237.92   30106.84  -0.705   0.4806    
+Bedroom_AbvGr -10350.20    1382.38  -7.487 1.05e-13 ***
+Mo_Sold         -409.12     270.24  -1.514   0.1302    
+StreetPave     30589.21   13486.61   2.268   0.0234 *  
+Central_AirY   17189.68    3366.03   5.107 3.59e-07 ***
+First_Flr_SF     140.27      17.44   8.044 1.47e-15 ***
+Second_Flr_SF    101.93      17.36   5.871 5.06e-09 ***
+Full_Bath      -4548.94    2211.69  -2.057   0.0398 *  
+Half_Bath       2355.98    2175.40   1.083   0.2789    
+Fireplaces     13066.61    1371.59   9.527  &lt; 2e-16 ***
+TotRms_AbvGrd  -1640.87     948.67  -1.730   0.0838 .  
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Approximate significance of smooth terms:
+                 edf Ref.df      F p-value    
+s(Garage_Area) 7.067  7.712  24.96  &lt;2e-16 ***
+s(Gr_Liv_Area) 7.899  7.996  46.44  &lt;2e-16 ***
+s(Year_Built)  5.255  5.764 128.05  &lt;2e-16 ***
+s(Lot_Area)    5.465  5.883  16.44  &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+R-sq.(adj) =  0.827   Deviance explained =   83%
+-REML =  24167  Scale est. = 1.0786e+09  n = 2051</code></pre>
+</div>
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(gam3, <span class="at">pages=</span><span class="dv">1</span>, <span class="at">shade=</span><span class="cn">TRUE</span>, <span class="at">scheme=</span><span class="dv">1</span>, <span class="at">scale=</span><span class="dv">0</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Interpreting GAM splines:</strong><br>
+A smooth <code>s(x)</code> shows how the expected outcome varies with <code>x</code> <em>holding other terms constant</em>. The edf indicates complexity; wide confidence bands suggest greater uncertainty in those regions.</p>
+<hr>
+</section>
+</section>
+<section id="model-comparison-r²-rmse-mse" class="level2" data-number="4.7">
+<h2 data-number="4.7" class="anchored" data-anchor-id="model-comparison-r²-rmse-mse"><span class="header-section-number">4.7</span> 7. Model Comparison (R², RMSE, MSE)</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Helper for R^2 on test</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>rsq <span class="ot">&lt;-</span> <span class="cf">function</span>(y, yhat) {</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="dv">1</span> <span class="sc">-</span> <span class="fu">sum</span>((y <span class="sc">-</span> yhat)<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> <span class="fu">sum</span>((y <span class="sc">-</span> <span class="fu">mean</span>(y))<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Predictions</span></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>p_piece <span class="ot">&lt;-</span> <span class="fu">predict</span>(m_seg, <span class="at">newdata=</span>test)</span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>p_mars  <span class="ot">&lt;-</span> <span class="fu">predict</span>(mars3, <span class="at">newdata=</span>test)   <span class="co"># final MARS with interactions</span></span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>p_gam   <span class="ot">&lt;-</span> <span class="fu">predict</span>(gam3, <span class="at">newdata=</span>test)    <span class="co"># full multivariate GAM</span></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-11"><a href="#cb33-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Metrics</span></span>
+<span id="cb33-12"><a href="#cb33-12" aria-hidden="true" tabindex="-1"></a>tbl <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb33-13"><a href="#cb33-13" aria-hidden="true" tabindex="-1"></a>  <span class="at">Model =</span> <span class="fu">c</span>(<span class="st">"Piecewise (segmented)"</span>, <span class="st">"MARS (degree=2)"</span>, <span class="st">"GAM splines (mgcv full)"</span>),</span>
+<span id="cb33-14"><a href="#cb33-14" aria-hidden="true" tabindex="-1"></a>  <span class="at">RMSE  =</span> <span class="fu">c</span>(<span class="fu">rmse</span>(test<span class="sc">$</span>Sale_Price, p_piece),</span>
+<span id="cb33-15"><a href="#cb33-15" aria-hidden="true" tabindex="-1"></a>            <span class="fu">rmse</span>(test<span class="sc">$</span>Sale_Price, p_mars),</span>
+<span id="cb33-16"><a href="#cb33-16" aria-hidden="true" tabindex="-1"></a>            <span class="fu">rmse</span>(test<span class="sc">$</span>Sale_Price, p_gam)),</span>
+<span id="cb33-17"><a href="#cb33-17" aria-hidden="true" tabindex="-1"></a>  <span class="at">MSE   =</span> <span class="fu">c</span>(<span class="fu">mse</span>(test<span class="sc">$</span>Sale_Price, p_piece),</span>
+<span id="cb33-18"><a href="#cb33-18" aria-hidden="true" tabindex="-1"></a>            <span class="fu">mse</span>(test<span class="sc">$</span>Sale_Price, p_mars),</span>
+<span id="cb33-19"><a href="#cb33-19" aria-hidden="true" tabindex="-1"></a>            <span class="fu">mse</span>(test<span class="sc">$</span>Sale_Price, p_gam)),</span>
+<span id="cb33-20"><a href="#cb33-20" aria-hidden="true" tabindex="-1"></a>  <span class="at">R2    =</span> <span class="fu">c</span>(<span class="fu">rsq</span>(test<span class="sc">$</span>Sale_Price, p_piece),</span>
+<span id="cb33-21"><a href="#cb33-21" aria-hidden="true" tabindex="-1"></a>            <span class="fu">rsq</span>(test<span class="sc">$</span>Sale_Price, p_mars),</span>
+<span id="cb33-22"><a href="#cb33-22" aria-hidden="true" tabindex="-1"></a>            <span class="fu">rsq</span>(test<span class="sc">$</span>Sale_Price, p_gam))</span>
+<span id="cb33-23"><a href="#cb33-23" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> <span class="fu">arrange</span>(<span class="fu">desc</span>(R2))</span>
+<span id="cb33-24"><a href="#cb33-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-25"><a href="#cb33-25" aria-hidden="true" tabindex="-1"></a>tbl</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 3 × 4
+  Model                     RMSE         MSE    R2
+  &lt;chr&gt;                    &lt;dbl&gt;       &lt;dbl&gt; &lt;dbl&gt;
+1 MARS (degree=2)         33028. 1090840972. 0.839
+2 GAM splines (mgcv full) 36796. 1353918715. 0.800
+3 Piecewise (segmented)   59034. 3484963067. 0.484</code></pre>
+</div>
+</div>
+<hr>
+</section>
+<section id="final-plot-predicted-vs-actual-test-set" class="level2" data-number="4.8">
+<h2 data-number="4.8" class="anchored" data-anchor-id="final-plot-predicted-vs-actual-test-set"><span class="header-section-number">4.8</span> 8. Final Plot: Predicted vs Actual (Test Set)</h2>
+<div class="cell">
+<details class="code-fold">
+<summary>Code</summary>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>plot_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">Model=</span><span class="st">"Piecewise (segmented)"</span>, <span class="at">Actual=</span>test<span class="sc">$</span>Sale_Price, <span class="at">Pred=</span>p_piece),</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">Model=</span><span class="st">"MARS (degree=2)"</span>, <span class="at">Actual=</span>test<span class="sc">$</span>Sale_Price, <span class="at">Pred=</span>p_mars),</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">Model=</span><span class="st">"GAM splines (mgcv full)"</span>, <span class="at">Actual=</span>test<span class="sc">$</span>Sale_Price, <span class="at">Pred=</span>p_gam)</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plot_df, <span class="fu">aes</span>(Actual, Pred, <span class="at">color=</span>Model)) <span class="sc">+</span></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha=</span>.<span class="dv">35</span>) <span class="sc">+</span></span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">intercept=</span><span class="dv">0</span>, <span class="at">slope=</span><span class="dv">1</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Predicted vs Actual (Test Set)"</span>, <span class="at">y=</span><span class="st">"Predicted Sale_Price"</span>) <span class="sc">+</span></span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</details>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="generalized-additive-models-r_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<hr>
+</section>
+<section id="how-to-explain" class="level2" data-number="4.9">
+<h2 data-number="4.9" class="anchored" data-anchor-id="how-to-explain"><span class="header-section-number">4.9</span> 9. How to Explain</h2>
+<ul>
+<li><strong>Piecewise</strong>: “There’s a threshold where the effect changes.” Simple story, limited flexibility.<br>
+</li>
+<li><strong>MARS</strong>: “The model finds breakpoints and sometimes <em>when</em> they matter (interactions).” Explain <code>h(x-c)</code> as <em>extra slope after c</em>.<br>
+</li>
+<li><strong>GAM (splines)</strong>: “We model smooth curves for key variables; edf shows wiggliness. More edf ⇒ more flexibility.”<br>
+</li>
+<li><strong>Tradeoff</strong>: More flexibility usually improves error (RMSE/MSE) and R², but reduce interpretability. Validate with cross‑validation and keep the story aligned with business intuition.</li>
+</ul>
+
+
+<!-- -->
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+        for (let i=0; i<detailsSrc.length; i++) {
+          const details = detailsSrc[i].parentElement;
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+<nav class="page-navigation">
+  <div class="nav-page nav-page-previous">
+      <a href="./resampling-model-selection-python.html" class="pagination-link" aria-label="Model Selection and Regularization - Python Version">
+        <i class="bi bi-arrow-left-short"></i> <span class="nav-page-text"><span class="chapter-number">3</span>&nbsp; <span class="chapter-title">Model Selection and Regularization - Python Version</span></span>
+      </a>          
+  </div>
+  <div class="nav-page nav-page-next">
+      <a href="./generalized-additive-models-python.html" class="pagination-link" aria-label="GAM— Piecewise, LOESS, and GAM Splines - Python Version">
+        <span class="nav-page-text"><span class="chapter-number">5</span>&nbsp; <span class="chapter-title">GAM— Piecewise, LOESS, and GAM Splines - Python Version</span></span> <i class="bi bi-arrow-right-short"></i>
+      </a>
+  </div>
+</nav><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb36" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "GAM – Piecewise, MARS, LOESS, and Splines - R Version"</span></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a><span class="an">format:</span></span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a><span class="co">  html:</span></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a><span class="co">    toc: true</span></span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a><span class="co">    number-sections: true</span></span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a><span class="co">  pdf: default</span></span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a><span class="at">&gt; **Goal:** Predict </span><span class="in">`Sale_Price`</span><span class="at"> from a focused set of Ames features using increasingly flexible methods in the GAM framework.</span></span>
+<span id="cb36-11"><a href="#cb36-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-12"><a href="#cb36-12" aria-hidden="true" tabindex="-1"></a><span class="fu">## 1. Setup and Data</span></span>
+<span id="cb36-13"><a href="#cb36-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-16"><a href="#cb36-16" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-17"><a href="#cb36-17" aria-hidden="true" tabindex="-1"></a><span class="co">#| message: false</span></span>
+<span id="cb36-18"><a href="#cb36-18" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">4321</span>)</span>
+<span id="cb36-19"><a href="#cb36-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-20"><a href="#cb36-20" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span>
+<span id="cb36-21"><a href="#cb36-21" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb36-22"><a href="#cb36-22" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb36-23"><a href="#cb36-23" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(AmesHousing)   <span class="co"># make_ordinal_ames()</span></span>
+<span id="cb36-24"><a href="#cb36-24" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(earth)         <span class="co"># MARS</span></span>
+<span id="cb36-25"><a href="#cb36-25" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(segmented)     <span class="co"># piecewise (segmented) regression</span></span>
+<span id="cb36-26"><a href="#cb36-26" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(splines)       <span class="co"># regression splines (bs, ns) - kept for reference</span></span>
+<span id="cb36-27"><a href="#cb36-27" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(mgcv)          <span class="co"># smoothing splines via GAM</span></span>
+<span id="cb36-28"><a href="#cb36-28" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(caret)         <span class="co"># data splitting / utilities</span></span>
+<span id="cb36-29"><a href="#cb36-29" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(Metrics)       <span class="co"># rmse, mse helpers (plus we'll compute R2 manually)</span></span>
+<span id="cb36-30"><a href="#cb36-30" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_set</span>(<span class="fu">theme_minimal</span>())</span>
+<span id="cb36-31"><a href="#cb36-31" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-32"><a href="#cb36-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-35"><a href="#cb36-35" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-36"><a href="#cb36-36" aria-hidden="true" tabindex="-1"></a><span class="co"># Limit to requested columns</span></span>
+<span id="cb36-37"><a href="#cb36-37" aria-hidden="true" tabindex="-1"></a>cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"Sale_Price"</span>,<span class="st">"Bedroom_AbvGr"</span>,<span class="st">"Year_Built"</span>,<span class="st">"Mo_Sold"</span>,<span class="st">"Lot_Area"</span>,<span class="st">"Street"</span>,</span>
+<span id="cb36-38"><a href="#cb36-38" aria-hidden="true" tabindex="-1"></a>          <span class="st">"Central_Air"</span>,<span class="st">"First_Flr_SF"</span>,<span class="st">"Second_Flr_SF"</span>,<span class="st">"Full_Bath"</span>,<span class="st">"Half_Bath"</span>,</span>
+<span id="cb36-39"><a href="#cb36-39" aria-hidden="true" tabindex="-1"></a>          <span class="st">"Fireplaces"</span>,<span class="st">"Garage_Area"</span>,<span class="st">"Gr_Liv_Area"</span>,<span class="st">"TotRms_AbvGrd"</span>)</span>
+<span id="cb36-40"><a href="#cb36-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-41"><a href="#cb36-41" aria-hidden="true" tabindex="-1"></a>ames <span class="ot">&lt;-</span> <span class="fu">make_ordinal_ames</span>() <span class="sc">|&gt;</span> </span>
+<span id="cb36-42"><a href="#cb36-42" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(dplyr<span class="sc">::</span><span class="fu">all_of</span>(cols)) <span class="sc">|&gt;</span> </span>
+<span id="cb36-43"><a href="#cb36-43" aria-hidden="true" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">drop_na</span>()</span>
+<span id="cb36-44"><a href="#cb36-44" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-45"><a href="#cb36-45" aria-hidden="true" tabindex="-1"></a><span class="co"># Train/test split</span></span>
+<span id="cb36-46"><a href="#cb36-46" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">4321</span>)</span>
+<span id="cb36-47"><a href="#cb36-47" aria-hidden="true" tabindex="-1"></a>idx <span class="ot">&lt;-</span> <span class="fu">sample.int</span>(<span class="fu">nrow</span>(ames), <span class="at">size =</span> <span class="fu">floor</span>(<span class="fl">0.7</span><span class="sc">*</span><span class="fu">nrow</span>(ames)))</span>
+<span id="cb36-48"><a href="#cb36-48" aria-hidden="true" tabindex="-1"></a>train <span class="ot">&lt;-</span> ames[idx,]</span>
+<span id="cb36-49"><a href="#cb36-49" aria-hidden="true" tabindex="-1"></a>test  <span class="ot">&lt;-</span> ames[<span class="sc">-</span>idx,]</span>
+<span id="cb36-50"><a href="#cb36-50" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-51"><a href="#cb36-51" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(train)</span>
+<span id="cb36-52"><a href="#cb36-52" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(train<span class="sc">$</span>Sale_Price)</span>
+<span id="cb36-53"><a href="#cb36-53" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-54"><a href="#cb36-54" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-55"><a href="#cb36-55" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb36-56"><a href="#cb36-56" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-57"><a href="#cb36-57" aria-hidden="true" tabindex="-1"></a><span class="fu">## 2. Quick Visual: Nonlinearity is Common</span></span>
+<span id="cb36-58"><a href="#cb36-58" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-61"><a href="#cb36-61" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-62"><a href="#cb36-62" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(train, <span class="fu">aes</span>(Gr_Liv_Area, Sale_Price)) <span class="sc">+</span></span>
+<span id="cb36-63"><a href="#cb36-63" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha=</span>.<span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb36-64"><a href="#cb36-64" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method=</span><span class="st">"loess"</span>, <span class="at">se=</span><span class="cn">FALSE</span>) <span class="sc">+</span></span>
+<span id="cb36-65"><a href="#cb36-65" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Sale_Price vs Gr_Liv_Area (LOESS smoother)"</span>)</span>
+<span id="cb36-66"><a href="#cb36-66" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-67"><a href="#cb36-67" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-68"><a href="#cb36-68" aria-hidden="true" tabindex="-1"></a>**Takeaway:** The relationship bends—nonlinear methods can help.</span>
+<span id="cb36-69"><a href="#cb36-69" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-70"><a href="#cb36-70" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb36-71"><a href="#cb36-71" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-72"><a href="#cb36-72" aria-hidden="true" tabindex="-1"></a><span class="fu">## 3. Piecewise Regression</span></span>
+<span id="cb36-73"><a href="#cb36-73" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-76"><a href="#cb36-76" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-77"><a href="#cb36-77" aria-hidden="true" tabindex="-1"></a>m_lin <span class="ot">&lt;-</span> <span class="fu">lm</span>(Sale_Price <span class="sc">~</span> Gr_Liv_Area, <span class="at">data=</span>train)</span>
+<span id="cb36-78"><a href="#cb36-78" aria-hidden="true" tabindex="-1"></a>m_seg_init <span class="ot">&lt;-</span> <span class="fu">lm</span>(Sale_Price <span class="sc">~</span> Gr_Liv_Area, <span class="at">data=</span>train)</span>
+<span id="cb36-79"><a href="#cb36-79" aria-hidden="true" tabindex="-1"></a>m_seg <span class="ot">&lt;-</span> <span class="fu">segmented</span>(m_seg_init, <span class="at">seg.Z =</span> <span class="sc">~</span> Gr_Liv_Area, <span class="at">psi =</span> <span class="fu">list</span>(<span class="at">Gr_Liv_Area =</span> <span class="dv">2000</span>))</span>
+<span id="cb36-80"><a href="#cb36-80" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(m_seg)</span>
+<span id="cb36-81"><a href="#cb36-81" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-82"><a href="#cb36-82" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-85"><a href="#cb36-85" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-86"><a href="#cb36-86" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(train<span class="sc">$</span>Gr_Liv_Area, train<span class="sc">$</span>Sale_Price, <span class="at">pch=</span><span class="dv">16</span>, <span class="at">cex=</span>.<span class="dv">5</span>,</span>
+<span id="cb36-87"><a href="#cb36-87" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab=</span><span class="st">"Gr_Liv_Area"</span>, <span class="at">ylab=</span><span class="st">"Sale_Price"</span>, <span class="at">main=</span><span class="st">"Piecewise fit at estimated knot"</span>)</span>
+<span id="cb36-88"><a href="#cb36-88" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(m_seg, <span class="at">add=</span><span class="cn">TRUE</span>, <span class="at">col=</span><span class="dv">2</span>, <span class="at">lwd=</span><span class="dv">2</span>)</span>
+<span id="cb36-89"><a href="#cb36-89" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="at">v =</span> m_seg<span class="sc">$</span>psi[,<span class="st">"Est."</span>], <span class="at">lty=</span><span class="dv">2</span>, <span class="at">col=</span><span class="dv">2</span>)</span>
+<span id="cb36-90"><a href="#cb36-90" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-91"><a href="#cb36-91" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-92"><a href="#cb36-92" aria-hidden="true" tabindex="-1"></a>**Interpretation (piecewise):** Two linear slopes before/after a knot. Useful when you expect a threshold effect.</span>
+<span id="cb36-93"><a href="#cb36-93" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-94"><a href="#cb36-94" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb36-95"><a href="#cb36-95" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-96"><a href="#cb36-96" aria-hidden="true" tabindex="-1"></a><span class="fu">## 4. MARS (earth) – From Simple to Interactions</span></span>
+<span id="cb36-97"><a href="#cb36-97" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-98"><a href="#cb36-98" aria-hidden="true" tabindex="-1"></a>MARS = *Multivariate Adaptive Regression Splines*. It builds **hinge** basis functions like `h(x - c) = max(0, x - c)` and can **interact** them.  </span>
+<span id="cb36-99"><a href="#cb36-99" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>A term such as <span class="in">`h(Gr_Liv_Area - 1500)`</span> means *once* <span class="in">`Gr_Liv_Area`</span> exceeds 1500, the fitted line’s slope can change.  </span>
+<span id="cb36-100"><a href="#cb36-100" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>An interaction like <span class="in">`h(Gr_Liv_Area - 1500) * Central_AirY`</span> means the slope change applies when <span class="in">`Central_Air == "Y"`</span>.</span>
+<span id="cb36-101"><a href="#cb36-101" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-102"><a href="#cb36-102" aria-hidden="true" tabindex="-1"></a><span class="fu">### 4A. Univariate MARS (Garage_Area)</span></span>
+<span id="cb36-103"><a href="#cb36-103" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-106"><a href="#cb36-106" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-107"><a href="#cb36-107" aria-hidden="true" tabindex="-1"></a>mars1 <span class="ot">&lt;-</span> <span class="fu">earth</span>(Sale_Price <span class="sc">~</span> Garage_Area, <span class="at">data=</span>train)</span>
+<span id="cb36-108"><a href="#cb36-108" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mars1)</span>
+<span id="cb36-109"><a href="#cb36-109" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-110"><a href="#cb36-110" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-113"><a href="#cb36-113" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-114"><a href="#cb36-114" aria-hidden="true" tabindex="-1"></a>grid <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">Garage_Area =</span> <span class="fu">seq</span>(<span class="fu">min</span>(train<span class="sc">$</span>Garage_Area), <span class="fu">max</span>(train<span class="sc">$</span>Garage_Area), <span class="at">length.out=</span><span class="dv">200</span>))</span>
+<span id="cb36-115"><a href="#cb36-115" aria-hidden="true" tabindex="-1"></a>grid<span class="sc">$</span>pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(mars1, <span class="at">newdata=</span>grid)</span>
+<span id="cb36-116"><a href="#cb36-116" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-117"><a href="#cb36-117" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(train, <span class="fu">aes</span>(Garage_Area, Sale_Price)) <span class="sc">+</span></span>
+<span id="cb36-118"><a href="#cb36-118" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha=</span>.<span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb36-119"><a href="#cb36-119" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data=</span>grid, <span class="fu">aes</span>(Garage_Area, pred), <span class="at">color=</span><span class="st">"blue"</span>, <span class="at">linewidth=</span><span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb36-120"><a href="#cb36-120" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Step 1: MARS with One Predictor (Garage_Area)"</span>,</span>
+<span id="cb36-121"><a href="#cb36-121" aria-hidden="true" tabindex="-1"></a>       <span class="at">subtitle=</span><span class="st">"Piecewise linear fit with automatically chosen knots"</span>,</span>
+<span id="cb36-122"><a href="#cb36-122" aria-hidden="true" tabindex="-1"></a>       <span class="at">y=</span><span class="st">"Predicted Sale_Price"</span>)</span>
+<span id="cb36-123"><a href="#cb36-123" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-124"><a href="#cb36-124" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-125"><a href="#cb36-125" aria-hidden="true" tabindex="-1"></a><span class="fu">### 4B. Additive MARS (degree = 1; no interactions)</span></span>
+<span id="cb36-126"><a href="#cb36-126" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-129"><a href="#cb36-129" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-130"><a href="#cb36-130" aria-hidden="true" tabindex="-1"></a>mars2 <span class="ot">&lt;-</span> <span class="fu">earth</span>(Sale_Price <span class="sc">~</span> Bedroom_AbvGr <span class="sc">+</span> Year_Built <span class="sc">+</span> Mo_Sold <span class="sc">+</span> Lot_Area <span class="sc">+</span></span>
+<span id="cb36-131"><a href="#cb36-131" aria-hidden="true" tabindex="-1"></a>                 Street <span class="sc">+</span> Central_Air <span class="sc">+</span> First_Flr_SF <span class="sc">+</span> Second_Flr_SF <span class="sc">+</span> Full_Bath <span class="sc">+</span></span>
+<span id="cb36-132"><a href="#cb36-132" aria-hidden="true" tabindex="-1"></a>                 Half_Bath <span class="sc">+</span> Fireplaces <span class="sc">+</span> Garage_Area <span class="sc">+</span> Gr_Liv_Area <span class="sc">+</span> TotRms_AbvGrd,</span>
+<span id="cb36-133"><a href="#cb36-133" aria-hidden="true" tabindex="-1"></a>               <span class="at">data=</span>train, <span class="at">degree=</span><span class="dv">1</span>, <span class="at">nfold=</span><span class="dv">5</span>)</span>
+<span id="cb36-134"><a href="#cb36-134" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mars2)</span>
+<span id="cb36-135"><a href="#cb36-135" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-136"><a href="#cb36-136" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-139"><a href="#cb36-139" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-140"><a href="#cb36-140" aria-hidden="true" tabindex="-1"></a>ev2 <span class="ot">&lt;-</span> <span class="fu">evimp</span>(mars2); <span class="fu">plot</span>(ev2, <span class="at">main=</span><span class="st">"Step 2: Variable Importance (degree=1, additive)"</span>)</span>
+<span id="cb36-141"><a href="#cb36-141" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">2</span>)); <span class="fu">plotmo</span>(mars2, <span class="at">type=</span><span class="st">"response"</span>, <span class="at">nresponse=</span><span class="dv">1</span>, <span class="at">do.par=</span><span class="cn">FALSE</span>); <span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">1</span>))</span>
+<span id="cb36-142"><a href="#cb36-142" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-143"><a href="#cb36-143" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-144"><a href="#cb36-144" aria-hidden="true" tabindex="-1"></a><span class="fu">### 4C. MARS with 2-way Interactions (degree = 2)</span></span>
+<span id="cb36-145"><a href="#cb36-145" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-148"><a href="#cb36-148" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-149"><a href="#cb36-149" aria-hidden="true" tabindex="-1"></a>mars3 <span class="ot">&lt;-</span> <span class="fu">earth</span>(Sale_Price <span class="sc">~</span> Bedroom_AbvGr <span class="sc">+</span> Year_Built <span class="sc">+</span> Mo_Sold <span class="sc">+</span> Lot_Area <span class="sc">+</span></span>
+<span id="cb36-150"><a href="#cb36-150" aria-hidden="true" tabindex="-1"></a>                 Street <span class="sc">+</span> Central_Air <span class="sc">+</span> First_Flr_SF <span class="sc">+</span> Second_Flr_SF <span class="sc">+</span> Full_Bath <span class="sc">+</span></span>
+<span id="cb36-151"><a href="#cb36-151" aria-hidden="true" tabindex="-1"></a>                 Half_Bath <span class="sc">+</span> Fireplaces <span class="sc">+</span> Garage_Area <span class="sc">+</span> Gr_Liv_Area <span class="sc">+</span> TotRms_AbvGrd,</span>
+<span id="cb36-152"><a href="#cb36-152" aria-hidden="true" tabindex="-1"></a>               <span class="at">data=</span>train, <span class="at">degree=</span><span class="dv">2</span>, <span class="at">nfold=</span><span class="dv">5</span>)</span>
+<span id="cb36-153"><a href="#cb36-153" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(mars3)</span>
+<span id="cb36-154"><a href="#cb36-154" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-155"><a href="#cb36-155" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-158"><a href="#cb36-158" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-159"><a href="#cb36-159" aria-hidden="true" tabindex="-1"></a>ev3 <span class="ot">&lt;-</span> <span class="fu">evimp</span>(mars3); <span class="fu">plot</span>(ev3, <span class="at">main=</span><span class="st">"Step 3: Variable Importance (degree=2, interactions)"</span>)</span>
+<span id="cb36-160"><a href="#cb36-160" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">2</span>,<span class="dv">2</span>)); <span class="fu">plotmo</span>(mars3, <span class="at">type=</span><span class="st">"response"</span>, <span class="at">nresponse=</span><span class="dv">1</span>, <span class="at">do.par=</span><span class="cn">FALSE</span>); <span class="fu">par</span>(<span class="at">mfrow=</span><span class="fu">c</span>(<span class="dv">1</span>,<span class="dv">1</span>))</span>
+<span id="cb36-161"><a href="#cb36-161" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-162"><a href="#cb36-162" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-163"><a href="#cb36-163" aria-hidden="true" tabindex="-1"></a>**Interpreting MARS terms:**  </span>
+<span id="cb36-164"><a href="#cb36-164" aria-hidden="true" tabindex="-1"></a>Look for <span class="in">`h()`</span> pieces and products. Coefficients on <span class="in">`h(x-c)`</span> indicate how slope changes after the knot <span class="in">`c`</span>. Interaction products mean “the slope change depends on another variable”.</span>
+<span id="cb36-165"><a href="#cb36-165" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-166"><a href="#cb36-166" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb36-167"><a href="#cb36-167" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-168"><a href="#cb36-168" aria-hidden="true" tabindex="-1"></a><span class="fu">## 5. LOESS (Visual local regression)</span></span>
+<span id="cb36-169"><a href="#cb36-169" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-172"><a href="#cb36-172" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-173"><a href="#cb36-173" aria-hidden="true" tabindex="-1"></a>loess_fit <span class="ot">&lt;-</span> <span class="fu">loess</span>(Sale_Price <span class="sc">~</span> Gr_Liv_Area, <span class="at">data=</span>train, <span class="at">span=</span><span class="fl">0.4</span>)</span>
+<span id="cb36-174"><a href="#cb36-174" aria-hidden="true" tabindex="-1"></a>grid_lo <span class="ot">&lt;-</span> <span class="fu">tibble</span>(<span class="at">Gr_Liv_Area =</span> <span class="fu">seq</span>(<span class="fu">min</span>(train<span class="sc">$</span>Gr_Liv_Area), <span class="fu">max</span>(train<span class="sc">$</span>Gr_Liv_Area), <span class="at">length.out=</span><span class="dv">200</span>))</span>
+<span id="cb36-175"><a href="#cb36-175" aria-hidden="true" tabindex="-1"></a>grid_lo<span class="sc">$</span>pred <span class="ot">&lt;-</span> <span class="fu">predict</span>(loess_fit, <span class="at">newdata=</span>grid_lo)</span>
+<span id="cb36-176"><a href="#cb36-176" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-177"><a href="#cb36-177" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb36-178"><a href="#cb36-178" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">data=</span>train, <span class="fu">aes</span>(Gr_Liv_Area, Sale_Price), <span class="at">alpha=</span>.<span class="dv">25</span>) <span class="sc">+</span></span>
+<span id="cb36-179"><a href="#cb36-179" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">data=</span>grid_lo, <span class="fu">aes</span>(Gr_Liv_Area, pred), <span class="at">linewidth=</span><span class="fl">1.2</span>) <span class="sc">+</span></span>
+<span id="cb36-180"><a href="#cb36-180" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"LOESS fit (span=0.4)"</span>, <span class="at">y=</span><span class="st">"Predicted Sale_Price"</span>)</span>
+<span id="cb36-181"><a href="#cb36-181" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-182"><a href="#cb36-182" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-183"><a href="#cb36-183" aria-hidden="true" tabindex="-1"></a>*We keep LOESS as a visualization-oriented smoother (not used in the multivariate comparison below).*</span>
+<span id="cb36-184"><a href="#cb36-184" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-185"><a href="#cb36-185" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb36-186"><a href="#cb36-186" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-187"><a href="#cb36-187" aria-hidden="true" tabindex="-1"></a><span class="fu">## 6. GAM Splines with `mgcv` – Simple → Complex</span></span>
+<span id="cb36-188"><a href="#cb36-188" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-189"><a href="#cb36-189" aria-hidden="true" tabindex="-1"></a>GAM smooths are written <span class="in">`s(x)`</span> and estimated with penalized splines. The **edf** (effective degrees of freedom) in the summary tells you the smooth’s complexity (larger edf ⇒ wigglier function).</span>
+<span id="cb36-190"><a href="#cb36-190" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-191"><a href="#cb36-191" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6A. Univariate GAM: `Sale_Price ~ s(Garage_Area)`</span></span>
+<span id="cb36-192"><a href="#cb36-192" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-195"><a href="#cb36-195" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-196"><a href="#cb36-196" aria-hidden="true" tabindex="-1"></a>gam1 <span class="ot">&lt;-</span> <span class="fu">gam</span>(Sale_Price <span class="sc">~</span> <span class="fu">s</span>(Garage_Area, <span class="at">k=</span><span class="dv">9</span>), <span class="at">data=</span>train, <span class="at">method=</span><span class="st">"REML"</span>)</span>
+<span id="cb36-197"><a href="#cb36-197" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gam1)  <span class="co"># inspect edf and significance</span></span>
+<span id="cb36-198"><a href="#cb36-198" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(gam1, <span class="at">pages=</span><span class="dv">1</span>, <span class="at">shade=</span><span class="cn">TRUE</span>, <span class="at">scheme=</span><span class="dv">1</span>, <span class="at">scale=</span><span class="dv">0</span>)</span>
+<span id="cb36-199"><a href="#cb36-199" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-200"><a href="#cb36-200" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-201"><a href="#cb36-201" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6B. Two-smooth Additive GAM: `s(Garage_Area) + s(Gr_Liv_Area)`</span></span>
+<span id="cb36-202"><a href="#cb36-202" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-205"><a href="#cb36-205" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-206"><a href="#cb36-206" aria-hidden="true" tabindex="-1"></a>gam2 <span class="ot">&lt;-</span> <span class="fu">gam</span>(Sale_Price <span class="sc">~</span> <span class="fu">s</span>(Garage_Area, <span class="at">k=</span><span class="dv">9</span>) <span class="sc">+</span> <span class="fu">s</span>(Gr_Liv_Area, <span class="at">k=</span><span class="dv">9</span>), <span class="at">data=</span>train, <span class="at">method=</span><span class="st">"REML"</span>)</span>
+<span id="cb36-207"><a href="#cb36-207" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gam2)</span>
+<span id="cb36-208"><a href="#cb36-208" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(gam2, <span class="at">pages=</span><span class="dv">1</span>, <span class="at">shade=</span><span class="cn">TRUE</span>, <span class="at">scheme=</span><span class="dv">1</span>, <span class="at">scale=</span><span class="dv">0</span>)</span>
+<span id="cb36-209"><a href="#cb36-209" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-210"><a href="#cb36-210" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-211"><a href="#cb36-211" aria-hidden="true" tabindex="-1"></a><span class="fu">### 6C. Full Multivariate GAM (selected smooths + factors)</span></span>
+<span id="cb36-212"><a href="#cb36-212" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-215"><a href="#cb36-215" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-216"><a href="#cb36-216" aria-hidden="true" tabindex="-1"></a>gam3 <span class="ot">&lt;-</span> <span class="fu">gam</span>(Sale_Price <span class="sc">~</span> </span>
+<span id="cb36-217"><a href="#cb36-217" aria-hidden="true" tabindex="-1"></a>              <span class="fu">s</span>(Garage_Area, <span class="at">k=</span><span class="dv">9</span>) <span class="sc">+</span> </span>
+<span id="cb36-218"><a href="#cb36-218" aria-hidden="true" tabindex="-1"></a>              <span class="fu">s</span>(Gr_Liv_Area, <span class="at">k=</span><span class="dv">9</span>) <span class="sc">+</span> </span>
+<span id="cb36-219"><a href="#cb36-219" aria-hidden="true" tabindex="-1"></a>              <span class="fu">s</span>(Year_Built, <span class="at">k=</span><span class="dv">7</span>) <span class="sc">+</span></span>
+<span id="cb36-220"><a href="#cb36-220" aria-hidden="true" tabindex="-1"></a>              <span class="fu">s</span>(Lot_Area, <span class="at">k=</span><span class="dv">7</span>) <span class="sc">+</span></span>
+<span id="cb36-221"><a href="#cb36-221" aria-hidden="true" tabindex="-1"></a>              Bedroom_AbvGr <span class="sc">+</span> Mo_Sold <span class="sc">+</span> </span>
+<span id="cb36-222"><a href="#cb36-222" aria-hidden="true" tabindex="-1"></a>              Street <span class="sc">+</span> Central_Air <span class="sc">+</span> </span>
+<span id="cb36-223"><a href="#cb36-223" aria-hidden="true" tabindex="-1"></a>              First_Flr_SF <span class="sc">+</span> Second_Flr_SF <span class="sc">+</span> </span>
+<span id="cb36-224"><a href="#cb36-224" aria-hidden="true" tabindex="-1"></a>              Full_Bath <span class="sc">+</span> Half_Bath <span class="sc">+</span> </span>
+<span id="cb36-225"><a href="#cb36-225" aria-hidden="true" tabindex="-1"></a>              Fireplaces <span class="sc">+</span> TotRms_AbvGrd,</span>
+<span id="cb36-226"><a href="#cb36-226" aria-hidden="true" tabindex="-1"></a>            <span class="at">data=</span>train, <span class="at">method=</span><span class="st">"REML"</span>)</span>
+<span id="cb36-227"><a href="#cb36-227" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(gam3)</span>
+<span id="cb36-228"><a href="#cb36-228" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(gam3, <span class="at">pages=</span><span class="dv">1</span>, <span class="at">shade=</span><span class="cn">TRUE</span>, <span class="at">scheme=</span><span class="dv">1</span>, <span class="at">scale=</span><span class="dv">0</span>)</span>
+<span id="cb36-229"><a href="#cb36-229" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-230"><a href="#cb36-230" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-231"><a href="#cb36-231" aria-hidden="true" tabindex="-1"></a>**Interpreting GAM splines:**  </span>
+<span id="cb36-232"><a href="#cb36-232" aria-hidden="true" tabindex="-1"></a>A smooth <span class="in">`s(x)`</span> shows how the expected outcome varies with <span class="in">`x`</span> *holding other terms constant*. The edf indicates complexity; wide confidence bands suggest greater uncertainty in those regions.</span>
+<span id="cb36-233"><a href="#cb36-233" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-234"><a href="#cb36-234" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb36-235"><a href="#cb36-235" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-236"><a href="#cb36-236" aria-hidden="true" tabindex="-1"></a><span class="fu">## 7. Model Comparison (R², RMSE, MSE)</span></span>
+<span id="cb36-237"><a href="#cb36-237" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-240"><a href="#cb36-240" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-241"><a href="#cb36-241" aria-hidden="true" tabindex="-1"></a><span class="co"># Helper for R^2 on test</span></span>
+<span id="cb36-242"><a href="#cb36-242" aria-hidden="true" tabindex="-1"></a>rsq <span class="ot">&lt;-</span> <span class="cf">function</span>(y, yhat) {</span>
+<span id="cb36-243"><a href="#cb36-243" aria-hidden="true" tabindex="-1"></a>  <span class="dv">1</span> <span class="sc">-</span> <span class="fu">sum</span>((y <span class="sc">-</span> yhat)<span class="sc">^</span><span class="dv">2</span>) <span class="sc">/</span> <span class="fu">sum</span>((y <span class="sc">-</span> <span class="fu">mean</span>(y))<span class="sc">^</span><span class="dv">2</span>)</span>
+<span id="cb36-244"><a href="#cb36-244" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb36-245"><a href="#cb36-245" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-246"><a href="#cb36-246" aria-hidden="true" tabindex="-1"></a><span class="co"># Predictions</span></span>
+<span id="cb36-247"><a href="#cb36-247" aria-hidden="true" tabindex="-1"></a>p_piece <span class="ot">&lt;-</span> <span class="fu">predict</span>(m_seg, <span class="at">newdata=</span>test)</span>
+<span id="cb36-248"><a href="#cb36-248" aria-hidden="true" tabindex="-1"></a>p_mars  <span class="ot">&lt;-</span> <span class="fu">predict</span>(mars3, <span class="at">newdata=</span>test)   <span class="co"># final MARS with interactions</span></span>
+<span id="cb36-249"><a href="#cb36-249" aria-hidden="true" tabindex="-1"></a>p_gam   <span class="ot">&lt;-</span> <span class="fu">predict</span>(gam3, <span class="at">newdata=</span>test)    <span class="co"># full multivariate GAM</span></span>
+<span id="cb36-250"><a href="#cb36-250" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-251"><a href="#cb36-251" aria-hidden="true" tabindex="-1"></a><span class="co"># Metrics</span></span>
+<span id="cb36-252"><a href="#cb36-252" aria-hidden="true" tabindex="-1"></a>tbl <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb36-253"><a href="#cb36-253" aria-hidden="true" tabindex="-1"></a>  <span class="at">Model =</span> <span class="fu">c</span>(<span class="st">"Piecewise (segmented)"</span>, <span class="st">"MARS (degree=2)"</span>, <span class="st">"GAM splines (mgcv full)"</span>),</span>
+<span id="cb36-254"><a href="#cb36-254" aria-hidden="true" tabindex="-1"></a>  <span class="at">RMSE  =</span> <span class="fu">c</span>(<span class="fu">rmse</span>(test<span class="sc">$</span>Sale_Price, p_piece),</span>
+<span id="cb36-255"><a href="#cb36-255" aria-hidden="true" tabindex="-1"></a>            <span class="fu">rmse</span>(test<span class="sc">$</span>Sale_Price, p_mars),</span>
+<span id="cb36-256"><a href="#cb36-256" aria-hidden="true" tabindex="-1"></a>            <span class="fu">rmse</span>(test<span class="sc">$</span>Sale_Price, p_gam)),</span>
+<span id="cb36-257"><a href="#cb36-257" aria-hidden="true" tabindex="-1"></a>  <span class="at">MSE   =</span> <span class="fu">c</span>(<span class="fu">mse</span>(test<span class="sc">$</span>Sale_Price, p_piece),</span>
+<span id="cb36-258"><a href="#cb36-258" aria-hidden="true" tabindex="-1"></a>            <span class="fu">mse</span>(test<span class="sc">$</span>Sale_Price, p_mars),</span>
+<span id="cb36-259"><a href="#cb36-259" aria-hidden="true" tabindex="-1"></a>            <span class="fu">mse</span>(test<span class="sc">$</span>Sale_Price, p_gam)),</span>
+<span id="cb36-260"><a href="#cb36-260" aria-hidden="true" tabindex="-1"></a>  <span class="at">R2    =</span> <span class="fu">c</span>(<span class="fu">rsq</span>(test<span class="sc">$</span>Sale_Price, p_piece),</span>
+<span id="cb36-261"><a href="#cb36-261" aria-hidden="true" tabindex="-1"></a>            <span class="fu">rsq</span>(test<span class="sc">$</span>Sale_Price, p_mars),</span>
+<span id="cb36-262"><a href="#cb36-262" aria-hidden="true" tabindex="-1"></a>            <span class="fu">rsq</span>(test<span class="sc">$</span>Sale_Price, p_gam))</span>
+<span id="cb36-263"><a href="#cb36-263" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> <span class="fu">arrange</span>(<span class="fu">desc</span>(R2))</span>
+<span id="cb36-264"><a href="#cb36-264" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-265"><a href="#cb36-265" aria-hidden="true" tabindex="-1"></a>tbl</span>
+<span id="cb36-266"><a href="#cb36-266" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-267"><a href="#cb36-267" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-268"><a href="#cb36-268" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb36-269"><a href="#cb36-269" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-270"><a href="#cb36-270" aria-hidden="true" tabindex="-1"></a><span class="fu">## 8. Final Plot: Predicted vs Actual (Test Set)</span></span>
+<span id="cb36-271"><a href="#cb36-271" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-274"><a href="#cb36-274" aria-hidden="true" tabindex="-1"></a><span class="in">```{r}</span></span>
+<span id="cb36-275"><a href="#cb36-275" aria-hidden="true" tabindex="-1"></a>plot_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb36-276"><a href="#cb36-276" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">Model=</span><span class="st">"Piecewise (segmented)"</span>, <span class="at">Actual=</span>test<span class="sc">$</span>Sale_Price, <span class="at">Pred=</span>p_piece),</span>
+<span id="cb36-277"><a href="#cb36-277" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">Model=</span><span class="st">"MARS (degree=2)"</span>, <span class="at">Actual=</span>test<span class="sc">$</span>Sale_Price, <span class="at">Pred=</span>p_mars),</span>
+<span id="cb36-278"><a href="#cb36-278" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tibble</span>(<span class="at">Model=</span><span class="st">"GAM splines (mgcv full)"</span>, <span class="at">Actual=</span>test<span class="sc">$</span>Sale_Price, <span class="at">Pred=</span>p_gam)</span>
+<span id="cb36-279"><a href="#cb36-279" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb36-280"><a href="#cb36-280" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-281"><a href="#cb36-281" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plot_df, <span class="fu">aes</span>(Actual, Pred, <span class="at">color=</span>Model)) <span class="sc">+</span></span>
+<span id="cb36-282"><a href="#cb36-282" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha=</span>.<span class="dv">35</span>) <span class="sc">+</span></span>
+<span id="cb36-283"><a href="#cb36-283" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">intercept=</span><span class="dv">0</span>, <span class="at">slope=</span><span class="dv">1</span>, <span class="at">linetype=</span><span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb36-284"><a href="#cb36-284" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title=</span><span class="st">"Predicted vs Actual (Test Set)"</span>, <span class="at">y=</span><span class="st">"Predicted Sale_Price"</span>) <span class="sc">+</span></span>
+<span id="cb36-285"><a href="#cb36-285" aria-hidden="true" tabindex="-1"></a>  <span class="fu">coord_equal</span>()</span>
+<span id="cb36-286"><a href="#cb36-286" aria-hidden="true" tabindex="-1"></a><span class="in">```</span></span>
+<span id="cb36-287"><a href="#cb36-287" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-288"><a href="#cb36-288" aria-hidden="true" tabindex="-1"></a>---</span>
+<span id="cb36-289"><a href="#cb36-289" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-290"><a href="#cb36-290" aria-hidden="true" tabindex="-1"></a><span class="fu">## 9. How to Explain</span></span>
+<span id="cb36-291"><a href="#cb36-291" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb36-292"><a href="#cb36-292" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Piecewise**: “There’s a threshold where the effect changes.” Simple story, limited flexibility.  </span>
+<span id="cb36-293"><a href="#cb36-293" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**MARS**: “The model finds breakpoints and sometimes *when* they matter (interactions).” Explain `h(x-c)` as *extra slope after c*.  </span>
+<span id="cb36-294"><a href="#cb36-294" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**GAM (splines)**: “We model smooth curves for key variables; edf shows wiggliness. More edf ⇒ more flexibility.”  </span>
+<span id="cb36-295"><a href="#cb36-295" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>**Tradeoff**: More flexibility usually improves error (RMSE/MSE) and R², but reduce interpretability. Validate with cross‑validation and keep the story aligned with business intuition.</span>
+</code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
