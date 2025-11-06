@@ -13,11 +13,31 @@ book:
     - resampling-model-selection-python.qmd
     - generalized-additive-models-r.qmd
     - generalized-additive-models-python.qmd
-    - tree-based-models.qmd
+    - Tree_Based_R.qmd
+    - Tree_Based_Python2.qmd
+    - rf-xgb-params.qmd
     - neural-network-models.qmd
     - naive-bayes-models.qmd
     - model-agnostic-interpretability.qmd
     - support-vector-machines.qmd
+
+# Use Jupyter for Python execution
+jupyter: python3
+
+execute:
+  kernel: python3
+  daemon: false
+  freeze: auto
+  keep-md: false
+  cache: true
+  echo: true
+  warning: false
+  message: false
+  python:
+    path: "/opt/anaconda3/bin/python"
+
+# Tell Quarto explicitly where Python is located
+engine: "/opt/anaconda3/bin/python"
 
 format:
   html:
@@ -27,13 +47,5 @@ format:
     toc: true
   pdf:
     documentclass: scrreprt
-
-execute:
-  echo: true
-  warning: false
-  message: false
-  cache: true
-  python:
-  path: "/opt/anaconda3/bin/python"
 
 

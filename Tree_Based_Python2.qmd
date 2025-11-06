@@ -1,0 +1,220 @@
+
+---
+title: "Tree Based Models - Python Version"
+format:
+  html:
+    toc: true
+    number-sections: true
+    code-fold: true
+  pdf:
+    number-sections: true
+    toc: true
+---
+
+> Tree Models: **Decision Tree**, **Random Forest**, and **XGBoost** on the Ames Housing dataset. Includes random-variable baselines, variable importance, partial dependence plots, and hyperparameter tuning (random search). 
+
+## Visual Roadmap
+
+```{mermaid}
+flowchart LR
+    A["Data (Ames)"]
+    DT["Decision Tree (Baseline)"]
+    RF["Random Forest (Bagging + Random Features)"]
+    XGB["XGBoost (Boosted Trees + Regularization)"]
+    Compare["Model Comparison"]
+    
+    A --> DT
+    A --> RF
+    A --> XGB
+    DT --> Compare
+    RF --> Compare
+    XGB --> Compare
+```
+
+## Setup and Data Preparation
+
+```{python}
+import pandas as pd
+import numpy as np
+from sklearn.datasets import fetch_openml
+from sklearn.model_selection import train_test_split, RandomizedSearchCV, KFold
+from sklearn.tree import DecisionTreeRegressor, plot_tree
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.inspection import PartialDependenceDisplay
+from xgboost import XGBRegressor, plot_importance
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings("ignore")
+
+# Set random seed for reproducibility
+seed = 12345
+np.random.seed(seed)
+
+# Load Ames dataset
+ames = fetch_openml(name="house_prices", as_frame=True)
+df = ames.frame
+
+# Feature selection matching R version
+features = [
+    'BedroomAbvGr', 'YearBuilt', 'MoSold', 'LotArea', 'Street', 'CentralAir',
+    '1stFlrSF', '2ndFlrSF', 'FullBath', 'HalfBath', 'Fireplaces',
+    'GarageArea', 'GrLivArea', 'TotRmsAbvGrd'
+]
+df = df[features + ['SalePrice']].dropna()
+
+# Encode categoricals
+df = pd.get_dummies(df, drop_first=True)
+
+# Train/test split
+train, test = train_test_split(df, test_size=0.3, random_state=seed)
+
+# Add random variable for variable-importance baseline
+train['random'] = np.random.randn(len(train))
+test['random'] = np.random.randn(len(test))
+
+X_train = train.drop(columns=['SalePrice'])
+y_train = train['SalePrice']
+X_test = test.drop(columns=['SalePrice'])
+y_test = test['SalePrice']
+```
+
+## Decision Tree (Baseline)
+
+```{python}
+tree = DecisionTreeRegressor(random_state=seed, max_depth=5)
+tree.fit(X_train, y_train)
+
+plt.figure(figsize=(16,8))
+plot_tree(tree, feature_names=X_train.columns, filled=True, max_depth=3)
+plt.title("Decision Tree for Ames Housing")
+plt.show()
+
+# Metrics
+pred_tree = tree.predict(X_test)
+rmse_tree = mean_squared_error(y_test, pred_tree)
+mae_tree = mean_absolute_error(y_test, pred_tree)
+mape_tree = np.mean(np.abs((y_test - pred_tree) / y_test)) * 100
+r2_tree = r2_score(y_test, pred_tree)
+
+pd.DataFrame([["Decision Tree", rmse_tree, mae_tree, mape_tree, r2_tree]],
+             columns=["Model", "RMSE", "MAE", "MAPE", "R2"])
+```
+
+## Random Forest: Random Variable, Importance, PDPs, and Tuning
+
+```{python}
+rf = RandomForestRegressor(random_state=seed)
+
+# Define parameter grid (similar to R tuning)
+param_dist_rf = {
+    'n_estimators': [100, 200, 300, 400, 500],
+    'max_features': ['sqrt', 'log2', None, 4, 6, 8],
+    'max_depth': [None, 5, 10, 15, 20],
+    'min_samples_split': [2, 5, 10]
+}
+
+cv = KFold(n_splits=10, shuffle=True, random_state=seed)
+
+rf_random = RandomizedSearchCV(
+    estimator=rf,
+    param_distributions=param_dist_rf,
+    n_iter=20,
+    cv=cv,
+    random_state=seed,
+    n_jobs=-1,
+    scoring='neg_root_mean_squared_error'
+)
+
+rf_random.fit(X_train, y_train)
+rf_best = rf_random.best_estimator_
+print("Best Random Forest Parameters:", rf_random.best_params_)
+
+# Importance with random variable
+importances = pd.Series(rf_best.feature_importances_, index=X_train.columns).sort_values(ascending=False)
+importances[:15].plot(kind='barh', title='Random Forest: Top Variables (with Random Baseline)')
+plt.show()
+
+# Partial dependence plots
+plt.figure()
+PartialDependenceDisplay.from_estimator(rf_best, X_train, ['YearBuilt', 'GarageArea'])
+plt.suptitle("Partial Dependence (Random Forest)")
+plt.show()
+
+# Performance metrics
+pred_rf = rf_best.predict(X_test)
+rmse_rf = mean_squared_error(y_test, pred_rf)
+mae_rf = mean_absolute_error(y_test, pred_rf)
+mape_rf = np.mean(np.abs((y_test - pred_rf) / y_test)) * 100
+r2_rf = r2_score(y_test, pred_rf)
+
+pd.DataFrame([["Random Forest (Tuned)", rmse_rf, mae_rf, mape_rf, r2_rf]],
+             columns=["Model", "RMSE", "MAE", "MAPE", "R2"])
+```
+
+## XGBoost: Random Variable, Importance, PDPs, and Tuning
+
+```{python}
+xgb = XGBRegressor(
+    objective='reg:squarederror',
+    random_state=seed,
+    n_jobs=-1
+)
+
+# Define tuning grid similar to R (eta = learning_rate, subsample, max_depth)
+param_dist_xgb = {
+    'n_estimators': [24, 50, 100, 200],
+    'learning_rate': [0.1, 0.15, 0.2, 0.25, 0.3],
+    'max_depth': [1, 3, 5, 7, 10],
+    'subsample': [0.25, 0.5, 0.75, 1],
+    'colsample_bytree': [0.5, 0.75, 1]
+}
+
+xgb_random = RandomizedSearchCV(
+    estimator=xgb,
+    param_distributions=param_dist_xgb,
+    n_iter=20,
+    cv=cv,
+    random_state=seed,
+    n_jobs=-1,
+    scoring='neg_root_mean_squared_error'
+)
+
+xgb_random.fit(X_train, y_train)
+xgb_best = xgb_random.best_estimator_
+print("Best XGBoost Parameters:", xgb_random.best_params_)
+
+# Importance plot with random variable
+plot_importance(xgb_best, max_num_features=15, importance_type='gain')
+plt.title("XGBoost: Variable Importance (with Random Baseline)")
+plt.show()
+
+# Partial dependence plots
+plt.figure()
+PartialDependenceDisplay.from_estimator(xgb_best, X_train, ['YearBuilt', 'GarageArea'])
+plt.suptitle("Partial Dependence (XGBoost)")
+plt.show()
+
+# Metrics
+pred_xgb = xgb_best.predict(X_test)
+rmse_xgb = mean_squared_error(y_test, pred_xgb)
+mae_xgb = mean_absolute_error(y_test, pred_xgb)
+mape_xgb = np.mean(np.abs((y_test - pred_xgb) / y_test)) * 100
+r2_xgb = r2_score(y_test, pred_xgb)
+
+pd.DataFrame([["XGBoost (Tuned)", rmse_xgb, mae_xgb, mape_xgb, r2_xgb]],
+             columns=["Model", "RMSE", "MAE", "MAPE", "R2"])
+```
+
+## Final Model Comparison
+
+```{python}
+results = pd.DataFrame([
+    ["Decision Tree", rmse_tree, mae_tree, mape_tree, r2_tree],
+    ["Random Forest (Tuned)", rmse_rf, mae_rf, mape_rf, r2_rf],
+    ["XGBoost (Tuned)", rmse_xgb, mae_xgb, mape_xgb, r2_xgb]
+], columns=["Model", "RMSE", "MAE", "MAPE", "R2"]).sort_values("RMSE")
+results
+```
+
+> **Summary:** The Decision Tree provides interpretability, Random Forest and XGBoost attempt to further reduce bias and manage variance error through randomization and ensembles of weak learners. The issue is that they become less and less interpretable, so we have to introduce other tools to understand what variables are important and how they are relating to the outcome.

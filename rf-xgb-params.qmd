@@ -1,0 +1,121 @@
+
+---
+title: "Understanding Random Forest and XGBoost Hyperparameters"
+format:
+  html:
+    toc: true
+    number-sections: true
+    code-fold: false
+  pdf:
+    toc: true
+    number-sections: true
+---
+
+
+
+## Random Forest Hyperparameters
+
+### ️ Switching Between Regression and Classification
+
+| Language | How to Specify Regression | How to Specify Classification |
+|:--|:--|:--|
+| **R** | `randomForest(y ~ ., data = df)` where `y` is **numeric** | `randomForest(y ~ ., data = df)` where `y` is a **factor** |  
+| **Python** | `RandomForestRegressor()` | `RandomForestClassifier()` |  
+
+**In R**, the outcome type (`numeric` vs `factor`) determines whether the model performs **regression** or **classification** automatically.  
+**In Python**, you explicitly choose the class (`RandomForestRegressor` or `RandomForestClassifier`).  
+
+---
+
+| Concept | **R (`randomForest`)** | **Python (`RandomForestRegressor` / `RandomForestClassifier`)** | Meaning / Role | Typical Values | Impact / Interpretation |
+|:--|:--|:--|:--|:--|:--|
+| **Model type** | Determined by outcome type (`numeric` vs `factor`) | Different estimator class | Defines whether the forest predicts continuous or categorical outcomes | – | Choose based on target type |
+| **Number of trees** | `ntree` | `n_estimators` | Number of trees to grow in the forest | 100–1000 (500 common) | More trees reduce variance but increase runtime |
+| **Features per split** | `mtry` | `max_features` | # of variables randomly selected at each split | Regression: √p; Classification: p/3 | Smaller → higher bias, more diversity; larger → lower bias, more correlation |
+| **Max tree depth** | *(no direct arg, via `nodesize`)* | `max_depth` | Maximum depth of each tree | None, or 5–30 | Deeper trees capture complexity but risk overfitting |
+| **Min samples per split** | *(via `nodesize` indirectly)* | `min_samples_split` | Minimum # of samples to split a node | 2–10 | Larger → smoother, higher bias; smaller → lower bias, higher variance |
+| **Min samples per leaf** | *(via `nodesize`)* | `min_samples_leaf` | Minimum samples per terminal node | 1–5 | Prevents tiny leaves, reduces overfitting |
+| **Bootstrap sampling** | `replace` | `bootstrap` | Whether to sample with replacement | TRUE/FALSE | Adds randomness; TRUE recommended |
+| **Sample fraction per tree** | *(rarely tuned)* | `max_samples` | Fraction of training data used per tree | 0.5–1.0 | Lower → more randomness, higher bias |
+| **Learning objective** | Implicit: minimize MSE (regression) or Gini/entropy (classification) | Implicit: minimize MSE or Gini/entropy | Objective changes automatically with model type | – | Regression averages numeric values; classification votes on class labels |
+| **Random seed** | `set.seed()` | `random_state` | Ensures reproducibility | any integer | Use same seed for consistency |
+
+---
+
+### Thinking About Random Forest Tuning
+
+- Start with **many trees** (≥ 500).  
+- Tune **`mtry` / `max_features`** to balance bias vs variance.  
+- Use `max_depth`, `min_samples_split`, or `min_samples_leaf` to prevent overfitting.  
+- RF tuning is relatively forgiving — focus on **efficiency and stability** rather than micro‑optimization.  
+- For **classification**, check **OOB error** or **ROC‑AUC** rather than RMSE.  
+
+---
+
+## XGBoost Hyperparameters
+
+| Concept | **R (`xgboost`)** | **Python (`XGBRegressor` / `XGBClassifier`)** | Meaning / Role | Typical Values | Impact / Interpretation |
+|:--|:--|:--|:--|:--|:--|
+| **Boosting rounds** | `nrounds` | `n_estimators` | Total # of trees (boosting steps) | 100–1000 | Too high → overfit unless learning rate small |
+| **Learning rate** | `eta` | `learning_rate` | Shrinks each tree’s contribution | 0.01–0.3 | Lower = slower, safer; higher = faster, riskier |
+| **Tree depth** | `max_depth` | `max_depth` | Max depth per tree | 3–10 | Shallow = less overfit; deep = more complex |
+| **Min child weight** | `min_child_weight` | `min_child_weight` | Min sum of instance weights per leaf | 1–10 | Larger = more conservative splits |
+| **Subsample (rows)** | `subsample` | `subsample` | Fraction of training rows used per round | 0.5–1.0 | Lower adds randomness, improves generalization |
+| **Col sample (features)** | `colsample_bytree` | `colsample_bytree` | Fraction of features per tree | 0.5–1.0 | Reduces feature correlation |
+| **Gamma** | `gamma` | `gamma` | Min loss reduction to split a node | 0–5 | Higher = more conservative, prevents overfitting |
+| **L1 regularization** | `alpha` | `reg_alpha` | Penalty on abs(weights) | 0–10 | Encourages sparsity (feature selection) |
+| **L2 regularization** | `lambda` | `reg_lambda` | Penalty on squared(weights) | 0–10 | Controls weight magnitudes (stability) |
+| **Learning objective** | `objective` | `objective` | Specifies prediction type | `"reg:squarederror"`, `"binary:logistic"`, etc. | Must match your target type |
+| **Early stopping** | via `xgb.cv()` | `early_stopping_rounds` | Stops when no improvement | 10–50 rounds | Prevents unnecessary rounds |
+| **Seed** | `set.seed()` | `random_state` | Ensures reproducibility | any integer | Consistent results across runs |
+
+---
+
+### Thinking About XGBoost Tuning
+
+1. **Start simple** — tune `n_estimators`, `max_depth`, and `learning_rate` first.  
+2. Add regularization (`gamma`, `alpha`, `lambda`) to control overfitting.  
+3. Use `subsample` and `colsample_bytree` to add randomness.  
+ 
+
+---
+
+## Practical Tips and Heuristics
+
+| Situation | Random Forest Strategy | XGBoost Strategy |
+|:--|:--|:--|
+| **Overfitting** | Increase `min_samples_split`, reduce `max_depth` | Lower `learning_rate`, increase `gamma` or `min_child_weight` |
+| **Underfitting** | Increase `n_estimators`, allow deeper trees | Lower regularization, increase `max_depth` or `n_estimators` |
+| **Slow training** | Reduce trees or sample fraction | Increase `learning_rate`, reduce trees |
+| **Unstable results** | Fix `random_state`, use more trees | Fix `random_state`, enable early stopping |
+| **High variance** | Lower `max_features`, increase randomness | Increase `subsample` diversity, lower `max_depth` |
+
+---
+
+## Rule‑of‑Thumb Summary
+
+| Parameter | Low Value → | High Value → |
+|:--|:--|:--|
+| `n_estimators` | Underfitting | Stable but slower |
+| `max_depth` | Simpler model (underfit) | Complex model (overfit) |
+| `learning_rate` | Slow, steady, robust | Fast, risk of overfit |
+| `subsample / colsample_bytree` | More bias, less variance | Lower bias, higher variance |
+| `mtry / max_features` | More randomization | More correlation between trees |
+| `min_samples_split / min_child_weight` | Flexible, low bias | Conservative, higher bias |
+
+---
+
+### Key Takeaways
+
+- **Random Forest**
+  - Regression/classification determined by outcome type (R) or model class (Python).  
+  - Reduces variance through bagging.  
+  - Tuning focuses on **stability** and **efficiency**.  
+
+- **XGBoost**
+  - Requires explicit objective selection.  
+  - Reduces error via boosting and regularization.  
+    
+
+- Use interpretability tools (importance, PDPs, SHAP) to understand **why** tuning changes model behavior.
+

@@ -1,0 +1,263 @@
+---
+title: "GAM – Piecewise, MARS, LOESS, and Splines - R Version"
+format:
+  html:
+    code-fold: true
+  pdf:
+    code-fold: false
+    code-overflow: wrap
+    code-line-numbers: true
+---
+
+> **Goal:** Predict `Sale_Price` from a focused set of Ames features using increasingly flexible methods in the GAM framework.
+
+## 1. Setup and Data
+
+```{r}
+#| message: false
+set.seed(4321)
+
+library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(AmesHousing)   # make_ordinal_ames()
+library(earth)         # MARS
+library(segmented)     # piecewise (segmented) regression
+library(splines)       # regression splines (bs, ns) - kept for reference
+library(mgcv)          # smoothing splines via GAM
+library(caret)         # data splitting / utilities
+library(Metrics)       # rmse, mse helpers (plus we'll compute R2 manually)
+theme_set(theme_minimal())
+```
+
+```{r}
+# Limit to requested columns
+cols <- c("Sale_Price","Bedroom_AbvGr","Year_Built","Mo_Sold","Lot_Area","Street",
+          "Central_Air","First_Flr_SF","Second_Flr_SF","Full_Bath","Half_Bath",
+          "Fireplaces","Garage_Area","Gr_Liv_Area","TotRms_AbvGrd")
+
+ames <- make_ordinal_ames() |> 
+  dplyr::select(dplyr::all_of(cols)) |> 
+  tidyr::drop_na()
+
+# Train/test split
+set.seed(4321)
+idx <- sample.int(nrow(ames), size = floor(0.7*nrow(ames)))
+train <- ames[idx,]
+test  <- ames[-idx,]
+
+glimpse(train)
+summary(train$Sale_Price)
+```
+
+---
+
+## 2. Quick Visual: Nonlinearity is Common
+
+```{r}
+ggplot(train, aes(Gr_Liv_Area, Sale_Price)) +
+  geom_point(alpha=.3) +
+  geom_smooth(method="loess", se=FALSE) +
+  labs(title="Sale_Price vs Gr_Liv_Area (LOESS smoother)")
+```
+
+**Takeaway:** The relationship bends—nonlinear methods can help.
+
+---
+
+## 3. Piecewise Regression
+
+```{r}
+m_lin <- lm(Sale_Price ~ Gr_Liv_Area, data=train)
+m_seg_init <- lm(Sale_Price ~ Gr_Liv_Area, data=train)
+m_seg <- segmented(m_seg_init, seg.Z = ~ Gr_Liv_Area, psi = list(Gr_Liv_Area = 2000))
+summary(m_seg)
+```
+
+```{r}
+plot(train$Gr_Liv_Area, train$Sale_Price, pch=16, cex=.5,
+     xlab="Gr_Liv_Area", ylab="Sale_Price", main="Piecewise fit at estimated knot")
+plot(m_seg, add=TRUE, col=2, lwd=2)
+abline(v = m_seg$psi[,"Est."], lty=2, col=2)
+```
+
+**Interpretation (piecewise):** Two linear slopes before/after a knot. Useful when you expect a threshold effect.
+
+---
+
+## 4. MARS (earth) – From Simple to Interactions
+
+MARS = *Multivariate Adaptive Regression Splines*. It builds **hinge** basis functions like `h(x - c) = max(0, x - c)` and can **interact** them.  
+- A term such as `h(Gr_Liv_Area - 1500)` means *once* `Gr_Liv_Area` exceeds 1500, the fitted line’s slope can change.  
+- An interaction like `h(Gr_Liv_Area - 1500) * Central_AirY` means the slope change applies when `Central_Air == "Y"`.
+
+### 4A. Univariate MARS (Garage_Area)
+
+```{r}
+mars1 <- earth(Sale_Price ~ Garage_Area, data=train)
+summary(mars1)
+```
+
+```{r}
+grid <- tibble(Garage_Area = seq(min(train$Garage_Area), max(train$Garage_Area), length.out=200))
+grid$pred <- predict(mars1, newdata=grid)
+
+ggplot(train, aes(Garage_Area, Sale_Price)) +
+  geom_point(alpha=.3) +
+  geom_line(data=grid, aes(Garage_Area, pred), color="blue", linewidth=1.2) +
+  labs(title="Step 1: MARS with One Predictor (Garage_Area)",
+       subtitle="Piecewise linear fit with automatically chosen knots",
+       y="Predicted Sale_Price")
+```
+
+### 4B. Additive MARS (degree = 1; no interactions)
+
+```{r}
+mars2 <- earth(Sale_Price ~ Bedroom_AbvGr + Year_Built + Mo_Sold + Lot_Area +
+                 Street + Central_Air + First_Flr_SF + Second_Flr_SF + Full_Bath +
+                 Half_Bath + Fireplaces + Garage_Area + Gr_Liv_Area + TotRms_AbvGrd,
+               data=train, degree=1, nfold=5)
+summary(mars2)
+```
+
+```{r}
+ev2 <- evimp(mars2); plot(ev2, main="Step 2: Variable Importance (degree=1, additive)")
+par(mfrow=c(2,2)); plotmo(mars2, type="response", nresponse=1, do.par=FALSE); par(mfrow=c(1,1))
+```
+
+### 4C. MARS with 2-way Interactions (degree = 2)
+
+```{r}
+mars3 <- earth(Sale_Price ~ Bedroom_AbvGr + Year_Built + Mo_Sold + Lot_Area +
+                 Street + Central_Air + First_Flr_SF + Second_Flr_SF + Full_Bath +
+                 Half_Bath + Fireplaces + Garage_Area + Gr_Liv_Area + TotRms_AbvGrd,
+               data=train, degree=2, nfold=5)
+summary(mars3)
+```
+
+```{r}
+ev3 <- evimp(mars3); plot(ev3, main="Step 3: Variable Importance (degree=2, interactions)")
+par(mfrow=c(2,2)); plotmo(mars3, type="response", nresponse=1, do.par=FALSE); par(mfrow=c(1,1))
+```
+
+**Interpreting MARS terms:**  
+Look for `h()` pieces and products. Coefficients on `h(x-c)` indicate how slope changes after the knot `c`. Interaction products mean “the slope change depends on another variable”.
+
+---
+
+## 5. LOESS (Visual local regression)
+
+```{r}
+loess_fit <- loess(Sale_Price ~ Gr_Liv_Area, data=train, span=0.4)
+grid_lo <- tibble(Gr_Liv_Area = seq(min(train$Gr_Liv_Area), max(train$Gr_Liv_Area), length.out=200))
+grid_lo$pred <- predict(loess_fit, newdata=grid_lo)
+
+ggplot() +
+  geom_point(data=train, aes(Gr_Liv_Area, Sale_Price), alpha=.25) +
+  geom_line(data=grid_lo, aes(Gr_Liv_Area, pred), linewidth=1.2) +
+  labs(title="LOESS fit (span=0.4)", y="Predicted Sale_Price")
+```
+
+*We keep LOESS as a visualization-oriented smoother (not used in the multivariate comparison below).*
+
+---
+
+## 6. GAM Splines with `mgcv` – Simple → Complex
+
+GAM smooths are written `s(x)` and estimated with penalized splines. The **edf** (effective degrees of freedom) in the summary tells you the smooth’s complexity (larger edf ⇒ wigglier function).
+
+### 6A. Univariate GAM: `Sale_Price ~ s(Garage_Area)`
+
+```{r}
+gam1 <- gam(Sale_Price ~ s(Garage_Area, k=9), data=train, method="REML")
+summary(gam1)  # inspect edf and significance
+plot(gam1, pages=1, shade=TRUE, scheme=1, scale=0)
+```
+
+### 6B. Two-smooth Additive GAM: `s(Garage_Area) + s(Gr_Liv_Area)`
+
+```{r}
+gam2 <- gam(Sale_Price ~ s(Garage_Area, k=9) + s(Gr_Liv_Area, k=9), data=train, method="REML")
+summary(gam2)
+plot(gam2, pages=1, shade=TRUE, scheme=1, scale=0)
+```
+
+### 6C. Full Multivariate GAM (selected smooths + factors)
+
+```{r}
+gam3 <- gam(Sale_Price ~ 
+              s(Garage_Area, k=9) + 
+              s(Gr_Liv_Area, k=9) + 
+              s(Year_Built, k=7) +
+              s(Lot_Area, k=7) +
+              Bedroom_AbvGr + Mo_Sold + 
+              Street + Central_Air + 
+              First_Flr_SF + Second_Flr_SF + 
+              Full_Bath + Half_Bath + 
+              Fireplaces + TotRms_AbvGrd,
+            data=train, method="REML")
+summary(gam3)
+plot(gam3, pages=1, shade=TRUE, scheme=1, scale=0)
+```
+
+**Interpreting GAM splines:**  
+A smooth `s(x)` shows how the expected outcome varies with `x` *holding other terms constant*. The edf indicates complexity; wide confidence bands suggest greater uncertainty in those regions.
+
+---
+
+## 7. Model Comparison (R², RMSE, MSE)
+
+```{r}
+# Helper for R^2 on test
+rsq <- function(y, yhat) {
+  1 - sum((y - yhat)^2) / sum((y - mean(y))^2)
+}
+
+# Predictions
+p_piece <- predict(m_seg, newdata=test)
+p_mars  <- predict(mars3, newdata=test)   # final MARS with interactions
+p_gam   <- predict(gam3, newdata=test)    # full multivariate GAM
+
+# Metrics
+tbl <- tibble(
+  Model = c("Piecewise (segmented)", "MARS (degree=2)", "GAM splines (mgcv full)"),
+  RMSE  = c(rmse(test$Sale_Price, p_piece),
+            rmse(test$Sale_Price, p_mars),
+            rmse(test$Sale_Price, p_gam)),
+  MSE   = c(mse(test$Sale_Price, p_piece),
+            mse(test$Sale_Price, p_mars),
+            mse(test$Sale_Price, p_gam)),
+  R2    = c(rsq(test$Sale_Price, p_piece),
+            rsq(test$Sale_Price, p_mars),
+            rsq(test$Sale_Price, p_gam))
+) |> arrange(desc(R2))
+
+tbl
+```
+
+---
+
+## 8. Final Plot: Predicted vs Actual (Test Set)
+
+```{r}
+plot_df <- bind_rows(
+  tibble(Model="Piecewise (segmented)", Actual=test$Sale_Price, Pred=p_piece),
+  tibble(Model="MARS (degree=2)", Actual=test$Sale_Price, Pred=p_mars),
+  tibble(Model="GAM splines (mgcv full)", Actual=test$Sale_Price, Pred=p_gam)
+)
+
+ggplot(plot_df, aes(Actual, Pred, color=Model)) +
+  geom_point(alpha=.35) +
+  geom_abline(intercept=0, slope=1, linetype="dashed") +
+  labs(title="Predicted vs Actual (Test Set)", y="Predicted Sale_Price") +
+  coord_equal()
+```
+
+---
+
+## 9. How to Explain
+
+- **Piecewise**: “There’s a threshold where the effect changes.” Simple story, limited flexibility.  
+- **MARS**: “The model finds breakpoints and sometimes *when* they matter (interactions).” Explain `h(x-c)` as *extra slope after c*.  
+- **GAM (splines)**: “We model smooth curves for key variables; edf shows wiggliness. More edf ⇒ more flexibility.”  
+- **Tradeoff**: More flexibility usually improves error (RMSE/MSE) and R², but reduce interpretability. Validate with cross‑validation and keep the story aligned with business intuition.
