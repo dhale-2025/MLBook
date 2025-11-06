@@ -438,5 +438,175 @@
     "crumbs": [
       "<span class='chapter-number'>5</span>  <span class='chapter-title'>GAM— Piecewise, LOESS, and GAM Splines - Python Version</span>"
     ]
+  },
+  {
+    "objectID": "Tree_Based_R.html",
+    "href": "Tree_Based_R.html",
+    "title": "6  Tree Based Models - R Version",
+    "section": "",
+    "text": "6.1 Visual Roadmap\nCode\nflowchart LR\n    A[\"Data (Ames)\"]\n    DT[\"Decision Tree (Baseline)\"]\n    RF[\"Random Forest (Bagging + Random Features)\"]\n    XGB[\"XGBoost (Boosted Trees + Regularization)\"]\n    Compare[\"Model Comparison\"]\n    \n    A --&gt; DT\n    A --&gt; RF\n    A --&gt; XGB\n    DT --&gt; Compare\n    RF --&gt; Compare\n    XGB --&gt; Compare\n\n\n\n\n\nflowchart LR\n    A[\"Data (Ames)\"]\n    DT[\"Decision Tree (Baseline)\"]\n    RF[\"Random Forest (Bagging + Random Features)\"]\n    XGB[\"XGBoost (Boosted Trees + Regularization)\"]\n    Compare[\"Model Comparison\"]\n    \n    A --&gt; DT\n    A --&gt; RF\n    A --&gt; XGB\n    DT --&gt; Compare\n    RF --&gt; Compare\n    XGB --&gt; Compare",
+    "crumbs": [
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Tree Based Models - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "Tree_Based_R.html#libraries-data-split",
+    "href": "Tree_Based_R.html#libraries-data-split",
+    "title": "6  Tree Based Models - R Version",
+    "section": "6.2 Libraries, Data, Split",
+    "text": "6.2 Libraries, Data, Split\n\n\nCode\nlibrary(tidyverse)\nlibrary(caret)\nlibrary(rpart)\nlibrary(rpart.plot)\nlibrary(randomForest)\nlibrary(xgboost)\nlibrary(Ckmeans.1d.dp)\nlibrary(pdp)\nlibrary(AmesHousing)\n\names &lt;- make_ordinal_ames()\names &lt;- ames %&gt;% mutate(id = row_number())\n\nset.seed(4321)\ntraining &lt;- ames %&gt;% sample_frac(0.7)\ntesting &lt;- anti_join(ames, training, by = 'id')\n\ntraining &lt;- training %&gt;% \n  select(Sale_Price,\n         Bedroom_AbvGr, Year_Built, Mo_Sold, Lot_Area, Street, Central_Air,\n         First_Flr_SF, Second_Flr_SF, Full_Bath, Half_Bath, Fireplaces,\n         Garage_Area, Gr_Liv_Area, TotRms_AbvGrd)\n\ntraining.df &lt;- as.data.frame(training)",
+    "crumbs": [
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Tree Based Models - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "Tree_Based_R.html#decision-tree-baseline",
+    "href": "Tree_Based_R.html#decision-tree-baseline",
+    "title": "6  Tree Based Models - R Version",
+    "section": "6.3 Decision Tree (Baseline)",
+    "text": "6.3 Decision Tree (Baseline)\n\n\nCode\nset.seed(12345)\ntree.ames &lt;- rpart(Sale_Price ~ ., data = training.df, method = \"anova\",\n                   control = rpart.control(cp = 0.005))\n\nrpart.plot(tree.ames, type = 2, fallen.leaves = TRUE, cex = 0.6,\n           main = \"Decision Tree for Ames Housing\")\n\n\n\n\n\n\n\n\n\nCode\ntesting_sel &lt;- testing %&gt;% select(names(training.df))\npred_tree &lt;- predict(tree.ames, newdata = testing_sel)\n\ntree_perf &lt;- testing_sel %&gt;% \n  mutate(pred = pred_tree,\n         AE = abs(Sale_Price - pred),\n         APE = 100*abs((Sale_Price - pred)/Sale_Price)) %&gt;%\n  summarise(Model = \"Decision Tree\",\n            RMSE = sqrt(mean((Sale_Price - pred)^2)),\n            MAE = mean(AE),\n            MAPE = mean(APE),\n            R2 = 1 - sum((Sale_Price - pred)^2)/sum((Sale_Price - mean(Sale_Price))^2))\ntree_perf\n\n\n# A tibble: 1 × 5\n  Model           RMSE    MAE  MAPE    R2\n  &lt;chr&gt;          &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;\n1 Decision Tree 42938. 28322.  17.5 0.727",
+    "crumbs": [
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Tree Based Models - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "Tree_Based_R.html#random-forest-random-variable-pdps-and-importance",
+    "href": "Tree_Based_R.html#random-forest-random-variable-pdps-and-importance",
+    "title": "6  Tree Based Models - R Version",
+    "section": "6.4 Random Forest: Random Variable, PDPs, and Importance",
+    "text": "6.4 Random Forest: Random Variable, PDPs, and Importance\n\n\nCode\n# Add random variable for feature selection sanity check\ntraining.df$random &lt;- rnorm(nrow(training.df))\n\nset.seed(12345)\nrf.ames &lt;- randomForest(Sale_Price ~ ., data = training.df, ntree = 500, mtry = 4, importance = TRUE)\nplot(rf.ames, main = \"Random Forest: Error vs Trees\")\n\n\n\n\n\n\n\n\n\nCode\nvarImpPlot(rf.ames, sort = TRUE, n.var = 15, main = \"Random Forest: Variables vs Random Baseline\")\n\n\n\n\n\n\n\n\n\nCode\nimportance(rf.ames)\n\n\n                 %IncMSE IncNodePurity\nBedroom_AbvGr 16.7830622  2.081292e+11\nYear_Built    59.6827740  2.608576e+12\nMo_Sold        0.6717216  1.820404e+11\nLot_Area      16.2410098  5.818823e+11\nStreet         4.6451725  5.141533e+09\nCentral_Air   15.9709319  1.023533e+11\nFirst_Flr_SF  37.4760827  1.884177e+12\nSecond_Flr_SF 24.6324055  6.159270e+11\nFull_Bath     12.3716046  6.191162e+11\nHalf_Bath     13.6183708  1.153802e+11\nFireplaces    26.1893181  5.796209e+11\nGarage_Area   28.4006898  1.961373e+12\nGr_Liv_Area   35.1279551  2.445543e+12\nTotRms_AbvGrd 13.9865453  4.189078e+11\nrandom         1.2436860  1.937137e+11\n\n\nCode\n# Partial dependence for key variables\npartialPlot(rf.ames, training.df, Year_Built, main = \"Partial Dependence: Year_Built (RF)\")\n\n\n\n\n\n\n\n\n\nCode\npartialPlot(rf.ames, training.df, Garage_Area, main = \"Partial Dependence: Garage_Area (RF)\")\n\n\n\n\n\n\n\n\n\n\n6.4.1 Random Forest Results\n\n\nCode\ntesting_sel$random &lt;- rnorm(nrow(testing_sel))\ntesting_sel$pred_rf &lt;- predict(rf.ames, testing_sel)\n\nrf_perf &lt;- testing_sel %&gt;% \n  mutate(AE = abs(Sale_Price - pred_rf),\n         APE = 100*abs((Sale_Price - pred_rf)/Sale_Price)) %&gt;%\n  summarise(Model = \"Random Forest\",\n            RMSE = sqrt(mean((Sale_Price - pred_rf)^2)),\n            MAE = mean(AE),\n            MAPE = mean(APE),\n            R2 = 1 - sum((Sale_Price - pred_rf)^2)/sum((Sale_Price - mean(Sale_Price))^2))\nrf_perf\n\n\n# A tibble: 1 × 5\n  Model           RMSE    MAE  MAPE    R2\n  &lt;chr&gt;          &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;\n1 Random Forest 30147. 19223.  11.6 0.866",
+    "crumbs": [
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Tree Based Models - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "Tree_Based_R.html#xgboost-random-variable-cv-tuning-pdps",
+    "href": "Tree_Based_R.html#xgboost-random-variable-cv-tuning-pdps",
+    "title": "6  Tree Based Models - R Version",
+    "section": "6.5 XGBoost: Random Variable, CV, Tuning, PDPs",
+    "text": "6.5 XGBoost: Random Variable, CV, Tuning, PDPs\n\n\nCode\ntraining$random &lt;- rnorm(nrow(training))\ntrain_x &lt;- model.matrix(Sale_Price ~ ., data = training)[, -1]\ntrain_y &lt;- training$Sale_Price\n\nset.seed(12345)\nxgb.ames &lt;- xgboost(\n  data = train_x, label = train_y, subsample = 0.5, nrounds = 100,\n  objective = \"reg:squarederror\", verbose = 0\n)\n\nxgbcv.ames &lt;- xgb.cv(\n  data = train_x, label = train_y, subsample = 0.5, nrounds = 100,\n  nfold = 10, objective = \"reg:squarederror\", verbose = 0\n)\n\ntune_grid &lt;- expand.grid(\n  nrounds = 24,\n  eta = c(0.1, 0.15, 0.2, 0.25, 0.3),\n  max_depth = c(1:10),\n  gamma = c(0),\n  colsample_bytree = 1,\n  min_child_weight = 1,\n  subsample = c(0.25, 0.5, 0.75, 1)\n)\n\nset.seed(12345)\nxgb.ames.caret &lt;- train(\n  x = train_x, y = train_y,\n  method = \"xgbTree\",\n  tuneGrid = tune_grid,\n  trControl = trainControl(method = 'cv', number = 10)\n)\nplot(xgb.ames.caret)\n\n\n\n\n\n\n\n\n\nCode\n# Fit tuned model\nxgb.ames &lt;- xgboost(\n  data = train_x, label = train_y, subsample = 1,\n  nrounds = 24, eta = 0.25, max_depth = 5,\n  objective = \"reg:squarederror\", verbose = 0\n)\n\n# Variable importance including random variable\nxgb.ggplot.importance(xgb.importance(feature_names = colnames(train_x), model = xgb.ames))\n\n\n\n\n\n\n\n\n\nCode\n# Partial dependence plots\ntrain_df &lt;- as.data.frame(train_x)\n\npartial(xgb.ames, pred.var = \"Year_Built\",\n        plot = TRUE, rug = TRUE, alpha = 0.1, plot.engine = \"lattice\",\n        train = train_df, pdp.color = \"red\")\n\n\n\n\n\n\n\n\n\nCode\npartial(xgb.ames, pred.var = \"Garage_Area\",\n        plot = TRUE, rug = TRUE, alpha = 0.1, plot.engine = \"lattice\",\n        train = train_df)\n\n\n\n\n\n\n\n\n\n\n6.5.1 XGBoost Results (Aligned Columns)\n\n\nCode\ntesting$random &lt;- rnorm(nrow(testing))\ntesting_x &lt;- model.matrix(Sale_Price ~ ., data = testing)[, -1]\n\n# Align test columns to training columns\nmissing_cols &lt;- setdiff(colnames(train_x), colnames(testing_x))\nfor (col in missing_cols) {\n  testing_x &lt;- cbind(testing_x, 0)\n  colnames(testing_x)[ncol(testing_x)] &lt;- col\n}\ntesting_x &lt;- testing_x[, colnames(train_x)]\n\ntesting_sel$pred_xgb &lt;- predict(xgb.ames, testing_x)\n\nxgb_perf &lt;- testing_sel %&gt;% \n  mutate(AE = abs(Sale_Price - pred_xgb),\n         APE = 100*abs((Sale_Price - pred_xgb)/Sale_Price)) %&gt;%\n  summarise(Model = \"XGBoost\",\n            RMSE = sqrt(mean((Sale_Price - pred_xgb)^2)),\n            MAE = mean(AE),\n            MAPE = mean(APE),\n            R2 = 1 - sum((Sale_Price - pred_xgb)^2)/sum((Sale_Price - mean(Sale_Price))^2))\nxgb_perf\n\n\n# A tibble: 1 × 5\n  Model     RMSE    MAE  MAPE    R2\n  &lt;chr&gt;    &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;\n1 XGBoost 30355. 19820.  11.8 0.864",
+    "crumbs": [
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Tree Based Models - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "Tree_Based_R.html#final-model-comparison",
+    "href": "Tree_Based_R.html#final-model-comparison",
+    "title": "6  Tree Based Models - R Version",
+    "section": "6.6 Final Model Comparison",
+    "text": "6.6 Final Model Comparison\n\n\nCode\nbind_rows(tree_perf, rf_perf, xgb_perf) %&gt;%\n  arrange(RMSE)\n\n\n# A tibble: 3 × 5\n  Model           RMSE    MAE  MAPE    R2\n  &lt;chr&gt;          &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;\n1 Random Forest 30147. 19223.  11.6 0.866\n2 XGBoost       30355. 19820.  11.8 0.864\n3 Decision Tree 42938. 28322.  17.5 0.727\n\n\n\nSummary: The Decision Tree provides interpretability, Random Forest and XGBoost attempt to further reduce bias and manage variance error through randomization and ensembles of weak learners. The issue is that they become less and less interpretable, so we have to introduce other tools to understand what variables are important and how they are relating to the outcome.",
+    "crumbs": [
+      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Tree Based Models - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "Tree_Based_Python2.html",
+    "href": "Tree_Based_Python2.html",
+    "title": "7  Tree Based Models - Python Version",
+    "section": "",
+    "text": "7.1 Visual Roadmap\nCode\nflowchart LR\n    A[\"Data (Ames)\"]\n    DT[\"Decision Tree (Baseline)\"]\n    RF[\"Random Forest (Bagging + Random Features)\"]\n    XGB[\"XGBoost (Boosted Trees + Regularization)\"]\n    Compare[\"Model Comparison\"]\n    \n    A --&gt; DT\n    A --&gt; RF\n    A --&gt; XGB\n    DT --&gt; Compare\n    RF --&gt; Compare\n    XGB --&gt; Compare\n\n\n\n\n\nflowchart LR\n    A[\"Data (Ames)\"]\n    DT[\"Decision Tree (Baseline)\"]\n    RF[\"Random Forest (Bagging + Random Features)\"]\n    XGB[\"XGBoost (Boosted Trees + Regularization)\"]\n    Compare[\"Model Comparison\"]\n    \n    A --&gt; DT\n    A --&gt; RF\n    A --&gt; XGB\n    DT --&gt; Compare\n    RF --&gt; Compare\n    XGB --&gt; Compare",
+    "crumbs": [
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Tree Based Models - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "Tree_Based_Python2.html#setup-and-data-preparation",
+    "href": "Tree_Based_Python2.html#setup-and-data-preparation",
+    "title": "7  Tree Based Models - Python Version",
+    "section": "7.2 Setup and Data Preparation",
+    "text": "7.2 Setup and Data Preparation\n\n\nCode\nimport pandas as pd\nimport numpy as np\nfrom sklearn.datasets import fetch_openml\nfrom sklearn.model_selection import train_test_split, RandomizedSearchCV, KFold\nfrom sklearn.tree import DecisionTreeRegressor, plot_tree\nfrom sklearn.ensemble import RandomForestRegressor\nfrom sklearn.inspection import PartialDependenceDisplay\nfrom xgboost import XGBRegressor, plot_importance\nfrom sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score\nimport matplotlib.pyplot as plt\nimport warnings\nwarnings.filterwarnings(\"ignore\")\n\n# Set random seed for reproducibility\nseed = 12345\nnp.random.seed(seed)\n\n# Load Ames dataset\names = fetch_openml(name=\"house_prices\", as_frame=True)\ndf = ames.frame\n\n# Feature selection matching R version\nfeatures = [\n    'BedroomAbvGr', 'YearBuilt', 'MoSold', 'LotArea', 'Street', 'CentralAir',\n    '1stFlrSF', '2ndFlrSF', 'FullBath', 'HalfBath', 'Fireplaces',\n    'GarageArea', 'GrLivArea', 'TotRmsAbvGrd'\n]\ndf = df[features + ['SalePrice']].dropna()\n\n# Encode categoricals\ndf = pd.get_dummies(df, drop_first=True)\n\n# Train/test split\ntrain, test = train_test_split(df, test_size=0.3, random_state=seed)\n\n# Add random variable for variable-importance baseline\ntrain['random'] = np.random.randn(len(train))\ntest['random'] = np.random.randn(len(test))\n\nX_train = train.drop(columns=['SalePrice'])\ny_train = train['SalePrice']\nX_test = test.drop(columns=['SalePrice'])\ny_test = test['SalePrice']",
+    "crumbs": [
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Tree Based Models - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "Tree_Based_Python2.html#decision-tree-baseline",
+    "href": "Tree_Based_Python2.html#decision-tree-baseline",
+    "title": "7  Tree Based Models - Python Version",
+    "section": "7.3 Decision Tree (Baseline)",
+    "text": "7.3 Decision Tree (Baseline)\n\n\nCode\ntree = DecisionTreeRegressor(random_state=seed, max_depth=5)\ntree.fit(X_train, y_train)\n\nplt.figure(figsize=(16,8))\nplot_tree(tree, feature_names=X_train.columns, filled=True, max_depth=3)\nplt.title(\"Decision Tree for Ames Housing\")\nplt.show()\n\n# Metrics\npred_tree = tree.predict(X_test)\nrmse_tree = mean_squared_error(y_test, pred_tree)\nmae_tree = mean_absolute_error(y_test, pred_tree)\nmape_tree = np.mean(np.abs((y_test - pred_tree) / y_test)) * 100\nr2_tree = r2_score(y_test, pred_tree)\n\npd.DataFrame([[\"Decision Tree\", rmse_tree, mae_tree, mape_tree, r2_tree]],\n             columns=[\"Model\", \"RMSE\", \"MAE\", \"MAPE\", \"R2\"])\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nModel\nRMSE\nMAE\nMAPE\nR2\n\n\n\n\n0\nDecision Tree\n2.378377e+09\n28465.348099\n17.701235\n0.522975",
+    "crumbs": [
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Tree Based Models - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "Tree_Based_Python2.html#random-forest-random-variable-importance-pdps-and-tuning",
+    "href": "Tree_Based_Python2.html#random-forest-random-variable-importance-pdps-and-tuning",
+    "title": "7  Tree Based Models - Python Version",
+    "section": "7.4 Random Forest: Random Variable, Importance, PDPs, and Tuning",
+    "text": "7.4 Random Forest: Random Variable, Importance, PDPs, and Tuning\n\n\nCode\nrf = RandomForestRegressor(random_state=seed)\n\n# Define parameter grid (similar to R tuning)\nparam_dist_rf = {\n    'n_estimators': [100, 200, 300, 400, 500],\n    'max_features': ['sqrt', 'log2', None, 4, 6, 8],\n    'max_depth': [None, 5, 10, 15, 20],\n    'min_samples_split': [2, 5, 10]\n}\n\ncv = KFold(n_splits=10, shuffle=True, random_state=seed)\n\nrf_random = RandomizedSearchCV(\n    estimator=rf,\n    param_distributions=param_dist_rf,\n    n_iter=20,\n    cv=cv,\n    random_state=seed,\n    n_jobs=-1,\n    scoring='neg_root_mean_squared_error'\n)\n\nrf_random.fit(X_train, y_train)\nrf_best = rf_random.best_estimator_\nprint(\"Best Random Forest Parameters:\", rf_random.best_params_)\n\n# Importance with random variable\nimportances = pd.Series(rf_best.feature_importances_, index=X_train.columns).sort_values(ascending=False)\nimportances[:15].plot(kind='barh', title='Random Forest: Top Variables (with Random Baseline)')\nplt.show()\n\n# Partial dependence plots\nplt.figure()\nPartialDependenceDisplay.from_estimator(rf_best, X_train, ['YearBuilt', 'GarageArea'])\nplt.suptitle(\"Partial Dependence (Random Forest)\")\nplt.show()\n\n# Performance metrics\npred_rf = rf_best.predict(X_test)\nrmse_rf = mean_squared_error(y_test, pred_rf)\nmae_rf = mean_absolute_error(y_test, pred_rf)\nmape_rf = np.mean(np.abs((y_test - pred_rf) / y_test)) * 100\nr2_rf = r2_score(y_test, pred_rf)\n\npd.DataFrame([[\"Random Forest (Tuned)\", rmse_rf, mae_rf, mape_rf, r2_rf]],\n             columns=[\"Model\", \"RMSE\", \"MAE\", \"MAPE\", \"R2\"])\n\n\nBest Random Forest Parameters: {'n_estimators': 500, 'min_samples_split': 2, 'max_features': 4, 'max_depth': 20}\n\n\n\n\n\n\n\n\n\n&lt;Figure size 672x480 with 0 Axes&gt;\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nModel\nRMSE\nMAE\nMAPE\nR2\n\n\n\n\n0\nRandom Forest (Tuned)\n1.093313e+09\n19889.772151\n12.832756\n0.780717",
+    "crumbs": [
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Tree Based Models - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "Tree_Based_Python2.html#xgboost-random-variable-importance-pdps-and-tuning",
+    "href": "Tree_Based_Python2.html#xgboost-random-variable-importance-pdps-and-tuning",
+    "title": "7  Tree Based Models - Python Version",
+    "section": "7.5 XGBoost: Random Variable, Importance, PDPs, and Tuning",
+    "text": "7.5 XGBoost: Random Variable, Importance, PDPs, and Tuning\n\n\nCode\nxgb = XGBRegressor(\n    objective='reg:squarederror',\n    random_state=seed,\n    n_jobs=-1\n)\n\n# Define tuning grid similar to R (eta = learning_rate, subsample, max_depth)\nparam_dist_xgb = {\n    'n_estimators': [24, 50, 100, 200],\n    'learning_rate': [0.1, 0.15, 0.2, 0.25, 0.3],\n    'max_depth': [1, 3, 5, 7, 10],\n    'subsample': [0.25, 0.5, 0.75, 1],\n    'colsample_bytree': [0.5, 0.75, 1]\n}\n\nxgb_random = RandomizedSearchCV(\n    estimator=xgb,\n    param_distributions=param_dist_xgb,\n    n_iter=20,\n    cv=cv,\n    random_state=seed,\n    n_jobs=-1,\n    scoring='neg_root_mean_squared_error'\n)\n\nxgb_random.fit(X_train, y_train)\nxgb_best = xgb_random.best_estimator_\nprint(\"Best XGBoost Parameters:\", xgb_random.best_params_)\n\n# Importance plot with random variable\nplot_importance(xgb_best, max_num_features=15, importance_type='gain')\nplt.title(\"XGBoost: Variable Importance (with Random Baseline)\")\nplt.show()\n\n# Partial dependence plots\nplt.figure()\nPartialDependenceDisplay.from_estimator(xgb_best, X_train, ['YearBuilt', 'GarageArea'])\nplt.suptitle(\"Partial Dependence (XGBoost)\")\nplt.show()\n\n# Metrics\npred_xgb = xgb_best.predict(X_test)\nrmse_xgb = mean_squared_error(y_test, pred_xgb)\nmae_xgb = mean_absolute_error(y_test, pred_xgb)\nmape_xgb = np.mean(np.abs((y_test - pred_xgb) / y_test)) * 100\nr2_xgb = r2_score(y_test, pred_xgb)\n\npd.DataFrame([[\"XGBoost (Tuned)\", rmse_xgb, mae_xgb, mape_xgb, r2_xgb]],\n             columns=[\"Model\", \"RMSE\", \"MAE\", \"MAPE\", \"R2\"])\n\n\nBest XGBoost Parameters: {'subsample': 0.75, 'n_estimators': 50, 'max_depth': 5, 'learning_rate': 0.15, 'colsample_bytree': 0.5}\n\n\n\n\n\n\n\n\n\n&lt;Figure size 672x480 with 0 Axes&gt;\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nModel\nRMSE\nMAE\nMAPE\nR2\n\n\n\n\n0\nXGBoost (Tuned)\n1.133839e+09\n20819.921875\n13.330445\n0.772589",
+    "crumbs": [
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Tree Based Models - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "Tree_Based_Python2.html#final-model-comparison",
+    "href": "Tree_Based_Python2.html#final-model-comparison",
+    "title": "7  Tree Based Models - Python Version",
+    "section": "7.6 Final Model Comparison",
+    "text": "7.6 Final Model Comparison\n\n\nCode\nresults = pd.DataFrame([\n    [\"Decision Tree\", rmse_tree, mae_tree, mape_tree, r2_tree],\n    [\"Random Forest (Tuned)\", rmse_rf, mae_rf, mape_rf, r2_rf],\n    [\"XGBoost (Tuned)\", rmse_xgb, mae_xgb, mape_xgb, r2_xgb]\n], columns=[\"Model\", \"RMSE\", \"MAE\", \"MAPE\", \"R2\"]).sort_values(\"RMSE\")\nresults\n\n\n\n\n\n\n\n\n\nModel\nRMSE\nMAE\nMAPE\nR2\n\n\n\n\n1\nRandom Forest (Tuned)\n1.093313e+09\n19889.772151\n12.832756\n0.780717\n\n\n2\nXGBoost (Tuned)\n1.133839e+09\n20819.921875\n13.330445\n0.772589\n\n\n0\nDecision Tree\n2.378377e+09\n28465.348099\n17.701235\n0.522975\n\n\n\n\n\n\n\n\nSummary: The Decision Tree provides interpretability, Random Forest and XGBoost attempt to further reduce bias and manage variance error through randomization and ensembles of weak learners. The issue is that they become less and less interpretable, so we have to introduce other tools to understand what variables are important and how they are relating to the outcome.",
+    "crumbs": [
+      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Tree Based Models - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "rf-xgb-params.html",
+    "href": "rf-xgb-params.html",
+    "title": "8  Understanding Random Forest and XGBoost Hyperparameters",
+    "section": "",
+    "text": "8.1 Random Forest Hyperparameters",
+    "crumbs": [
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Understanding Random Forest and XGBoost Hyperparameters</span>"
+    ]
+  },
+  {
+    "objectID": "rf-xgb-params.html#random-forest-hyperparameters",
+    "href": "rf-xgb-params.html#random-forest-hyperparameters",
+    "title": "8  Understanding Random Forest and XGBoost Hyperparameters",
+    "section": "",
+    "text": "8.1.1 ️ Switching Between Regression and Classification\n\n\n\n\n\n\n\n\nLanguage\nHow to Specify Regression\nHow to Specify Classification\n\n\n\n\nR\nrandomForest(y ~ ., data = df) where y is numeric\nrandomForest(y ~ ., data = df) where y is a factor\n\n\nPython\nRandomForestRegressor()\nRandomForestClassifier()\n\n\n\nIn R, the outcome type (numeric vs factor) determines whether the model performs regression or classification automatically.\nIn Python, you explicitly choose the class (RandomForestRegressor or RandomForestClassifier).\n\n\n\n\n\n\n\n\n\n\n\n\nConcept\nR (randomForest)\nPython (RandomForestRegressor / RandomForestClassifier)\nMeaning / Role\nTypical Values\nImpact / Interpretation\n\n\n\n\nModel type\nDetermined by outcome type (numeric vs factor)\nDifferent estimator class\nDefines whether the forest predicts continuous or categorical outcomes\n–\nChoose based on target type\n\n\nNumber of trees\nntree\nn_estimators\nNumber of trees to grow in the forest\n100–1000 (500 common)\nMore trees reduce variance but increase runtime\n\n\nFeatures per split\nmtry\nmax_features\n# of variables randomly selected at each split\nRegression: √p; Classification: p/3\nSmaller → higher bias, more diversity; larger → lower bias, more correlation\n\n\nMax tree depth\n(no direct arg, via nodesize)\nmax_depth\nMaximum depth of each tree\nNone, or 5–30\nDeeper trees capture complexity but risk overfitting\n\n\nMin samples per split\n(via nodesize indirectly)\nmin_samples_split\nMinimum # of samples to split a node\n2–10\nLarger → smoother, higher bias; smaller → lower bias, higher variance\n\n\nMin samples per leaf\n(via nodesize)\nmin_samples_leaf\nMinimum samples per terminal node\n1–5\nPrevents tiny leaves, reduces overfitting\n\n\nBootstrap sampling\nreplace\nbootstrap\nWhether to sample with replacement\nTRUE/FALSE\nAdds randomness; TRUE recommended\n\n\nSample fraction per tree\n(rarely tuned)\nmax_samples\nFraction of training data used per tree\n0.5–1.0\nLower → more randomness, higher bias\n\n\nLearning objective\nImplicit: minimize MSE (regression) or Gini/entropy (classification)\nImplicit: minimize MSE or Gini/entropy\nObjective changes automatically with model type\n–\nRegression averages numeric values; classification votes on class labels\n\n\nRandom seed\nset.seed()\nrandom_state\nEnsures reproducibility\nany integer\nUse same seed for consistency\n\n\n\n\n\n\n8.1.2 Thinking About Random Forest Tuning\n\nStart with many trees (≥ 500).\n\nTune mtry / max_features to balance bias vs variance.\n\nUse max_depth, min_samples_split, or min_samples_leaf to prevent overfitting.\n\nRF tuning is relatively forgiving — focus on efficiency and stability rather than micro‑optimization.\n\nFor classification, check OOB error or ROC‑AUC rather than RMSE.",
+    "crumbs": [
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Understanding Random Forest and XGBoost Hyperparameters</span>"
+    ]
+  },
+  {
+    "objectID": "rf-xgb-params.html#xgboost-hyperparameters",
+    "href": "rf-xgb-params.html#xgboost-hyperparameters",
+    "title": "8  Understanding Random Forest and XGBoost Hyperparameters",
+    "section": "8.2 XGBoost Hyperparameters",
+    "text": "8.2 XGBoost Hyperparameters\n\n\n\n\n\n\n\n\n\n\n\nConcept\nR (xgboost)\nPython (XGBRegressor / XGBClassifier)\nMeaning / Role\nTypical Values\nImpact / Interpretation\n\n\n\n\nBoosting rounds\nnrounds\nn_estimators\nTotal # of trees (boosting steps)\n100–1000\nToo high → overfit unless learning rate small\n\n\nLearning rate\neta\nlearning_rate\nShrinks each tree’s contribution\n0.01–0.3\nLower = slower, safer; higher = faster, riskier\n\n\nTree depth\nmax_depth\nmax_depth\nMax depth per tree\n3–10\nShallow = less overfit; deep = more complex\n\n\nMin child weight\nmin_child_weight\nmin_child_weight\nMin sum of instance weights per leaf\n1–10\nLarger = more conservative splits\n\n\nSubsample (rows)\nsubsample\nsubsample\nFraction of training rows used per round\n0.5–1.0\nLower adds randomness, improves generalization\n\n\nCol sample (features)\ncolsample_bytree\ncolsample_bytree\nFraction of features per tree\n0.5–1.0\nReduces feature correlation\n\n\nGamma\ngamma\ngamma\nMin loss reduction to split a node\n0–5\nHigher = more conservative, prevents overfitting\n\n\nL1 regularization\nalpha\nreg_alpha\nPenalty on abs(weights)\n0–10\nEncourages sparsity (feature selection)\n\n\nL2 regularization\nlambda\nreg_lambda\nPenalty on squared(weights)\n0–10\nControls weight magnitudes (stability)\n\n\nLearning objective\nobjective\nobjective\nSpecifies prediction type\n\"reg:squarederror\", \"binary:logistic\", etc.\nMust match your target type\n\n\nEarly stopping\nvia xgb.cv()\nearly_stopping_rounds\nStops when no improvement\n10–50 rounds\nPrevents unnecessary rounds\n\n\nSeed\nset.seed()\nrandom_state\nEnsures reproducibility\nany integer\nConsistent results across runs\n\n\n\n\n\n8.2.1 Thinking About XGBoost Tuning\n\nStart simple — tune n_estimators, max_depth, and learning_rate first.\n\nAdd regularization (gamma, alpha, lambda) to control overfitting.\n\nUse subsample and colsample_bytree to add randomness.",
+    "crumbs": [
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Understanding Random Forest and XGBoost Hyperparameters</span>"
+    ]
+  },
+  {
+    "objectID": "rf-xgb-params.html#practical-tips-and-heuristics",
+    "href": "rf-xgb-params.html#practical-tips-and-heuristics",
+    "title": "8  Understanding Random Forest and XGBoost Hyperparameters",
+    "section": "8.3 Practical Tips and Heuristics",
+    "text": "8.3 Practical Tips and Heuristics\n\n\n\n\n\n\n\n\nSituation\nRandom Forest Strategy\nXGBoost Strategy\n\n\n\n\nOverfitting\nIncrease min_samples_split, reduce max_depth\nLower learning_rate, increase gamma or min_child_weight\n\n\nUnderfitting\nIncrease n_estimators, allow deeper trees\nLower regularization, increase max_depth or n_estimators\n\n\nSlow training\nReduce trees or sample fraction\nIncrease learning_rate, reduce trees\n\n\nUnstable results\nFix random_state, use more trees\nFix random_state, enable early stopping\n\n\nHigh variance\nLower max_features, increase randomness\nIncrease subsample diversity, lower max_depth",
+    "crumbs": [
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Understanding Random Forest and XGBoost Hyperparameters</span>"
+    ]
+  },
+  {
+    "objectID": "rf-xgb-params.html#ruleofthumb-summary",
+    "href": "rf-xgb-params.html#ruleofthumb-summary",
+    "title": "8  Understanding Random Forest and XGBoost Hyperparameters",
+    "section": "8.4 Rule‑of‑Thumb Summary",
+    "text": "8.4 Rule‑of‑Thumb Summary\n\n\n\n\n\n\n\n\nParameter\nLow Value →\nHigh Value →\n\n\n\n\nn_estimators\nUnderfitting\nStable but slower\n\n\nmax_depth\nSimpler model (underfit)\nComplex model (overfit)\n\n\nlearning_rate\nSlow, steady, robust\nFast, risk of overfit\n\n\nsubsample / colsample_bytree\nMore bias, less variance\nLower bias, higher variance\n\n\nmtry / max_features\nMore randomization\nMore correlation between trees\n\n\nmin_samples_split / min_child_weight\nFlexible, low bias\nConservative, higher bias\n\n\n\n\n\n8.4.1 Key Takeaways\n\nRandom Forest\n\nRegression/classification determined by outcome type (R) or model class (Python).\n\nReduces variance through bagging.\n\nTuning focuses on stability and efficiency.\n\nXGBoost\n\nRequires explicit objective selection.\n\nReduces error via boosting and regularization.\n\nUse interpretability tools (importance, PDPs, SHAP) to understand why tuning changes model behavior.",
+    "crumbs": [
+      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Understanding Random Forest and XGBoost Hyperparameters</span>"
+    ]
   }
 ]
