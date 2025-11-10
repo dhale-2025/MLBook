@@ -16,28 +16,36 @@ book:
     - Tree_Based_R.qmd
     - Tree_Based_Python2.qmd
     - rf-xgb-params.qmd
-    - neural-network-models.qmd
+    - neural-network-Rversion.qmd
+    - neural-networks-python.qmd
     - naive-bayes-models.qmd
     - model-agnostic-interpretability.qmd
     - support-vector-machines.qmd
 
-# Use Jupyter for Python execution
-jupyter: python3
-
+# ---------------------------------------------------------------------
+# Execution defaults for both R + Python chapters
+# ---------------------------------------------------------------------
 execute:
-  kernel: python3
-  daemon: false
   freeze: auto
-  keep-md: false
   cache: true
   echo: true
   warning: false
   message: false
-  python:
-    path: "/opt/anaconda3/bin/python"
+  daemon: false
+  keep-md: false
 
-# Tell Quarto explicitly where Python is located
-engine: "/opt/anaconda3/bin/python"
+# ---------------------------------------------------------------------
+# Ensure R chapters use your ARM-native Python for reticulate
+# ---------------------------------------------------------------------
+env:
+  RETICULATE_PYTHON: "/Users/donaldhale/r-arm/bin/python"
+
+# ---------------------------------------------------------------------
+# Ensure Python-only QMDs run through Jupyter (Anaconda)
+# ---------------------------------------------------------------------
+jupyter: python3
+python:
+  executable: /opt/anaconda3/bin/python
 
 format:
   html:
@@ -47,5 +55,6 @@ format:
     toc: true
   pdf:
     documentclass: scrreprt
+
 
 

@@ -1,252 +1,52 @@
 [
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "Machine Learning with R and Python",
+    "objectID": "neural-network-Rversion.html",
+    "href": "neural-network-Rversion.html",
+    "title": "9  Neural Networks in R",
     "section": "",
-    "text": "About\nThis book is a companion to the Machine Learning Class. It will be a repository of R and Python Code. The chapters will be updated as we progress through the class.",
+    "text": "9.1 Introduction\nThis chapter introduces neural networks in R, progressing from feed-forward to recurrent (RNN) and convolutional (CNN) architectures.\nIt uses the Ames housing dataset, a sine wave sequence, and the MNIST digit dataset to demonstrate increasingly complex network structures.\nEach example illustrates a different ANN architecture.",
     "crumbs": [
-      "About"
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Neural Networks in R</span>"
     ]
   },
   {
-    "objectID": "introduction.html",
-    "href": "introduction.html",
-    "title": "1  Introduction",
-    "section": "",
-    "text": "1.1 Introduction to Machine Learning\nMachine Learning (ML) is a branch of artificial intelligence (AI) that focuses on building systems that learn patterns from data and make predictions or decisions without being explicitly programmed to perform specific tasks. Instead of writing rules by hand, a machine learning algorithm “learns” from examples in the data.",
+    "objectID": "neural-network-Rversion.html#cross-validation-tuning",
+    "href": "neural-network-Rversion.html#cross-validation-tuning",
+    "title": "9  Neural Networks in R",
+    "section": "11.1 1.2 Cross-Validation Tuning",
+    "text": "11.1 1.2 Cross-Validation Tuning\nWe tune two important parameters: - size — number of neurons in the hidden layer\n- decay — regularization strength (prevents overfitting)\ncaret::train() automates this search using k-fold cross-validation.\n\n\nCode\ntune_grid &lt;- expand.grid(size = c(3,5,7,9), decay = c(0,0.1,0.5,1))\nctrl &lt;- trainControl(method = \"cv\", number = 5)\n\nset.seed(123)\nnn.tuned &lt;- train(\n  x = x_train, y = as.numeric(y_train_s),\n  method = \"nnet\",\n  tuneGrid = tune_grid,\n  trControl = ctrl,\n  linout = TRUE,\n  trace = FALSE\n)\n\nnn.tuned$bestTune\n\n\n   size decay\n15    9   0.5\n\n\nCode\nplot(nn.tuned)",
     "crumbs": [
-      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Neural Networks in R</span>"
     ]
   },
   {
-    "objectID": "introduction.html#what-is-machine-learning",
-    "href": "introduction.html#what-is-machine-learning",
-    "title": "1  Introduction",
-    "section": "1.2 What is Machine Learning?",
-    "text": "1.2 What is Machine Learning?\nFormally, machine learning is the process of using data to train a model to make accurate predictions or decisions. The model identifies patterns in the training data and generalizes these patterns to new, unseen data.\nML can be thought of as:\n\nPredictive modeling – learning a function that maps inputs (features) to outputs (targets).\nAutomated decision-making – systems that improve their performance over time without explicit reprogramming.",
+    "objectID": "neural-network-Rversion.html#evaluate-performance",
+    "href": "neural-network-Rversion.html#evaluate-performance",
+    "title": "9  Neural Networks in R",
+    "section": "11.2 1.3 Evaluate Performance",
+    "text": "11.2 1.3 Evaluate Performance\nAfter identifying the best parameters, we retrain the model and evaluate its predictive accuracy.\n\n\nCode\nbest_size  &lt;- nn.tuned$bestTune$size\nbest_decay &lt;- nn.tuned$bestTune$decay\n\nset.seed(123)\nnn.final &lt;- nnet(\n  y ~ ., \n  data = train_df, \n  size = best_size, \n  decay = best_decay, \n  linout = TRUE, \n  trace = FALSE\n)\n\npred_std &lt;- predict(nn.final, newdata = as.data.frame(x_test))\npred_nn  &lt;- pred_std * attr(y_train_s, \"scaled:scale\") + attr(y_train_s, \"scaled:center\")\n\nperf &lt;- data.frame(\n  MAE  = mean(abs(y_test - pred_nn)),\n  MAPE = mean(abs((y_test - pred_nn) / y_test)) * 100\n)\nperf\n\n\n       MAE     MAPE\n1 20392.57 12.63864",
     "crumbs": [
-      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Neural Networks in R</span>"
     ]
   },
   {
-    "objectID": "introduction.html#major-types-of-machine-learning",
-    "href": "introduction.html#major-types-of-machine-learning",
-    "title": "1  Introduction",
-    "section": "1.3 Major Types of Machine Learning",
-    "text": "1.3 Major Types of Machine Learning\nMachine learning is commonly categorized into several types based on the nature of the task and availability of labeled data.\n\n1.3.1 1. Supervised Learning\n\nUses labeled data, meaning that each training example has an input and a known output.\nThe goal is to learn a function that maps inputs to outputs accurately.\nTypical tasks:\n\nRegression: Predict a continuous variable (e.g., house prices).\nClassification: Predict a categorical variable (e.g., spam vs. non-spam email).\n\n\n\n\n1.3.2 2. Unsupervised Learning\n\nWorks with unlabeled data, where the output is unknown.\nThe goal is to discover patterns or structure in the data.\nTypical tasks:\n\nClustering: Group similar observations together (e.g., customer segmentation).\nDimensionality reduction: Reduce the number of features while retaining important information (e.g., PCA).\n\n\n\n\n1.3.3 3. Semi-Supervised Learning\n\nCombines a small amount of labeled data with a large amount of unlabeled data.\nUseful when labeling data is expensive or time-consuming.\n\n\n\n1.3.4 4. Reinforcement Learning\n\nFocuses on learning through trial and error.\nAn agent learns to take actions in an environment to maximize cumulative reward.\nExamples: Robotics, game AI, recommendation systems.",
+    "objectID": "neural-network-Rversion.html#train-and-evaluate-the-cnn",
+    "href": "neural-network-Rversion.html#train-and-evaluate-the-cnn",
+    "title": "9  Neural Networks in R",
+    "section": "14.1 4.1 Train and Evaluate the CNN",
+    "text": "14.1 4.1 Train and Evaluate the CNN\n\n\nCode\nmodel_cnn &lt;- keras_model_sequential() |&gt;\n  layer_conv_2d(filters = 16, kernel_size = c(3,3), activation = \"relu\", input_shape = c(28,28,1)) |&gt;\n  layer_max_pooling_2d(pool_size = c(2,2)) |&gt;\n  layer_flatten() |&gt;\n  layer_dense(units = 32, activation = \"relu\") |&gt;\n  layer_dense(units = 10, activation = \"softmax\")\n\ncompile(model_cnn, optimizer = \"adam\",\n        loss = \"categorical_crossentropy\",\n        metrics = \"accuracy\")\n\nhistory_cnn &lt;- fit(model_cnn, x_train, y_train_cat,\n                   epochs = 3, batch_size = 64, validation_split = 0.2, verbose = 0)\n\nplot(history_cnn)\n\n\n\n\n\n\n\n\n\nCode\nscore &lt;- evaluate(model_cnn, x_test, y_test_cat)\n\n\n32/32 - 0s - 745us/step - accuracy: 0.9000 - loss: 0.3169\n\n\nCode\nscore\n\n\n$accuracy\n[1] 0.9\n\n$loss\n[1] 0.3169269",
     "crumbs": [
-      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Neural Networks in R</span>"
     ]
   },
   {
-    "objectID": "introduction.html#objectives-of-machine-learning",
-    "href": "introduction.html#objectives-of-machine-learning",
-    "title": "1  Introduction",
-    "section": "1.4 Objectives of Machine Learning",
-    "text": "1.4 Objectives of Machine Learning\nThe main objective of machine learning is to build models that generalize well from historical data to make accurate predictions or decisions on new, unseen data. Key considerations include:\n\nAccuracy – How well does the model predict outcomes?\nGeneralization – Does the model perform well on unseen data, or is it overfitting the training data?\nInterpretability – Can humans understand how the model makes predictions?",
+    "objectID": "neural-network-Rversion.html#visualizing-correct-and-incorrect-predictions",
+    "href": "neural-network-Rversion.html#visualizing-correct-and-incorrect-predictions",
+    "title": "9  Neural Networks in R",
+    "section": "14.2 4.2 Visualizing Correct and Incorrect Predictions",
+    "text": "14.2 4.2 Visualizing Correct and Incorrect Predictions\nWe visualize examples of digits that the CNN classified correctly and incorrectly.\n\n\nCode\npred_probs &lt;- predict(model_cnn, x_test)\n\n\n32/32 - 0s - 1ms/step\n\n\nCode\npred_classes &lt;- apply(pred_probs, 1, which.max) - 1\n\ncorrect_idx &lt;- which(pred_classes == y_test)[1:6]\nincorrect_idx &lt;- which(pred_classes != y_test)[1:6]\n\npar(mfrow=c(2,6), mar=c(1,1,2,1))\nfor (i in correct_idx) {\n  img &lt;- x_test[i,,,1]\n  image(1:28, 1:28, t(apply(img, 2, rev)), col=gray.colors(255), axes=FALSE,\n        main=paste(\"✓\", y_test[i]))\n}\nfor (i in incorrect_idx) {\n  img &lt;- x_test[i,,,1]\n  image(1:28, 1:28, t(apply(img, 2, rev)), col=gray.colors(255), axes=FALSE,\n        main=paste(\"✗\", y_test[i], \"→\", pred_classes[i]))\n}",
     "crumbs": [
-      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
-    ]
-  },
-  {
-    "objectID": "introduction.html#bias-variance-tradeoff",
-    "href": "introduction.html#bias-variance-tradeoff",
-    "title": "1  Introduction",
-    "section": "1.5 Bias-Variance Tradeoff",
-    "text": "1.5 Bias-Variance Tradeoff\nA fundamental concept in machine learning is the bias-variance tradeoff, which explains the balance between:\n\nBias: Error due to overly simplistic models that underfit the data.\nVariance: Error due to overly complex models that overfit the training data.\n\nThe goal is to find a model that minimizes the total prediction error:\n[ = ^2 + + ]\n\nUnderfitting → High bias, low variance\n\nOverfitting → Low bias, high variance\n\nThe optimal model balances bias and variance for the best predictive performance.",
-    "crumbs": [
-      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
-    ]
-  },
-  {
-    "objectID": "introduction.html#the-machine-learning-process",
-    "href": "introduction.html#the-machine-learning-process",
-    "title": "1  Introduction",
-    "section": "1.6 The Machine Learning Process",
-    "text": "1.6 The Machine Learning Process\nA typical workflow in machine learning consists of the following steps:\n\nData Collection\n\nGather data from experiments, databases, or external sources.\n\nData Preprocessing\n\nHandle missing values, outliers, and feature engineering.\n\nModel Selection\n\nChoose an appropriate algorithm (e.g., linear regression, random forest, neural networks).\n\nModel Training\n\nFit the model to the training data.\n\nModel Evaluation\n\nAssess performance using metrics such as RMSE, accuracy, precision, recall, or AUC.\n\nModel Tuning\n\nAdjust hyperparameters to improve performance.\n\nModel Deployment\n\nUse the trained model to make predictions on new data.\n\nMonitoring and Maintenance\n\nContinuously track model performance and retrain if necessary.",
-    "crumbs": [
-      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
-    ]
-  },
-  {
-    "objectID": "introduction.html#summary",
-    "href": "introduction.html#summary",
-    "title": "1  Introduction",
-    "section": "1.7 Summary",
-    "text": "1.7 Summary\nMachine learning allows us to build predictive models that learn from data. Understanding the different types of ML, their objectives, and the tradeoffs between bias and variance is critical to applying ML effectively. The remainder of this book explores practical algorithms, their implementation in R and Python, and strategies for model selection and interpretation.",
-    "crumbs": [
-      "<span class='chapter-number'>1</span>  <span class='chapter-title'>Introduction</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection.html",
-    "href": "resampling-model-selection.html",
-    "title": "2  Model Selection and Regularization - R Version",
-    "section": "",
-    "text": "2.1 Overview\nIn this section, we’ll use the Ames Housing dataset to demonstrate model selection and regularization.\nWe’ll cover:",
-    "crumbs": [
-      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Model Selection and Regularization - R Version</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection.html#overview",
-    "href": "resampling-model-selection.html#overview",
-    "title": "2  Model Selection and Regularization - R Version",
-    "section": "",
-    "text": "Splitting data into training and testing sets\n\nPerforming stepwise regression with cross-validation\n\nRunning Ridge and Lasso regression, and visualizing how λ affects RMSE and model complexity\n\nExploring Elastic Net, varying α to balance Ridge and Lasso\n\nComparing all models on the test set",
-    "crumbs": [
-      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Model Selection and Regularization - R Version</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection.html#step-0-setup-and-data-preparation",
-    "href": "resampling-model-selection.html#step-0-setup-and-data-preparation",
-    "title": "2  Model Selection and Regularization - R Version",
-    "section": "2.2 Step 0: Setup and Data Preparation",
-    "text": "2.2 Step 0: Setup and Data Preparation\nWe’ll use a reduced set of variables for speed and clarity.\n\n\nCode\n# Suppress messages and warnings globally\nknitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)\n\nlibrary(tidyverse)\nlibrary(caret)\nlibrary(glmnet)\nlibrary(AmesHousing)\nlibrary(GGally)\n\nset.seed(123)\n\n# Load data and split into 70% training, 30% testing\names &lt;- make_ordinal_ames() %&gt;% mutate(id = row_number())\ntrain &lt;- ames %&gt;% sample_frac(0.7)\ntest  &lt;- anti_join(ames, train, by = \"id\")\n\n# Select a manageable subset of predictors\nkeep &lt;- c(\"Sale_Price\", \"Bedroom_AbvGr\", \"Year_Built\", \"Mo_Sold\", \"Lot_Area\",\n          \"Street\", \"Central_Air\", \"First_Flr_SF\", \"Second_Flr_SF\", \"Full_Bath\",\n          \"Half_Bath\", \"Fireplaces\", \"Garage_Area\", \"Gr_Liv_Area\", \"TotRms_AbvGrd\")\n\ntrain &lt;- train %&gt;% select(all_of(keep))\ntest  &lt;- test  %&gt;% select(all_of(keep))\n\n# Convert categorical variables to factors\ntrain &lt;- train %&gt;% mutate(across(c(Street, Central_Air), as.factor))\ntest  &lt;- test %&gt;% mutate(across(c(Street, Central_Air), as.factor))",
-    "crumbs": [
-      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Model Selection and Regularization - R Version</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection.html#step-1-stepwise-regression-with-10-fold-cross-validation",
-    "href": "resampling-model-selection.html#step-1-stepwise-regression-with-10-fold-cross-validation",
-    "title": "2  Model Selection and Regularization - R Version",
-    "section": "2.3 Step 1: Stepwise Regression with 10-Fold Cross Validation",
-    "text": "2.3 Step 1: Stepwise Regression with 10-Fold Cross Validation\nWe’ll use backward stepwise regression as a traditional benchmark.\n\n\nCode\nctrl &lt;- trainControl(method = \"cv\", number = 10)\n\nstep_model &lt;- train(\n  Sale_Price ~ ., data = train,\n  method = \"lmStepAIC\",\n  trControl = ctrl,\n  trace = FALSE,\n  direction = \"backward\"\n)\n\n# Evaluate on the test set\nstep_pred &lt;- predict(step_model, newdata = test)\nstep_perf &lt;- postResample(step_pred, test$Sale_Price)\nstep_perf\n\n\n        RMSE     Rsquared          MAE \n3.820776e+04 7.670269e-01 2.613098e+04 \n\n\nCode\n# Visualize predicted vs observed\nggplot(data.frame(obs = test$Sale_Price, pred = step_pred), aes(obs, pred)) +\n  geom_point(alpha = 0.6) +\n  geom_abline(linetype = \"dashed\", color = \"red\") +\n  labs(title = \"Stepwise Regression: Observed vs Predicted\",\n       x = \"Observed Price\", y = \"Predicted Price\")\n\n\n\n\n\n\n\n\n\nNote:\nStepwise regression is intuitive and fast, but it can be unstable.\nStepwise regression (forward, backward, or both) selects predictors one at a time based on how much they improve a criterion (like AIC or adjusted R²).",
-    "crumbs": [
-      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Model Selection and Regularization - R Version</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection.html#step-2-ridge-and-lasso-regression",
-    "href": "resampling-model-selection.html#step-2-ridge-and-lasso-regression",
-    "title": "2  Model Selection and Regularization - R Version",
-    "section": "2.4 Step 2: Ridge and Lasso Regression",
-    "text": "2.4 Step 2: Ridge and Lasso Regression\nRidge and Lasso both shrink coefficients, but in different ways: - Ridge shrinks all coefficients toward zero. - Lasso can set some coefficients exactly to zero, performing variable selection.\n\n\nCode\nx_train &lt;- model.matrix(Sale_Price ~ ., train)[, -1]\ny_train &lt;- train$Sale_Price\nx_test  &lt;- model.matrix(Sale_Price ~ ., test)[, -1]\ny_test  &lt;- test$Sale_Price\n\nset.seed(123)\ncv_ridge &lt;- cv.glmnet(x_train, y_train, alpha = 0, nfolds = 10)\ncv_lasso &lt;- cv.glmnet(x_train, y_train, alpha = 1, nfolds = 10)\n\n\n\n2.4.1 Visualizing RMSE and Model Complexity\n\n\nCode\nbuild_path_df &lt;- function(cvfit, label) {\n  fit &lt;- cvfit$glmnet.fit\n  tibble(\n    lambda = fit$lambda,\n    log_lambda = log(fit$lambda),\n    RMSE = sqrt(cvfit$cvm),\n    nonzero = colSums(abs(fit$beta) &gt; 0),\n    Model = label\n  )\n}\n\nridge_df &lt;- build_path_df(cv_ridge, \"Ridge\")\nlasso_df &lt;- build_path_df(cv_lasso, \"Lasso\")\ndf &lt;- bind_rows(ridge_df, lasso_df)\n\nggplot(df, aes(log_lambda, RMSE, color = Model)) +\n  geom_line(size = 1) +\n  labs(title = \"RMSE vs log(lambda)\", y = \"Cross-validated RMSE\", x = \"log(lambda)\")\n\n\n\n\n\n\n\n\n\nCode\nggplot(df, aes(log_lambda, nonzero, color = Model)) +\n  geom_line(size = 1) +\n  labs(title = \"Number of Nonzero Coefficients vs log(lambda)\",\n       y = \"Number of Nonzero Coefficients\", x = \"log(lambda)\")\n\n\n\n\n\n\n\n\n\nNote:\n- Increasing λ increases regularization.\n- Ridge never eliminates variables, Lasso can.\n- There’s a sweet spot where RMSE is minimized.",
-    "crumbs": [
-      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Model Selection and Regularization - R Version</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection.html#step-3-elastic-net-balancing-ridge-and-lasso",
-    "href": "resampling-model-selection.html#step-3-elastic-net-balancing-ridge-and-lasso",
-    "title": "2  Model Selection and Regularization - R Version",
-    "section": "2.5 Step 3: Elastic Net (Balancing Ridge and Lasso)",
-    "text": "2.5 Step 3: Elastic Net (Balancing Ridge and Lasso)\nElastic Net introduces α to control the mix between Ridge (α = 0) and Lasso (α = 1).\n\n\nCode\nalpha_grid &lt;- seq(0, 1, by = 0.25)\n\nelastic_results &lt;- map_df(alpha_grid, function(a) {\n  cv_fit &lt;- cv.glmnet(x_train, y_train, alpha = a, nfolds = 10)\n  tibble(\n    alpha = a,\n    best_lambda = cv_fit$lambda.min,\n    best_RMSE = sqrt(min(cv_fit$cvm)),\n    nonzero = sum(abs(coef(cv_fit, s = \"lambda.min\")[-1]) &gt; 0)\n  )\n})\n\nelastic_results\n\n\n# A tibble: 5 × 4\n  alpha best_lambda best_RMSE nonzero\n  &lt;dbl&gt;       &lt;dbl&gt;     &lt;dbl&gt;   &lt;int&gt;\n1  0          5603.    42664.      14\n2  0.25       1224.    42675.      14\n3  0.5        1552.    42952.      11\n4  0.75        650.    42612.      11\n5  1          1126.    43048.      10\n\n\n\n2.5.1 Visualizing α Effects\n\n\nCode\nggplot(elastic_results, aes(alpha, best_RMSE)) +\n  geom_line() + geom_point(size = 2) +\n  labs(title = \"Elastic Net: Best RMSE vs Alpha\",\n       y = \"Best Cross-validated RMSE\", x = \"Alpha\")\n\n\n\n\n\n\n\n\n\nCode\nggplot(elastic_results, aes(alpha, nonzero)) +\n  geom_line() + geom_point(size = 2) +\n  labs(title = \"Elastic Net: Model Size vs Alpha\",\n       y = \"Number of Nonzero Coefficients\", x = \"Alpha\")\n\n\n\n\n\n\n\n\n\nNote:\nElastic Net combines the strengths of Ridge and Lasso: - Ridge for stability. - Lasso for sparsity. - Often performs best at intermediate α values.",
-    "crumbs": [
-      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Model Selection and Regularization - R Version</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection.html#step-4-comparing-all-models-on-the-test-set",
-    "href": "resampling-model-selection.html#step-4-comparing-all-models-on-the-test-set",
-    "title": "2  Model Selection and Regularization - R Version",
-    "section": "2.6 Step 4: Comparing All Models on the Test Set",
-    "text": "2.6 Step 4: Comparing All Models on the Test Set\nWe’ll compare Stepwise, Ridge, Lasso, and the best Elastic Net.\n\n\nCode\nridge_pred &lt;- predict(cv_ridge, newx = x_test, s = \"lambda.min\")\nlasso_pred &lt;- predict(cv_lasso, newx = x_test, s = \"lambda.min\")\n\nbest_alpha &lt;- elastic_results %&gt;% arrange(best_RMSE) %&gt;% slice(1) %&gt;% pull(alpha)\ncv_en_best &lt;- cv.glmnet(x_train, y_train, alpha = best_alpha, nfolds = 10)\nelastic_pred &lt;- predict(cv_en_best, newx = x_test, s = \"lambda.min\")\n\n\n\ncompare_tbl &lt;- bind_rows(\n  Stepwise = as_tibble_row(postResample(step_pred, test$Sale_Price)),\n  Ridge = as_tibble_row(postResample(ridge_pred, y_test)),\n  Lasso = as_tibble_row(postResample(lasso_pred, y_test)),\n  Elastic = as_tibble_row(postResample(elastic_pred, y_test)),\n  .id = \"Model\"\n)\n\ncolnames(compare_tbl) &lt;- c(\"Model\", \"RMSE\", \"Rsquared\", \"MAE\")\ncompare_tbl &lt;- compare_tbl %&gt;% arrange(RMSE)\ncompare_tbl\n\n\n# A tibble: 4 × 4\n  Model      RMSE Rsquared    MAE\n  &lt;chr&gt;     &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;\n1 Stepwise 38208.    0.767 26131.\n2 Lasso    38297.    0.767 26045.\n3 Elastic  38301.    0.767 26039.\n4 Ridge    38412.    0.766 26022.\n\n\n\n\nCode\n# ------------------------------------------------------------\n\n# Display the best cross-validated Lasso, Ridge, and Elastic Net models\n\n\n# ------------------------------------------------------------\n\nlibrary(glmnet)\nlibrary(knitr)\n\n# Helper function to summarize a fitted cv.glmnet model\n\nsummarize_glmnet &lt;- function(cvfit, X_train, y_train, X_test, y_test, model_name) {\n  cat(\"\\n============================================\\n\")\n  cat(\"Model:\", model_name, \"\\n\")\n  cat(\"============================================\\n\")\n  \n  # Extract best lambda\n  best_lambda &lt;- cvfit$lambda.min\n  cat(\"Best Lambda (lambda.min):\", round(best_lambda, 6), \"\\n\")\n  \n  # Coefficients (non-zero)\n  coefs &lt;- as.matrix(coef(cvfit, s = \"lambda.min\"))\n  nonzero &lt;- coefs[coefs != 0, , drop = FALSE]\n  \n  # Print nonzero coefficients\n  cat(\"\\nNonzero Coefficients:\\n\")\n  print(knitr::kable(as.data.frame(nonzero), digits = 4))\n  \n  # Predictions and performance\n  pred_train &lt;- predict(cvfit, newx = X_train, s = \"lambda.min\")\n  pred_test  &lt;- predict(cvfit, newx = X_test,  s = \"lambda.min\")\n  \n  rmse &lt;- function(y, yhat) sqrt(mean((y - yhat)^2))\n  rsq  &lt;- function(y, yhat) 1 - sum((y - yhat)^2) / sum((y - mean(y))^2)\n  \n  train_rmse &lt;- rmse(y_train, pred_train)\n  test_rmse  &lt;- rmse(y_test, pred_test)\n  test_r2    &lt;- rsq(y_test, pred_test)\n  \n  # Return one-row summary\n  data.frame(\n    Model = model_name,\n    Lambda = round(best_lambda, 6),\n    Train_RMSE = round(train_rmse, 2),\n    Test_RMSE = round(test_rmse, 2),\n    Test_R2 = round(test_r2, 3),\n    Nonzero_Coeff = nrow(nonzero)\n  )\n}\n\n# Summarize and display all three models\nresults &lt;- rbind(\n  summarize_glmnet(cv_lasso, x_train, y_train, x_test, y_test, \"Lasso\"),\n  summarize_glmnet(cv_ridge, x_train, y_train, x_test, y_test, \"Ridge\"),\n  summarize_glmnet(cv_en_best, x_train, y_train, x_test, y_test, \"Elastic Net\")\n)\n\n\n\n============================================\nModel: Lasso \n============================================\nBest Lambda (lambda.min): 444.0297 \n\nNonzero Coefficients:\n\n\n|              |    lambda.min|\n|:-------------|-------------:|\n|(Intercept)   | -1536712.4502|\n|Bedroom_AbvGr |   -12871.7248|\n|Year_Built    |      786.0097|\n|Lot_Area      |        0.3320|\n|StreetPave    |    14782.6929|\n|Central_AirY  |     3463.4742|\n|First_Flr_SF  |       22.9872|\n|Half_Bath     |    -1509.7005|\n|Fireplaces    |    11647.3233|\n|Garage_Area   |       62.2549|\n|Gr_Liv_Area   |       74.6167|\n|TotRms_AbvGrd |     1301.9029|\n\n============================================\nModel: Ridge \n============================================\nBest Lambda (lambda.min): 5603.019 \n\nNonzero Coefficients:\n\n\n|              |    lambda.min|\n|:-------------|-------------:|\n|(Intercept)   | -1398127.9251|\n|Bedroom_AbvGr |   -13051.9562|\n|Year_Built    |      706.9534|\n|Mo_Sold       |      105.9352|\n|Lot_Area      |        0.4001|\n|StreetPave    |    22908.4375|\n|Central_AirY  |     6951.0203|\n|First_Flr_SF  |       45.3168|\n|Second_Flr_SF |       21.9030|\n|Full_Bath     |     4203.4612|\n|Half_Bath     |      -26.1950|\n|Fireplaces    |    12666.1199|\n|Garage_Area   |       64.5695|\n|Gr_Liv_Area   |       42.3845|\n|TotRms_AbvGrd |     3067.4622|\n\n============================================\nModel: Elastic Net \n============================================\nBest Lambda (lambda.min): 592.0396 \n\nNonzero Coefficients:\n\n\n|              |    lambda.min|\n|:-------------|-------------:|\n|(Intercept)   | -1532932.2050|\n|Bedroom_AbvGr |   -12808.7530|\n|Year_Built    |      783.9250|\n|Lot_Area      |        0.3319|\n|StreetPave    |    14821.6671|\n|Central_AirY  |     3497.9772|\n|First_Flr_SF  |       23.2544|\n|Half_Bath     |    -1319.3051|\n|Fireplaces    |    11686.0135|\n|Garage_Area   |       62.4230|\n|Gr_Liv_Area   |       73.9778|\n|TotRms_AbvGrd |     1388.0576|\n\n\nCode\n# Combined performance table\ncat(\"\\n\\n***Model Performance Comparison***\\n\")\n\n\n\n\n***Model Performance Comparison***\n\n\nCode\nkable(results, caption = \"Performance of Cross-Validated Regularized Models\")\n\n\n\nPerformance of Cross-Validated Regularized Models\n\n\nModel\nLambda\nTrain_RMSE\nTest_RMSE\nTest_R2\nNonzero_Coeff\n\n\n\n\nLasso\n444.0297\n41745.42\n38296.94\n0.764\n12\n\n\nRidge\n5603.0194\n41830.59\n38411.78\n0.763\n15\n\n\nElastic Net\n592.0396\n41748.11\n38300.92\n0.764\n12",
-    "crumbs": [
-      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Model Selection and Regularization - R Version</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection.html#key-takeaways",
-    "href": "resampling-model-selection.html#key-takeaways",
-    "title": "2  Model Selection and Regularization - R Version",
-    "section": "2.7 Key Takeaways",
-    "text": "2.7 Key Takeaways\n\nStepwise selection is simple but can lead to unstable models.\n\nRidge adds stability via coefficient shrinkage.\n\nLasso enforces sparsity by removing weak predictors.\n\nElastic Net balances both effects.\n\nRegularization often produces models that generalize better than purely stepwise ones.",
-    "crumbs": [
-      "<span class='chapter-number'>2</span>  <span class='chapter-title'>Model Selection and Regularization - R Version</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection-python.html",
-    "href": "resampling-model-selection-python.html",
-    "title": "3  Model Selection and Regularization - Python Version",
-    "section": "",
-    "text": "3.1 Overview\nThis section parallels the R version of Model Selection and Regularization.\nWe will:",
-    "crumbs": [
-      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Model Selection and Regularization - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection-python.html#overview",
-    "href": "resampling-model-selection-python.html#overview",
-    "title": "3  Model Selection and Regularization - Python Version",
-    "section": "",
-    "text": "Load the Ames Housing data\n\nSplit into training and test sets\n\nPerform Ridge, Lasso, and Elastic Net regressions with 10-fold CV\n\nVisualize RMSE and coefficient shrinkage patterns\n\nCompare test set performance",
-    "crumbs": [
-      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Model Selection and Regularization - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection-python.html#step-0-setup-and-data",
-    "href": "resampling-model-selection-python.html#step-0-setup-and-data",
-    "title": "3  Model Selection and Regularization - Python Version",
-    "section": "3.2 Step 0: Setup and Data",
-    "text": "3.2 Step 0: Setup and Data\nWe’ll use scikit-learn for modeling.\nIf the CSVs ames_training.csv and ames_testing.csv are not present, you can load Ames Housing via the fetch_openml function.\n\n\nCode\nimport warnings\nwarnings.filterwarnings(\"ignore\")\n\nimport numpy as np\nimport pandas as pd\nimport matplotlib.pyplot as plt\nfrom sklearn.datasets import fetch_openml\nfrom sklearn.model_selection import train_test_split, KFold, cross_val_score\nfrom sklearn.preprocessing import OneHotEncoder, StandardScaler\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.linear_model import RidgeCV, LassoCV, ElasticNetCV\nfrom sklearn.metrics import mean_squared_error\n\n# Load Ames dataset directly\names = fetch_openml(name=\"house_prices\", as_frame=True)\ndf = ames.frame\n\n# Subset variables to match the R version\nkeep = [\n    \"SalePrice\",\"BedroomAbvGr\",\"YearBuilt\",\"MoSold\",\"LotArea\",\"Street\",\"CentralAir\",\n    \"1stFlrSF\",\"2ndFlrSF\",\"FullBath\",\"HalfBath\",\"Fireplaces\",\"GarageArea\",\n    \"GrLivArea\",\"TotRmsAbvGrd\"\n]\ndf = df[keep].copy()\n\n# Clean up names to match Python variable rules\ndf.columns = [\"Sale_Price\",\"Bedroom_AbvGr\",\"Year_Built\",\"Mo_Sold\",\"Lot_Area\",\"Street\",\n              \"Central_Air\",\"First_Flr_SF\",\"Second_Flr_SF\",\"Full_Bath\",\"Half_Bath\",\n              \"Fireplaces\",\"Garage_Area\",\"Gr_Liv_Area\",\"TotRms_AbvGrd\"]\n\n# Drop missing rows\ndf = df.dropna()\n\n# Train/test split (70/30)\ntrain, test = train_test_split(df, test_size=0.3, random_state=123)\n\n# Identify predictors and target\ny_train = train[\"Sale_Price\"]\ny_test  = test[\"Sale_Price\"]\nX_train = train.drop(columns=\"Sale_Price\")\nX_test  = test.drop(columns=\"Sale_Price\")\n\ncat_vars = [\"Street\",\"Central_Air\"]\nnum_vars = [c for c in X_train.columns if c not in cat_vars]\n\n# Preprocess: scale numeric, one-hot encode categorical\npreprocessor = ColumnTransformer([\n    (\"num\", StandardScaler(), num_vars),\n    (\"cat\", OneHotEncoder(drop=\"first\"), cat_vars)\n])",
-    "crumbs": [
-      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Model Selection and Regularization - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection-python.html#step-1-ridge-regression",
-    "href": "resampling-model-selection-python.html#step-1-ridge-regression",
-    "title": "3  Model Selection and Regularization - Python Version",
-    "section": "3.3 Step 1: Ridge Regression",
-    "text": "3.3 Step 1: Ridge Regression\nWe’ll use cross-validation to tune λ (alpha).\nThen we visualize RMSE vs log(lambda) and the number of nonzero coefficients.\n\n\nCode\nalphas = np.logspace(4, -4, 80)\nridge = Pipeline([\n    (\"prep\", preprocessor),\n    (\"model\", RidgeCV(alphas=alphas, scoring=\"neg_mean_squared_error\", cv=10))\n])\nridge.fit(X_train, y_train)\n\nridge_best = ridge.named_steps[\"model\"].alpha_\nprint(\"Best Ridge alpha:\", ridge_best)\n\n# Evaluate RMSE on test set\nridge_pred = ridge.predict(X_test)\nridge_rmse = np.sqrt(mean_squared_error(y_test, ridge_pred))\nprint(\"Test RMSE (Ridge):\", ridge_rmse)\n\n\nBest Ridge alpha: 94.33732216299774\nTest RMSE (Ridge): 37055.84511170759",
-    "crumbs": [
-      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Model Selection and Regularization - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection-python.html#step-2-lasso-regression",
-    "href": "resampling-model-selection-python.html#step-2-lasso-regression",
-    "title": "3  Model Selection and Regularization - Python Version",
-    "section": "3.4 Step 2: Lasso Regression",
-    "text": "3.4 Step 2: Lasso Regression\nLasso adds variable selection — some coefficients go exactly to zero.\n\n\nCode\nlasso = Pipeline([\n    (\"prep\", preprocessor),\n    (\"model\", LassoCV(alphas=alphas, cv=10, max_iter=20000))\n])\nlasso.fit(X_train, y_train)\n\nlasso_best = lasso.named_steps[\"model\"].alpha_\nprint(\"Best Lasso alpha:\", lasso_best)\n\nlasso_pred = lasso.predict(X_test)\nlasso_rmse = np.sqrt(mean_squared_error(y_test, lasso_pred))\nprint(\"Test RMSE (Lasso):\", lasso_rmse)\n\n\nBest Lasso alpha: 11.568875283162821\nTest RMSE (Lasso): 37074.74978063246",
-    "crumbs": [
-      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Model Selection and Regularization - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection-python.html#step-3-visualize-coefficient-shrinkage-and-rmse",
-    "href": "resampling-model-selection-python.html#step-3-visualize-coefficient-shrinkage-and-rmse",
-    "title": "3  Model Selection and Regularization - Python Version",
-    "section": "3.5 Step 3: Visualize Coefficient Shrinkage and RMSE",
-    "text": "3.5 Step 3: Visualize Coefficient Shrinkage and RMSE\nLet’s visualize how RMSE and model sparsity change with λ.\n\n\nCode\n# Compute RMSE path manually\ndef cv_rmse(model_class, X, y, alphas):\n    rmse = []\n    for a in alphas:\n        model = Pipeline([\n            (\"prep\", preprocessor),\n            (\"model\", model_class(alpha=a, max_iter=20000))\n        ])\n        scores = cross_val_score(model, X, y, scoring=\"neg_mean_squared_error\", cv=KFold(10, shuffle=True, random_state=123))\n        rmse.append(np.sqrt(-scores.mean()))\n    return np.array(rmse)\n\nfrom sklearn.linear_model import Ridge, Lasso\nridge_rmse_path = cv_rmse(Ridge, X_train, y_train, alphas)\nlasso_rmse_path = cv_rmse(Lasso, X_train, y_train, alphas)\n\nplt.figure()\nplt.plot(np.log(alphas), ridge_rmse_path, label=\"Ridge\")\nplt.plot(np.log(alphas), lasso_rmse_path, label=\"Lasso\")\nplt.xlabel(\"log(lambda)\")\nplt.ylabel(\"Cross-validated RMSE\")\nplt.title(\"RMSE vs log(lambda)\")\nplt.legend()\nplt.show()",
-    "crumbs": [
-      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Model Selection and Regularization - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection-python.html#step-4-elastic-net",
-    "href": "resampling-model-selection-python.html#step-4-elastic-net",
-    "title": "3  Model Selection and Regularization - Python Version",
-    "section": "3.6 Step 4: Elastic Net",
-    "text": "3.6 Step 4: Elastic Net\nElastic Net blends Ridge and Lasso.\nWe’ll vary α (the mix) and visualize the tradeoff.\n\n\nCode\nl1_ratios = np.linspace(0, 1, 6)\nen_cv = Pipeline([\n    (\"prep\", preprocessor),\n    (\"model\", ElasticNetCV(l1_ratio=l1_ratios, alphas=alphas, cv=10, max_iter=50000))\n])\nen_cv.fit(X_train, y_train)\n\nprint(\"Best Elastic Net alpha:\", en_cv.named_steps[\"model\"].alpha_)\nprint(\"Best Elastic Net l1_ratio:\", en_cv.named_steps[\"model\"].l1_ratio_)\n\nen_pred = en_cv.predict(X_test)\nen_rmse = np.sqrt(mean_squared_error(y_test, en_pred))\nprint(\"Test RMSE (Elastic Net):\", en_rmse)\n\n\nBest Elastic Net alpha: 0.55825862688627\nBest Elastic Net l1_ratio: 0.8\nTest RMSE (Elastic Net): 37134.497858434275",
-    "crumbs": [
-      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Model Selection and Regularization - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection-python.html#step-5-compare-models",
-    "href": "resampling-model-selection-python.html#step-5-compare-models",
-    "title": "3  Model Selection and Regularization - Python Version",
-    "section": "3.7 Step 5: Compare Models",
-    "text": "3.7 Step 5: Compare Models\n\n\nCode\nresults = pd.DataFrame({\n    \"Model\": [\"Ridge\", \"Lasso\", \"Elastic Net\"],\n    \"Test_RMSE\": [ridge_rmse, lasso_rmse, en_rmse]\n})\nprint(results.sort_values(\"Test_RMSE\"))\n\n\n         Model     Test_RMSE\n0        Ridge  37055.845112\n1        Lasso  37074.749781\n2  Elastic Net  37134.497858",
-    "crumbs": [
-      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Model Selection and Regularization - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "resampling-model-selection-python.html#summary",
-    "href": "resampling-model-selection-python.html#summary",
-    "title": "3  Model Selection and Regularization - Python Version",
-    "section": "3.8 Summary",
-    "text": "3.8 Summary\n\nRidge stabilizes coefficients by shrinking them.\n\nLasso enforces sparsity by zeroing weak predictors.\n\nElastic Net blends both for balance.\n\nRegularization often beats pure stepwise regression on unseen data.",
-    "crumbs": [
-      "<span class='chapter-number'>3</span>  <span class='chapter-title'>Model Selection and Regularization - Python Version</span>"
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Neural Networks in R</span>"
     ]
   },
   {
@@ -340,273 +140,53 @@
     ]
   },
   {
-    "objectID": "generalized-additive-models-python.html",
-    "href": "generalized-additive-models-python.html",
-    "title": "5  GAM— Piecewise, LOESS, and GAM Splines - Python Version",
-    "section": "",
-    "text": "5.1 1. Setup and Data\nCode\nimport sys\nprint(\"Active Python interpreter:\", sys.executable)\n\nimport numpy as np, pandas as pd\nimport matplotlib.pyplot as plt\n\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.preprocessing import OneHotEncoder, StandardScaler\nfrom sklearn.pipeline import Pipeline\nfrom sklearn.metrics import mean_squared_error, r2_score\nfrom sklearn.linear_model import LinearRegression, Ridge\nimport inspect\n\n# --- Fix for SciPy &gt;= 1.13 removing .A from sparse matrices ---\nimport scipy.sparse as sp\n\nif not hasattr(sp.spmatrix, \"A\"):\n    def _toarray(self):\n        return self.toarray()\n    sp.spmatrix.A = property(_toarray)\n# -------------------------------------------------------------\n\nnp.random.seed(4321)\n\n\nActive Python interpreter: /opt/anaconda3/bin/python\nCode\nfrom sklearn.datasets import fetch_openml\n\names = fetch_openml(name=\"house_prices\", as_frame=True).frame\n\nkeep = {\n    \"SalePrice\":\"SalePrice\",\n    \"BedroomAbvGr\":\"Bedroom_AbvGr\",\n    \"YearBuilt\":\"Year_Built\",\n    \"MoSold\":\"Mo_Sold\",\n    \"LotArea\":\"Lot_Area\",\n    \"Street\":\"Street\",\n    \"CentralAir\":\"Central_Air\",\n    \"1stFlrSF\":\"First_Flr_SF\",\n    \"2ndFlrSF\":\"Second_Flr_SF\",\n    \"FullBath\":\"Full_Bath\",\n    \"HalfBath\":\"Half_Bath\",\n    \"Fireplaces\":\"Fireplaces\",\n    \"GarageArea\":\"Garage_Area\",\n    \"GrLivArea\":\"Gr_Liv_Area\",\n    \"TotRmsAbvGrd\":\"TotRms_AbvGrd\"\n}\n\ndf = ames[list(keep.keys())].rename(columns=keep).dropna().copy()\n\nX = df.drop(columns=[\"SalePrice\"])\ny = df[\"SalePrice\"].values\n\nnum_cols = X.select_dtypes(include=[np.number]).columns.tolist()\ncat_cols = [c for c in X.columns if c not in num_cols]\n\n# Handle OneHotEncoder version changes and ensure dense output\nif \"sparse_output\" in inspect.signature(OneHotEncoder).parameters:\n    encoder = OneHotEncoder(drop=\"first\", handle_unknown=\"ignore\", sparse_output=False)\nelse:\n    encoder = OneHotEncoder(drop=\"first\", handle_unknown=\"ignore\", sparse=False)\n\npre = ColumnTransformer([\n    (\"num\", StandardScaler(), num_cols),\n    (\"cat\", encoder, cat_cols)\n], sparse_threshold=0)\n\nX_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=4321)\ndf.head()\n\n\n\n\n\n\n\n\n\nSalePrice\nBedroom_AbvGr\nYear_Built\nMo_Sold\nLot_Area\nStreet\nCentral_Air\nFirst_Flr_SF\nSecond_Flr_SF\nFull_Bath\nHalf_Bath\nFireplaces\nGarage_Area\nGr_Liv_Area\nTotRms_AbvGrd\n\n\n\n\n0\n208500\n3\n2003\n2\n8450\nPave\nY\n856\n854\n2\n1\n0\n548\n1710\n8\n\n\n1\n181500\n3\n1976\n5\n9600\nPave\nY\n1262\n0\n2\n0\n1\n460\n1262\n6\n\n\n2\n223500\n3\n2001\n9\n11250\nPave\nY\n920\n866\n2\n1\n1\n608\n1786\n6\n\n\n3\n140000\n3\n1915\n2\n9550\nPave\nY\n961\n756\n1\n0\n1\n642\n1717\n7\n\n\n4\n250000\n4\n2000\n12\n14260\nPave\nY\n1145\n1053\n2\n1\n1\n836\n2198\n9",
+    "objectID": "neural-network-Rversion.html#feed-forward-neural-networks-ames-data",
+    "href": "neural-network-Rversion.html#feed-forward-neural-networks-ames-data",
+    "title": "9  Neural Networks in R",
+    "section": "9.2 1. Feed-Forward Neural Networks (Ames Data)",
+    "text": "9.2 1. Feed-Forward Neural Networks (Ames Data)\nFeed-forward networks are the simplest type of neural networks. They map input features (like home size, rooms, or year built) to an output (home price) through layers of neurons.\nEach neuron applies a weighted sum and activation function, allowing the network to learn complex relationships between variables.\n\n\nCode\n#Note: This is specific to my environment \nlibrary(reticulate)\nuse_python(\"/Users/donaldhale/r-arm/bin/python\", required = TRUE)\n\nlibrary(keras3)\n\ntf &lt;- reticulate::import(\"tensorflow\", delay_load = FALSE)\ncat(\"TensorFlow version:\", tf$`__version__`, \"\\n\")\n\n\nTensorFlow version: 2.16.1 \n\n\n\n\nCode\nlibrary(tidyverse)\nlibrary(caret)\nlibrary(nnet)\nlibrary(NeuralNetTools)\nlibrary(AmesHousing)\n\nset.seed(4321)\n\n# Load and sample data\names &lt;- make_ordinal_ames() %&gt;% mutate(id = row_number())\ntrain_idx &lt;- sample(1:nrow(ames), 0.7 * nrow(ames))\ntraining &lt;- ames[train_idx, ]\ntesting  &lt;- ames[-train_idx, ]\n\n# Select a manageable subset of variables\nvars &lt;- c(\"Sale_Price\", \"Bedroom_AbvGr\", \"Year_Built\", \"Mo_Sold\", \"Lot_Area\",\n          \"Street\", \"Central_Air\", \"First_Flr_SF\", \"Second_Flr_SF\",\n          \"Full_Bath\", \"Half_Bath\", \"Fireplaces\", \"Garage_Area\",\n          \"Gr_Liv_Area\", \"TotRms_AbvGrd\")\ntraining &lt;- training[, vars]\ntesting  &lt;- testing[, vars]\n\n# Convert categorical predictors into dummy numeric columns\nx_train &lt;- model.matrix(Sale_Price ~ ., data = training)[, -1]\ny_train &lt;- training$Sale_Price\nx_test  &lt;- model.matrix(Sale_Price ~ ., data = testing)[, -1]\ny_test  &lt;- testing$Sale_Price\n\n# Drop low-variance predictors and scale for stable training\nnzv &lt;- nearZeroVar(x_train)\nif (length(nzv) &gt; 0) {\n  x_train &lt;- x_train[, -nzv, drop = FALSE]\n  x_test  &lt;- x_test[, -nzv, drop = FALSE]\n}\n\nx_train &lt;- scale(x_train)\nx_test  &lt;- scale(x_test, center = attr(x_train, \"scaled:center\"),\n                 scale = attr(x_train, \"scaled:scale\"))\n\ny_train_s &lt;- scale(y_train)\n\n# Combine into a single training dataframe\ntrain_df &lt;- data.frame(y = as.numeric(y_train_s), x_train)\n\nset.seed(123)\nnn.ames &lt;- nnet(y ~ ., data = train_df, size = 5, linout = TRUE, trace = FALSE)\nplotnet(nn.ames)\n\n\n\n\n\n\n\n\n\n\n\n9.2.1 1.2 Cross-Validation Tuning\nWe tune two important parameters: - size — number of neurons in the hidden layer\n- decay — regularization strength (prevents overfitting)\ncaret::train() automates this search using k-fold cross-validation.\n\n\nCode\ntune_grid &lt;- expand.grid(size = c(3,5,7,9), decay = c(0,0.1,0.5,1))\nctrl &lt;- trainControl(method = \"cv\", number = 5)\n\nset.seed(123)\nnn.tuned &lt;- train(\n  x = x_train, y = as.numeric(y_train_s),\n  method = \"nnet\",\n  tuneGrid = tune_grid,\n  trControl = ctrl,\n  linout = TRUE,\n  trace = FALSE\n)\n\nnn.tuned$bestTune\n\n\n   size decay\n15    9   0.5\n\n\nCode\nplot(nn.tuned)\n\n\n\n\n\n\n\n\n\n\n\n\n9.2.2 1.3 Evaluate Performance\nAfter identifying the best parameters, we retrain the model and evaluate its predictive accuracy.\n\n\nCode\nbest_size  &lt;- nn.tuned$bestTune$size\nbest_decay &lt;- nn.tuned$bestTune$decay\n\nset.seed(123)\nnn.final &lt;- nnet(\n  y ~ ., \n  data = train_df, \n  size = best_size, \n  decay = best_decay, \n  linout = TRUE, \n  trace = FALSE\n)\n\npred_std &lt;- predict(nn.final, newdata = as.data.frame(x_test))\npred_nn  &lt;- pred_std * attr(y_train_s, \"scaled:scale\") + attr(y_train_s, \"scaled:center\")\n\nperf &lt;- data.frame(\n  MAE  = mean(abs(y_test - pred_nn)),\n  MAPE = mean(abs((y_test - pred_nn) / y_test)) * 100\n)\nperf\n\n\n       MAE     MAPE\n1 20392.57 12.63864",
     "crumbs": [
-      "<span class='chapter-number'>5</span>  <span class='chapter-title'>GAM— Piecewise, LOESS, and GAM Splines - Python Version</span>"
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Neural Networks in R</span>"
     ]
   },
   {
-    "objectID": "generalized-additive-models-python.html#visual-check-for-nonlinearity",
-    "href": "generalized-additive-models-python.html#visual-check-for-nonlinearity",
-    "title": "5  GAM— Piecewise, LOESS, and GAM Splines - Python Version",
-    "section": "5.2 2. Visual Check for Nonlinearity",
-    "text": "5.2 2. Visual Check for Nonlinearity\n\n\nCode\nimport statsmodels.api as sm\nfig = plt.figure()\nplt.scatter(df[\"Gr_Liv_Area\"], df[\"SalePrice\"], s=8, alpha=0.3)\nlow = sm.nonparametric.lowess(df[\"SalePrice\"], df[\"Gr_Liv_Area\"], frac=0.3, return_sorted=True)\nplt.plot(low[:,0], low[:,1], linewidth=2)\nplt.title(\"SalePrice vs Gr_Liv_Area (LOESS smoother)\")\nplt.xlabel(\"Gr_Liv_Area\"); plt.ylabel(\"SalePrice\")\nplt.tight_layout()",
+    "objectID": "neural-network-Rversion.html#feed-forward-neural-networks-keras-3",
+    "href": "neural-network-Rversion.html#feed-forward-neural-networks-keras-3",
+    "title": "9  Neural Networks in R",
+    "section": "9.3 2. Feed-Forward Neural Networks (Keras 3)",
+    "text": "9.3 2. Feed-Forward Neural Networks (Keras 3)\nThe Keras 3 API is a modern deep learning interface. It supports more complex models and GPUs while maintaining a simple syntax.\nThis example shows the same concept as above using a multi-layer perceptron (MLP).\n\n\nCode\n#library(keras3)\nset.seed(123)\n\nmodel_ff &lt;- keras_model_sequential() |&gt;\n  layer_dense(units = 16, activation = \"relu\", input_shape = ncol(x_train)) |&gt;\n  layer_dropout(rate = 0.1) |&gt;\n  layer_dense(units = 1)\n\ncompile(model_ff, optimizer = optimizer_adam(learning_rate = 0.01),\n        loss = \"mse\", metrics = \"mae\")\n\nhistory &lt;- fit(model_ff, x_train, as.numeric(y_train_s),\n               epochs = 40, batch_size = 32, validation_split = 0.2, verbose = 0)\n\nplot(history)",
     "crumbs": [
-      "<span class='chapter-number'>5</span>  <span class='chapter-title'>GAM— Piecewise, LOESS, and GAM Splines - Python Version</span>"
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Neural Networks in R</span>"
     ]
   },
   {
-    "objectID": "generalized-additive-models-python.html#piecewise-regression-example",
-    "href": "generalized-additive-models-python.html#piecewise-regression-example",
-    "title": "5  GAM— Piecewise, LOESS, and GAM Splines - Python Version",
-    "section": "5.3 3. Piecewise Regression Example",
-    "text": "5.3 3. Piecewise Regression Example\n\n\nCode\nclass PiecewiseLinear:\n    def __init__(self, knot=2000.0):\n        self.knot = knot\n        self.lin = LinearRegression()\n\n    def _transform(self, x):\n        x1 = np.asarray(x).reshape(-1,1)\n        hx = np.maximum(0, x1 - self.knot)\n        return np.hstack([x1, hx])\n\n    def fit(self, x, y):\n        Z = self._transform(x)\n        self.lin.fit(Z, y)\n        return self\n\n    def predict(self, x):\n        Z = self._transform(x)\n        return self.lin.predict(Z)\n\npw = PiecewiseLinear(knot=2000).fit(df[\"Gr_Liv_Area\"].values, df[\"SalePrice\"].values)\n\ngrid = np.linspace(df[\"Gr_Liv_Area\"].min(), df[\"Gr_Liv_Area\"].max(), 200)\npred = pw.predict(grid)\n\nplt.figure()\nplt.scatter(df[\"Gr_Liv_Area\"], df[\"SalePrice\"], s=8, alpha=0.2)\nplt.plot(grid, pred, linewidth=2)\nplt.axvline(2000, linestyle=\"--\")\nplt.title(\"Piecewise Linear Fit at Knot = 2000\")\nplt.xlabel(\"Gr_Liv_Area\"); plt.ylabel(\"SalePrice\")\nplt.tight_layout()",
+    "objectID": "neural-network-Rversion.html#recurrent-neural-network-rnn",
+    "href": "neural-network-Rversion.html#recurrent-neural-network-rnn",
+    "title": "9  Neural Networks in R",
+    "section": "9.4 3. Recurrent Neural Network (RNN)",
+    "text": "9.4 3. Recurrent Neural Network (RNN)\nRNNs are ideal for sequential data such as time series, text, or speech.\nWe use a sine wave as a toy example because its repeating pattern requires the model to “remember” recent values — something feed-forward networks cannot do.\n\n\nCode\nset.seed(42)\nt &lt;- seq(0, 50, by = 0.1)\ny &lt;- sin(t)\nplot(t, y, type='l', main=\"Sine Wave Example\", ylab=\"y\", xlab=\"Time\")\n\n\n\n\n\n\n\n\n\nCode\nwindow_size &lt;- 20\nX &lt;- sapply(1:(length(y) - window_size), function(i) y[i:(i + window_size - 1)])\nX &lt;- t(X)\ny_out &lt;- y[(window_size + 1):length(y)]\nX &lt;- array(X, dim = c(nrow(X), window_size, 1))\n\nsplit &lt;- round(0.8 * nrow(X))\nx_train &lt;- X[1:split,,]; y_train &lt;- y_out[1:split]\nx_test  &lt;- X[(split + 1):nrow(X),,]; y_test  &lt;- y_out[(split + 1):length(y_out)]\n\nmodel_rnn &lt;- keras_model_sequential() |&gt;\n  layer_simple_rnn(units = 16, activation = \"tanh\", input_shape = c(window_size, 1)) |&gt;\n  layer_dense(units = 1)\n\ncompile(model_rnn, loss = \"mse\", optimizer = \"adam\")\n\nhistory_rnn &lt;- fit(model_rnn, x_train, y_train, epochs = 30, batch_size = 16,\n                   validation_split = 0.2, verbose = 0)\n\nplot(history_rnn)\n\n\n\n\n\n\n\n\n\nCode\npreds &lt;- predict(model_rnn, x_test)\n\n\n3/3 - 0s - 11ms/step\n\n\nCode\nplot(y_test, type='l', main=\"RNN Sine Prediction\", col='blue', ylab=\"y\")\nlines(preds, col='red')\nlegend(\"bottomleft\", legend=c(\"Actual\",\"Predicted\"), col=c(\"blue\",\"red\"), lty=1, bty=\"n\")",
     "crumbs": [
-      "<span class='chapter-number'>5</span>  <span class='chapter-title'>GAM— Piecewise, LOESS, and GAM Splines - Python Version</span>"
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Neural Networks in R</span>"
     ]
   },
   {
-    "objectID": "generalized-additive-models-python.html#mars-commented-out-for-reference-only",
-    "href": "generalized-additive-models-python.html#mars-commented-out-for-reference-only",
-    "title": "5  GAM— Piecewise, LOESS, and GAM Splines - Python Version",
-    "section": "5.4 4. MARS (Commented Out — For Reference Only)",
-    "text": "5.4 4. MARS (Commented Out — For Reference Only)\n# The MARS implementation (py-earth) is not actively maintained and may fail to install on modern Python.\n# If you wish to try it, install from conda-forge:\n#     conda install -c conda-forge sklearn-contrib-py-earth\n#\n# Example (commented out):\n#\n# from pyearth import Earth\n#\n# mars = Pipeline([(\"prep\", pre), (\"model\", Earth(max_degree=2))]).fit(X_train, y_train)\n# print(mars.named_steps[\"model\"].summary())\n#\n# xs = np.linspace(X[\"Garage_Area\"].min(), X[\"Garage_Area\"].max(), 200)\n# yhat = mars.predict(pd.DataFrame({\"Garage_Area\": xs}))\n#\n# plt.figure()\n# plt.scatter(X_train[\"Garage_Area\"], y_train, s=8, alpha=0.2)\n# plt.plot(xs, yhat, linewidth=2)\n# plt.title(\"MARS with Garage_Area (Commented Out Example)\")\n# plt.xlabel(\"Garage_Area\"); plt.ylabel(\"SalePrice\")\n# plt.tight_layout()",
+    "objectID": "neural-network-Rversion.html#convolutional-neural-network-cnn",
+    "href": "neural-network-Rversion.html#convolutional-neural-network-cnn",
+    "title": "9  Neural Networks in R",
+    "section": "9.5 4. Convolutional Neural Network (CNN)",
+    "text": "9.5 4. Convolutional Neural Network (CNN)\nCNNs are built for spatial pattern recognition — ideal for images.\nThe MNIST dataset contains 70,000 grayscale images of handwritten digits (0–9), each 28×28 pixels.\nThese lines prepare the data for use in a CNN.\n\n\nCode\n#library(keras3)\n\n# Load and preview the MNIST data\nmnist &lt;- dataset_mnist()\n\n# We only use a subset (5k train, 1k test) for quick demonstration\nx_train &lt;- mnist$train$x[1:5000,,]\ny_train &lt;- mnist$train$y[1:5000]\nx_test  &lt;- mnist$test$x[1:1000,,]\ny_test  &lt;- mnist$test$y[1:1000]\n\n# Normalize pixel values: 0-255 -&gt; 0-1\nx_train &lt;- x_train / 255\nx_test  &lt;- x_test / 255\n\n# Reshape to [samples, height, width, channels]\n# MNIST images are grayscale, so channels = 1\nx_train &lt;- array_reshape(x_train, c(nrow(x_train), 28, 28, 1))\nx_test  &lt;- array_reshape(x_test,  c(nrow(x_test),  28, 28, 1))\n\n# Convert labels to categorical one-hot vectors (10 classes for digits 0-9)\ny_train_cat &lt;- to_categorical(y_train, 10)\ny_test_cat  &lt;- to_categorical(y_test, 10)\n\n\n\n9.5.1 Explanation of the MNIST Preprocessing\n\nLoad the built-in dataset from Keras.\n\nSubsample for faster training (5,000 train / 1,000 test).\n\nNormalize pixel intensities to the 0–1 range.\n\nReshape to the 4D structure required by CNNs: [samples, height, width, channels].\n\nOne-hot encode labels, converting a digit like 3 into a vector [0,0,0,1,0,0,0,0,0,0].\n\nThese steps turn raw pixel data into numeric tensors suitable for learning.\n\n\n\n9.5.2 4.1 Train and Evaluate the CNN\n\n\nCode\nmodel_cnn &lt;- keras_model_sequential() |&gt;\n  layer_conv_2d(filters = 16, kernel_size = c(3,3), activation = \"relu\", input_shape = c(28,28,1)) |&gt;\n  layer_max_pooling_2d(pool_size = c(2,2)) |&gt;\n  layer_flatten() |&gt;\n  layer_dense(units = 32, activation = \"relu\") |&gt;\n  layer_dense(units = 10, activation = \"softmax\")\n\ncompile(model_cnn, optimizer = \"adam\",\n        loss = \"categorical_crossentropy\",\n        metrics = \"accuracy\")\n\nhistory_cnn &lt;- fit(model_cnn, x_train, y_train_cat,\n                   epochs = 3, batch_size = 64, validation_split = 0.2, verbose = 0)\n\nplot(history_cnn)\n\n\n\n\n\n\n\n\n\nCode\nscore &lt;- evaluate(model_cnn, x_test, y_test_cat)\n\n\n32/32 - 0s - 745us/step - accuracy: 0.9000 - loss: 0.3169\n\n\nCode\nscore\n\n\n$accuracy\n[1] 0.9\n\n$loss\n[1] 0.3169269\n\n\n\n\n\n9.5.3 4.2 Visualizing Correct and Incorrect Predictions\nWe visualize examples of digits that the CNN classified correctly and incorrectly.\n\n\nCode\npred_probs &lt;- predict(model_cnn, x_test)\n\n\n32/32 - 0s - 1ms/step\n\n\nCode\npred_classes &lt;- apply(pred_probs, 1, which.max) - 1\n\ncorrect_idx &lt;- which(pred_classes == y_test)[1:6]\nincorrect_idx &lt;- which(pred_classes != y_test)[1:6]\n\npar(mfrow=c(2,6), mar=c(1,1,2,1))\nfor (i in correct_idx) {\n  img &lt;- x_test[i,,,1]\n  image(1:28, 1:28, t(apply(img, 2, rev)), col=gray.colors(255), axes=FALSE,\n        main=paste(\"✓\", y_test[i]))\n}\nfor (i in incorrect_idx) {\n  img &lt;- x_test[i,,,1]\n  image(1:28, 1:28, t(apply(img, 2, rev)), col=gray.colors(255), axes=FALSE,\n        main=paste(\"✗\", y_test[i], \"→\", pred_classes[i]))\n}",
     "crumbs": [
-      "<span class='chapter-number'>5</span>  <span class='chapter-title'>GAM— Piecewise, LOESS, and GAM Splines - Python Version</span>"
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Neural Networks in R</span>"
     ]
   },
   {
-    "objectID": "generalized-additive-models-python.html#loess-visualization",
-    "href": "generalized-additive-models-python.html#loess-visualization",
-    "title": "5  GAM— Piecewise, LOESS, and GAM Splines - Python Version",
-    "section": "5.5 5. LOESS Visualization",
-    "text": "5.5 5. LOESS Visualization\n\n\nCode\nfig = plt.figure()\nplt.scatter(df[\"Gr_Liv_Area\"], df[\"SalePrice\"], s=8, alpha=0.2)\nlow = sm.nonparametric.lowess(df[\"SalePrice\"], df[\"Gr_Liv_Area\"], frac=0.4, return_sorted=True)\nplt.plot(low[:,0], low[:,1], linewidth=2)\nplt.title(\"LOESS Smoother (Visual Aid)\")\nplt.xlabel(\"Gr_Liv_Area\"); plt.ylabel(\"SalePrice\")\nplt.tight_layout()",
+    "objectID": "neural-network-Rversion.html#summary",
+    "href": "neural-network-Rversion.html#summary",
+    "title": "9  Neural Networks in R",
+    "section": "9.6 Summary",
+    "text": "9.6 Summary\n\nFeed-forward networks: handle static, tabular data (e.g., housing prices).\n\nRNNs: handle sequential data with temporal dependencies (e.g., sine wave, stock prices, text, timer series).\n\nCNNs: handle image and spatial data by learning patterns like edges and textures.",
     "crumbs": [
-      "<span class='chapter-number'>5</span>  <span class='chapter-title'>GAM— Piecewise, LOESS, and GAM Splines - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "generalized-additive-models-python.html#gam-and-spline-approaches-modern-alternatives",
-    "href": "generalized-additive-models-python.html#gam-and-spline-approaches-modern-alternatives",
-    "title": "5  GAM— Piecewise, LOESS, and GAM Splines - Python Version",
-    "section": "5.6 6. GAM and Spline Approaches (Modern Alternatives)",
-    "text": "5.6 6. GAM and Spline Approaches (Modern Alternatives)\n\n\nCode\nfrom pygam import LinearGAM, s\ngam1 = LinearGAM(s(0)).fit(X_train[[\"Garage_Area\"]].values, y_train)\nprint(gam1.summary())\ngam2 = LinearGAM(s(0) + s(1)).fit(X_train[[\"Garage_Area\",\"Gr_Liv_Area\"]].values, y_train)\nprint(gam2.summary())\nnum_train = X_train[num_cols].values\ngam3 = LinearGAM().fit(num_train, y_train)\nprint(gam3.summary())\n\n\nLinearGAM                                                                                                 \n=============================================== ==========================================================\nDistribution:                        NormalDist Effective DoF:                                     11.7399\nLink Function:                     IdentityLink Log Likelihood:                                -23263.1874\nNumber of Samples:                         1022 AIC:                                            46551.8545\n                                                AICc:                                           46552.2017\n                                                GCV:                                       3130152370.8794\n                                                Scale:                                     3065497547.8147\n                                                Pseudo R-Squared:                                   0.4883\n==========================================================================================================\nFeature Function                  Lambda               Rank         EDoF         P &gt; x        Sig. Code   \n================================= ==================== ============ ============ ============ ============\ns(0)                              [0.6]                20           11.7         1.11e-16     ***         \nintercept                                              1            0.0          1.11e-16     ***         \n==========================================================================================================\nSignificance codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1\n\nWARNING: Fitting splines and a linear function to a feature introduces a model identifiability problem\n         which can cause p-values to appear significant when they are not.\n\nWARNING: p-values calculated in this manner behave correctly for un-penalized models or models with\n         known smoothing parameters, but when smoothing parameters have been estimated, the p-values\n         are typically lower than they should be, meaning that the tests reject the null too readily.\nNone\nLinearGAM                                                                                                 \n=============================================== ==========================================================\nDistribution:                        NormalDist Effective DoF:                                     20.8593\nLink Function:                     IdentityLink Log Likelihood:                                -22770.8323\nNumber of Samples:                         1022 AIC:                                            45585.3832\n                                                AICc:                                           45586.3834\n                                                GCV:                                       1965630736.4285\n                                                Scale:                                      1893550067.068\n                                                Pseudo R-Squared:                                   0.6868\n==========================================================================================================\nFeature Function                  Lambda               Rank         EDoF         P &gt; x        Sig. Code   \n================================= ==================== ============ ============ ============ ============\ns(0)                              [0.6]                20           12.6         1.11e-16     ***         \ns(1)                              [0.6]                20           8.3          1.11e-16     ***         \nintercept                                              1            0.0          1.11e-16     ***         \n==========================================================================================================\nSignificance codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1\n\nWARNING: Fitting splines and a linear function to a feature introduces a model identifiability problem\n         which can cause p-values to appear significant when they are not.\n\nWARNING: p-values calculated in this manner behave correctly for un-penalized models or models with\n         known smoothing parameters, but when smoothing parameters have been estimated, the p-values\n         are typically lower than they should be, meaning that the tests reject the null too readily.\nNone\nLinearGAM                                                                                                 \n=============================================== ==========================================================\nDistribution:                        NormalDist Effective DoF:                                     89.0836\nLink Function:                     IdentityLink Log Likelihood:                                 -21995.395\nNumber of Samples:                         1022 AIC:                                            44170.9574\n                                                AICc:                                           44188.5855\n                                                GCV:                                       1050008766.0212\n                                                Scale:                                      886662002.9642\n                                                Pseudo R-Squared:                                   0.8633\n==========================================================================================================\nFeature Function                  Lambda               Rank         EDoF         P &gt; x        Sig. Code   \n================================= ==================== ============ ============ ============ ============\ns(0)                              [0.6]                20           8.7          6.58e-07     ***         \ns(1)                              [0.6]                20           12.8         1.11e-16     ***         \ns(2)                              [0.6]                20           11.0         5.15e-01                 \ns(3)                              [0.6]                20           8.4          1.11e-16     ***         \ns(4)                              [0.6]                20           8.6          1.11e-16     ***         \ns(5)                              [0.6]                20           10.1         2.17e-03     **          \ns(6)                              [0.6]                20           3.2          9.76e-02     .           \ns(7)                              [0.6]                20           2.2          4.19e-01                 \ns(8)                              [0.6]                20           2.9          3.16e-10     ***         \ns(9)                              [0.6]                20           9.0          1.11e-16     ***         \ns(10)                             [0.6]                20           5.7          1.11e-16     ***         \ns(11)                             [0.6]                20           6.5          3.78e-01                 \nintercept                                              1            0.0          1.11e-16     ***         \n==========================================================================================================\nSignificance codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1\n\nWARNING: Fitting splines and a linear function to a feature introduces a model identifiability problem\n         which can cause p-values to appear significant when they are not.\n\nWARNING: p-values calculated in this manner behave correctly for un-penalized models or models with\n         known smoothing parameters, but when smoothing parameters have been estimated, the p-values\n         are typically lower than they should be, meaning that the tests reject the null too readily.\nNone",
-    "crumbs": [
-      "<span class='chapter-number'>5</span>  <span class='chapter-title'>GAM— Piecewise, LOESS, and GAM Splines - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "generalized-additive-models-python.html#regression-spline-example-fallback",
-    "href": "generalized-additive-models-python.html#regression-spline-example-fallback",
-    "title": "5  GAM— Piecewise, LOESS, and GAM Splines - Python Version",
-    "section": "5.7 7. Regression Spline Example (Fallback)",
-    "text": "5.7 7. Regression Spline Example (Fallback)\n\n\nCode\nfrom patsy import dmatrix\n\ndesign_tr = dmatrix(\"bs(Garage_Area, df=6) + bs(Gr_Liv_Area, df=6)\", data=X_train, return_type=\"dataframe\")\ndesign_te = dmatrix(\"bs(Garage_Area, df=6) + bs(Gr_Liv_Area, df=6)\", data=X_test, return_type=\"dataframe\")\n\nridge = Ridge(alpha=1.0).fit(design_tr, y_train)\npred_spline = ridge.predict(design_te)",
-    "crumbs": [
-      "<span class='chapter-number'>5</span>  <span class='chapter-title'>GAM— Piecewise, LOESS, and GAM Splines - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "generalized-additive-models-python.html#model-comparison-piecewise-vs-gam-vs-spline",
-    "href": "generalized-additive-models-python.html#model-comparison-piecewise-vs-gam-vs-spline",
-    "title": "5  GAM— Piecewise, LOESS, and GAM Splines - Python Version",
-    "section": "5.8 8. Model Comparison (Piecewise vs GAM vs Spline)",
-    "text": "5.8 8. Model Comparison (Piecewise vs GAM vs Spline)\n\n\nCode\ndef rmse(y, yhat):\n    try:\n        return mean_squared_error(y, yhat, squared=False)\n    except TypeError:\n        return np.sqrt(mean_squared_error(y, yhat))\n\ndef mse(y, yhat): return mean_squared_error(y, yhat)\ndef rsq(y, yhat): return r2_score(y, yhat)\n\np_piece = pw.predict(X_test[\"Gr_Liv_Area\"].values)\n\ntry:\n    p_gam = gam3.predict(X_test[num_cols].values)\nexcept Exception:\n    p_gam = np.full_like(y_test, np.nan, dtype=float)\n\np_spline = pred_spline\n\ncmp = pd.DataFrame({\n    \"Model\": [\"Piecewise\", \"GAM (pyGAM)\" if not np.isnan(p_gam).all() else \"GAM (not available)\", \"Regression Spline\"],\n    \"RMSE\": [rmse(y_test, p_piece), rmse(y_test, p_gam) if not np.isnan(p_gam).all() else np.nan, rmse(y_test, p_spline)],\n    \"MSE\": [mse(y_test, p_piece), mse(y_test, p_gam) if not np.isnan(p_gam).all() else np.nan, mse(y_test, p_spline)],\n    \"R2\": [rsq(y_test, p_piece), rsq(y_test, p_gam) if not np.isnan(p_gam).all() else np.nan, rsq(y_test, p_spline)]\n}).sort_values(\"R2\", ascending=False)\n\ncmp\n\n\n\n\n\n\n\n\n\nModel\nRMSE\nMSE\nR2\n\n\n\n\n1\nGAM (pyGAM)\n40805.867162\n1.665119e+09\n0.766556\n\n\n0\nPiecewise\n58108.537553\n3.376602e+09\n0.526612\n\n\n2\nRegression Spline\n60289.000524\n3.634764e+09\n0.490419",
-    "crumbs": [
-      "<span class='chapter-number'>5</span>  <span class='chapter-title'>GAM— Piecewise, LOESS, and GAM Splines - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "generalized-additive-models-python.html#predicted-vs-actual-comparison",
-    "href": "generalized-additive-models-python.html#predicted-vs-actual-comparison",
-    "title": "5  GAM— Piecewise, LOESS, and GAM Splines - Python Version",
-    "section": "5.9 9. Predicted vs Actual Comparison",
-    "text": "5.9 9. Predicted vs Actual Comparison\n\n\nCode\nplt.figure()\nplt.scatter(y_test, p_piece, s=8, alpha=0.4, label=\"Piecewise\")\nif not np.isnan(p_gam).all():\n    plt.scatter(y_test, p_gam, s=8, alpha=0.4, label=\"GAM\")\nplt.scatter(y_test, p_spline, s=8, alpha=0.4, label=\"Spline\")\nplt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], linestyle=\"--\")\nplt.legend()\nplt.title(\"Predicted vs Actual (Test Set)\")\nplt.xlabel(\"Actual SalePrice\"); plt.ylabel(\"Predicted SalePrice\")\nplt.tight_layout()",
-    "crumbs": [
-      "<span class='chapter-number'>5</span>  <span class='chapter-title'>GAM— Piecewise, LOESS, and GAM Splines - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "generalized-additive-models-python.html#interpretation-summary",
-    "href": "generalized-additive-models-python.html#interpretation-summary",
-    "title": "5  GAM— Piecewise, LOESS, and GAM Splines - Python Version",
-    "section": "5.10 10. Interpretation Summary",
-    "text": "5.10 10. Interpretation Summary\n\nPiecewise: adds simple thresholds, easy to explain.\n\nGAMs: provide smooth, interpretable nonlinearities.\n\nSplines: flexible approximations that behave like local polynomials.\n\nMARS (optional): similar conceptually but less maintained in Python; consider using R’s earth instead.",
-    "crumbs": [
-      "<span class='chapter-number'>5</span>  <span class='chapter-title'>GAM— Piecewise, LOESS, and GAM Splines - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "Tree_Based_R.html",
-    "href": "Tree_Based_R.html",
-    "title": "6  Tree Based Models - R Version",
-    "section": "",
-    "text": "6.1 Visual Roadmap\nCode\nflowchart LR\n    A[\"Data (Ames)\"]\n    DT[\"Decision Tree (Baseline)\"]\n    RF[\"Random Forest (Bagging + Random Features)\"]\n    XGB[\"XGBoost (Boosted Trees + Regularization)\"]\n    Compare[\"Model Comparison\"]\n    \n    A --&gt; DT\n    A --&gt; RF\n    A --&gt; XGB\n    DT --&gt; Compare\n    RF --&gt; Compare\n    XGB --&gt; Compare\n\n\n\n\n\nflowchart LR\n    A[\"Data (Ames)\"]\n    DT[\"Decision Tree (Baseline)\"]\n    RF[\"Random Forest (Bagging + Random Features)\"]\n    XGB[\"XGBoost (Boosted Trees + Regularization)\"]\n    Compare[\"Model Comparison\"]\n    \n    A --&gt; DT\n    A --&gt; RF\n    A --&gt; XGB\n    DT --&gt; Compare\n    RF --&gt; Compare\n    XGB --&gt; Compare",
-    "crumbs": [
-      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Tree Based Models - R Version</span>"
-    ]
-  },
-  {
-    "objectID": "Tree_Based_R.html#libraries-data-split",
-    "href": "Tree_Based_R.html#libraries-data-split",
-    "title": "6  Tree Based Models - R Version",
-    "section": "6.2 Libraries, Data, Split",
-    "text": "6.2 Libraries, Data, Split\n\n\nCode\nlibrary(tidyverse)\nlibrary(caret)\nlibrary(rpart)\nlibrary(rpart.plot)\nlibrary(randomForest)\nlibrary(xgboost)\nlibrary(Ckmeans.1d.dp)\nlibrary(pdp)\nlibrary(AmesHousing)\n\names &lt;- make_ordinal_ames()\names &lt;- ames %&gt;% mutate(id = row_number())\n\nset.seed(4321)\ntraining &lt;- ames %&gt;% sample_frac(0.7)\ntesting &lt;- anti_join(ames, training, by = 'id')\n\ntraining &lt;- training %&gt;% \n  select(Sale_Price,\n         Bedroom_AbvGr, Year_Built, Mo_Sold, Lot_Area, Street, Central_Air,\n         First_Flr_SF, Second_Flr_SF, Full_Bath, Half_Bath, Fireplaces,\n         Garage_Area, Gr_Liv_Area, TotRms_AbvGrd)\n\ntraining.df &lt;- as.data.frame(training)",
-    "crumbs": [
-      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Tree Based Models - R Version</span>"
-    ]
-  },
-  {
-    "objectID": "Tree_Based_R.html#decision-tree-baseline",
-    "href": "Tree_Based_R.html#decision-tree-baseline",
-    "title": "6  Tree Based Models - R Version",
-    "section": "6.3 Decision Tree (Baseline)",
-    "text": "6.3 Decision Tree (Baseline)\n\n\nCode\nset.seed(12345)\ntree.ames &lt;- rpart(Sale_Price ~ ., data = training.df, method = \"anova\",\n                   control = rpart.control(cp = 0.005))\n\nrpart.plot(tree.ames, type = 2, fallen.leaves = TRUE, cex = 0.6,\n           main = \"Decision Tree for Ames Housing\")\n\n\n\n\n\n\n\n\n\nCode\ntesting_sel &lt;- testing %&gt;% select(names(training.df))\npred_tree &lt;- predict(tree.ames, newdata = testing_sel)\n\ntree_perf &lt;- testing_sel %&gt;% \n  mutate(pred = pred_tree,\n         AE = abs(Sale_Price - pred),\n         APE = 100*abs((Sale_Price - pred)/Sale_Price)) %&gt;%\n  summarise(Model = \"Decision Tree\",\n            RMSE = sqrt(mean((Sale_Price - pred)^2)),\n            MAE = mean(AE),\n            MAPE = mean(APE),\n            R2 = 1 - sum((Sale_Price - pred)^2)/sum((Sale_Price - mean(Sale_Price))^2))\ntree_perf\n\n\n# A tibble: 1 × 5\n  Model           RMSE    MAE  MAPE    R2\n  &lt;chr&gt;          &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;\n1 Decision Tree 42938. 28322.  17.5 0.727",
-    "crumbs": [
-      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Tree Based Models - R Version</span>"
-    ]
-  },
-  {
-    "objectID": "Tree_Based_R.html#random-forest-random-variable-pdps-and-importance",
-    "href": "Tree_Based_R.html#random-forest-random-variable-pdps-and-importance",
-    "title": "6  Tree Based Models - R Version",
-    "section": "6.4 Random Forest: Random Variable, PDPs, and Importance",
-    "text": "6.4 Random Forest: Random Variable, PDPs, and Importance\n\n\nCode\n# Add random variable for feature selection sanity check\ntraining.df$random &lt;- rnorm(nrow(training.df))\n\nset.seed(12345)\nrf.ames &lt;- randomForest(Sale_Price ~ ., data = training.df, ntree = 500, mtry = 4, importance = TRUE)\nplot(rf.ames, main = \"Random Forest: Error vs Trees\")\n\n\n\n\n\n\n\n\n\nCode\nvarImpPlot(rf.ames, sort = TRUE, n.var = 15, main = \"Random Forest: Variables vs Random Baseline\")\n\n\n\n\n\n\n\n\n\nCode\nimportance(rf.ames)\n\n\n                 %IncMSE IncNodePurity\nBedroom_AbvGr 16.7830622  2.081292e+11\nYear_Built    59.6827740  2.608576e+12\nMo_Sold        0.6717216  1.820404e+11\nLot_Area      16.2410098  5.818823e+11\nStreet         4.6451725  5.141533e+09\nCentral_Air   15.9709319  1.023533e+11\nFirst_Flr_SF  37.4760827  1.884177e+12\nSecond_Flr_SF 24.6324055  6.159270e+11\nFull_Bath     12.3716046  6.191162e+11\nHalf_Bath     13.6183708  1.153802e+11\nFireplaces    26.1893181  5.796209e+11\nGarage_Area   28.4006898  1.961373e+12\nGr_Liv_Area   35.1279551  2.445543e+12\nTotRms_AbvGrd 13.9865453  4.189078e+11\nrandom         1.2436860  1.937137e+11\n\n\nCode\n# Partial dependence for key variables\npartialPlot(rf.ames, training.df, Year_Built, main = \"Partial Dependence: Year_Built (RF)\")\n\n\n\n\n\n\n\n\n\nCode\npartialPlot(rf.ames, training.df, Garage_Area, main = \"Partial Dependence: Garage_Area (RF)\")\n\n\n\n\n\n\n\n\n\n\n6.4.1 Random Forest Results\n\n\nCode\ntesting_sel$random &lt;- rnorm(nrow(testing_sel))\ntesting_sel$pred_rf &lt;- predict(rf.ames, testing_sel)\n\nrf_perf &lt;- testing_sel %&gt;% \n  mutate(AE = abs(Sale_Price - pred_rf),\n         APE = 100*abs((Sale_Price - pred_rf)/Sale_Price)) %&gt;%\n  summarise(Model = \"Random Forest\",\n            RMSE = sqrt(mean((Sale_Price - pred_rf)^2)),\n            MAE = mean(AE),\n            MAPE = mean(APE),\n            R2 = 1 - sum((Sale_Price - pred_rf)^2)/sum((Sale_Price - mean(Sale_Price))^2))\nrf_perf\n\n\n# A tibble: 1 × 5\n  Model           RMSE    MAE  MAPE    R2\n  &lt;chr&gt;          &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;\n1 Random Forest 30147. 19223.  11.6 0.866",
-    "crumbs": [
-      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Tree Based Models - R Version</span>"
-    ]
-  },
-  {
-    "objectID": "Tree_Based_R.html#xgboost-random-variable-cv-tuning-pdps",
-    "href": "Tree_Based_R.html#xgboost-random-variable-cv-tuning-pdps",
-    "title": "6  Tree Based Models - R Version",
-    "section": "6.5 XGBoost: Random Variable, CV, Tuning, PDPs",
-    "text": "6.5 XGBoost: Random Variable, CV, Tuning, PDPs\n\n\nCode\ntraining$random &lt;- rnorm(nrow(training))\ntrain_x &lt;- model.matrix(Sale_Price ~ ., data = training)[, -1]\ntrain_y &lt;- training$Sale_Price\n\nset.seed(12345)\nxgb.ames &lt;- xgboost(\n  data = train_x, label = train_y, subsample = 0.5, nrounds = 100,\n  objective = \"reg:squarederror\", verbose = 0\n)\n\nxgbcv.ames &lt;- xgb.cv(\n  data = train_x, label = train_y, subsample = 0.5, nrounds = 100,\n  nfold = 10, objective = \"reg:squarederror\", verbose = 0\n)\n\ntune_grid &lt;- expand.grid(\n  nrounds = 24,\n  eta = c(0.1, 0.15, 0.2, 0.25, 0.3),\n  max_depth = c(1:10),\n  gamma = c(0),\n  colsample_bytree = 1,\n  min_child_weight = 1,\n  subsample = c(0.25, 0.5, 0.75, 1)\n)\n\nset.seed(12345)\nxgb.ames.caret &lt;- train(\n  x = train_x, y = train_y,\n  method = \"xgbTree\",\n  tuneGrid = tune_grid,\n  trControl = trainControl(method = 'cv', number = 10)\n)\nplot(xgb.ames.caret)\n\n\n\n\n\n\n\n\n\nCode\n# Fit tuned model\nxgb.ames &lt;- xgboost(\n  data = train_x, label = train_y, subsample = 1,\n  nrounds = 24, eta = 0.25, max_depth = 5,\n  objective = \"reg:squarederror\", verbose = 0\n)\n\n# Variable importance including random variable\nxgb.ggplot.importance(xgb.importance(feature_names = colnames(train_x), model = xgb.ames))\n\n\n\n\n\n\n\n\n\nCode\n# Partial dependence plots\ntrain_df &lt;- as.data.frame(train_x)\n\npartial(xgb.ames, pred.var = \"Year_Built\",\n        plot = TRUE, rug = TRUE, alpha = 0.1, plot.engine = \"lattice\",\n        train = train_df, pdp.color = \"red\")\n\n\n\n\n\n\n\n\n\nCode\npartial(xgb.ames, pred.var = \"Garage_Area\",\n        plot = TRUE, rug = TRUE, alpha = 0.1, plot.engine = \"lattice\",\n        train = train_df)\n\n\n\n\n\n\n\n\n\n\n6.5.1 XGBoost Results (Aligned Columns)\n\n\nCode\ntesting$random &lt;- rnorm(nrow(testing))\ntesting_x &lt;- model.matrix(Sale_Price ~ ., data = testing)[, -1]\n\n# Align test columns to training columns\nmissing_cols &lt;- setdiff(colnames(train_x), colnames(testing_x))\nfor (col in missing_cols) {\n  testing_x &lt;- cbind(testing_x, 0)\n  colnames(testing_x)[ncol(testing_x)] &lt;- col\n}\ntesting_x &lt;- testing_x[, colnames(train_x)]\n\ntesting_sel$pred_xgb &lt;- predict(xgb.ames, testing_x)\n\nxgb_perf &lt;- testing_sel %&gt;% \n  mutate(AE = abs(Sale_Price - pred_xgb),\n         APE = 100*abs((Sale_Price - pred_xgb)/Sale_Price)) %&gt;%\n  summarise(Model = \"XGBoost\",\n            RMSE = sqrt(mean((Sale_Price - pred_xgb)^2)),\n            MAE = mean(AE),\n            MAPE = mean(APE),\n            R2 = 1 - sum((Sale_Price - pred_xgb)^2)/sum((Sale_Price - mean(Sale_Price))^2))\nxgb_perf\n\n\n# A tibble: 1 × 5\n  Model     RMSE    MAE  MAPE    R2\n  &lt;chr&gt;    &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;\n1 XGBoost 30355. 19820.  11.8 0.864",
-    "crumbs": [
-      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Tree Based Models - R Version</span>"
-    ]
-  },
-  {
-    "objectID": "Tree_Based_R.html#final-model-comparison",
-    "href": "Tree_Based_R.html#final-model-comparison",
-    "title": "6  Tree Based Models - R Version",
-    "section": "6.6 Final Model Comparison",
-    "text": "6.6 Final Model Comparison\n\n\nCode\nbind_rows(tree_perf, rf_perf, xgb_perf) %&gt;%\n  arrange(RMSE)\n\n\n# A tibble: 3 × 5\n  Model           RMSE    MAE  MAPE    R2\n  &lt;chr&gt;          &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;\n1 Random Forest 30147. 19223.  11.6 0.866\n2 XGBoost       30355. 19820.  11.8 0.864\n3 Decision Tree 42938. 28322.  17.5 0.727\n\n\n\nSummary: The Decision Tree provides interpretability, Random Forest and XGBoost attempt to further reduce bias and manage variance error through randomization and ensembles of weak learners. The issue is that they become less and less interpretable, so we have to introduce other tools to understand what variables are important and how they are relating to the outcome.",
-    "crumbs": [
-      "<span class='chapter-number'>6</span>  <span class='chapter-title'>Tree Based Models - R Version</span>"
-    ]
-  },
-  {
-    "objectID": "Tree_Based_Python2.html",
-    "href": "Tree_Based_Python2.html",
-    "title": "7  Tree Based Models - Python Version",
-    "section": "",
-    "text": "7.1 Visual Roadmap\nCode\nflowchart LR\n    A[\"Data (Ames)\"]\n    DT[\"Decision Tree (Baseline)\"]\n    RF[\"Random Forest (Bagging + Random Features)\"]\n    XGB[\"XGBoost (Boosted Trees + Regularization)\"]\n    Compare[\"Model Comparison\"]\n    \n    A --&gt; DT\n    A --&gt; RF\n    A --&gt; XGB\n    DT --&gt; Compare\n    RF --&gt; Compare\n    XGB --&gt; Compare\n\n\n\n\n\nflowchart LR\n    A[\"Data (Ames)\"]\n    DT[\"Decision Tree (Baseline)\"]\n    RF[\"Random Forest (Bagging + Random Features)\"]\n    XGB[\"XGBoost (Boosted Trees + Regularization)\"]\n    Compare[\"Model Comparison\"]\n    \n    A --&gt; DT\n    A --&gt; RF\n    A --&gt; XGB\n    DT --&gt; Compare\n    RF --&gt; Compare\n    XGB --&gt; Compare",
-    "crumbs": [
-      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Tree Based Models - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "Tree_Based_Python2.html#setup-and-data-preparation",
-    "href": "Tree_Based_Python2.html#setup-and-data-preparation",
-    "title": "7  Tree Based Models - Python Version",
-    "section": "7.2 Setup and Data Preparation",
-    "text": "7.2 Setup and Data Preparation\n\n\nCode\nimport pandas as pd\nimport numpy as np\nfrom sklearn.datasets import fetch_openml\nfrom sklearn.model_selection import train_test_split, RandomizedSearchCV, KFold\nfrom sklearn.tree import DecisionTreeRegressor, plot_tree\nfrom sklearn.ensemble import RandomForestRegressor\nfrom sklearn.inspection import PartialDependenceDisplay\nfrom xgboost import XGBRegressor, plot_importance\nfrom sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score\nimport matplotlib.pyplot as plt\nimport warnings\nwarnings.filterwarnings(\"ignore\")\n\n# Set random seed for reproducibility\nseed = 12345\nnp.random.seed(seed)\n\n# Load Ames dataset\names = fetch_openml(name=\"house_prices\", as_frame=True)\ndf = ames.frame\n\n# Feature selection matching R version\nfeatures = [\n    'BedroomAbvGr', 'YearBuilt', 'MoSold', 'LotArea', 'Street', 'CentralAir',\n    '1stFlrSF', '2ndFlrSF', 'FullBath', 'HalfBath', 'Fireplaces',\n    'GarageArea', 'GrLivArea', 'TotRmsAbvGrd'\n]\ndf = df[features + ['SalePrice']].dropna()\n\n# Encode categoricals\ndf = pd.get_dummies(df, drop_first=True)\n\n# Train/test split\ntrain, test = train_test_split(df, test_size=0.3, random_state=seed)\n\n# Add random variable for variable-importance baseline\ntrain['random'] = np.random.randn(len(train))\ntest['random'] = np.random.randn(len(test))\n\nX_train = train.drop(columns=['SalePrice'])\ny_train = train['SalePrice']\nX_test = test.drop(columns=['SalePrice'])\ny_test = test['SalePrice']",
-    "crumbs": [
-      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Tree Based Models - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "Tree_Based_Python2.html#decision-tree-baseline",
-    "href": "Tree_Based_Python2.html#decision-tree-baseline",
-    "title": "7  Tree Based Models - Python Version",
-    "section": "7.3 Decision Tree (Baseline)",
-    "text": "7.3 Decision Tree (Baseline)\n\n\nCode\ntree = DecisionTreeRegressor(random_state=seed, max_depth=5)\ntree.fit(X_train, y_train)\n\nplt.figure(figsize=(16,8))\nplot_tree(tree, feature_names=X_train.columns, filled=True, max_depth=3)\nplt.title(\"Decision Tree for Ames Housing\")\nplt.show()\n\n# Metrics\npred_tree = tree.predict(X_test)\nrmse_tree = mean_squared_error(y_test, pred_tree)\nmae_tree = mean_absolute_error(y_test, pred_tree)\nmape_tree = np.mean(np.abs((y_test - pred_tree) / y_test)) * 100\nr2_tree = r2_score(y_test, pred_tree)\n\npd.DataFrame([[\"Decision Tree\", rmse_tree, mae_tree, mape_tree, r2_tree]],\n             columns=[\"Model\", \"RMSE\", \"MAE\", \"MAPE\", \"R2\"])\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nModel\nRMSE\nMAE\nMAPE\nR2\n\n\n\n\n0\nDecision Tree\n2.378377e+09\n28465.348099\n17.701235\n0.522975",
-    "crumbs": [
-      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Tree Based Models - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "Tree_Based_Python2.html#random-forest-random-variable-importance-pdps-and-tuning",
-    "href": "Tree_Based_Python2.html#random-forest-random-variable-importance-pdps-and-tuning",
-    "title": "7  Tree Based Models - Python Version",
-    "section": "7.4 Random Forest: Random Variable, Importance, PDPs, and Tuning",
-    "text": "7.4 Random Forest: Random Variable, Importance, PDPs, and Tuning\n\n\nCode\nrf = RandomForestRegressor(random_state=seed)\n\n# Define parameter grid (similar to R tuning)\nparam_dist_rf = {\n    'n_estimators': [100, 200, 300, 400, 500],\n    'max_features': ['sqrt', 'log2', None, 4, 6, 8],\n    'max_depth': [None, 5, 10, 15, 20],\n    'min_samples_split': [2, 5, 10]\n}\n\ncv = KFold(n_splits=10, shuffle=True, random_state=seed)\n\nrf_random = RandomizedSearchCV(\n    estimator=rf,\n    param_distributions=param_dist_rf,\n    n_iter=20,\n    cv=cv,\n    random_state=seed,\n    n_jobs=-1,\n    scoring='neg_root_mean_squared_error'\n)\n\nrf_random.fit(X_train, y_train)\nrf_best = rf_random.best_estimator_\nprint(\"Best Random Forest Parameters:\", rf_random.best_params_)\n\n# Importance with random variable\nimportances = pd.Series(rf_best.feature_importances_, index=X_train.columns).sort_values(ascending=False)\nimportances[:15].plot(kind='barh', title='Random Forest: Top Variables (with Random Baseline)')\nplt.show()\n\n# Partial dependence plots\nplt.figure()\nPartialDependenceDisplay.from_estimator(rf_best, X_train, ['YearBuilt', 'GarageArea'])\nplt.suptitle(\"Partial Dependence (Random Forest)\")\nplt.show()\n\n# Performance metrics\npred_rf = rf_best.predict(X_test)\nrmse_rf = mean_squared_error(y_test, pred_rf)\nmae_rf = mean_absolute_error(y_test, pred_rf)\nmape_rf = np.mean(np.abs((y_test - pred_rf) / y_test)) * 100\nr2_rf = r2_score(y_test, pred_rf)\n\npd.DataFrame([[\"Random Forest (Tuned)\", rmse_rf, mae_rf, mape_rf, r2_rf]],\n             columns=[\"Model\", \"RMSE\", \"MAE\", \"MAPE\", \"R2\"])\n\n\nBest Random Forest Parameters: {'n_estimators': 500, 'min_samples_split': 2, 'max_features': 4, 'max_depth': 20}\n\n\n\n\n\n\n\n\n\n&lt;Figure size 672x480 with 0 Axes&gt;\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nModel\nRMSE\nMAE\nMAPE\nR2\n\n\n\n\n0\nRandom Forest (Tuned)\n1.093313e+09\n19889.772151\n12.832756\n0.780717",
-    "crumbs": [
-      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Tree Based Models - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "Tree_Based_Python2.html#xgboost-random-variable-importance-pdps-and-tuning",
-    "href": "Tree_Based_Python2.html#xgboost-random-variable-importance-pdps-and-tuning",
-    "title": "7  Tree Based Models - Python Version",
-    "section": "7.5 XGBoost: Random Variable, Importance, PDPs, and Tuning",
-    "text": "7.5 XGBoost: Random Variable, Importance, PDPs, and Tuning\n\n\nCode\nxgb = XGBRegressor(\n    objective='reg:squarederror',\n    random_state=seed,\n    n_jobs=-1\n)\n\n# Define tuning grid similar to R (eta = learning_rate, subsample, max_depth)\nparam_dist_xgb = {\n    'n_estimators': [24, 50, 100, 200],\n    'learning_rate': [0.1, 0.15, 0.2, 0.25, 0.3],\n    'max_depth': [1, 3, 5, 7, 10],\n    'subsample': [0.25, 0.5, 0.75, 1],\n    'colsample_bytree': [0.5, 0.75, 1]\n}\n\nxgb_random = RandomizedSearchCV(\n    estimator=xgb,\n    param_distributions=param_dist_xgb,\n    n_iter=20,\n    cv=cv,\n    random_state=seed,\n    n_jobs=-1,\n    scoring='neg_root_mean_squared_error'\n)\n\nxgb_random.fit(X_train, y_train)\nxgb_best = xgb_random.best_estimator_\nprint(\"Best XGBoost Parameters:\", xgb_random.best_params_)\n\n# Importance plot with random variable\nplot_importance(xgb_best, max_num_features=15, importance_type='gain')\nplt.title(\"XGBoost: Variable Importance (with Random Baseline)\")\nplt.show()\n\n# Partial dependence plots\nplt.figure()\nPartialDependenceDisplay.from_estimator(xgb_best, X_train, ['YearBuilt', 'GarageArea'])\nplt.suptitle(\"Partial Dependence (XGBoost)\")\nplt.show()\n\n# Metrics\npred_xgb = xgb_best.predict(X_test)\nrmse_xgb = mean_squared_error(y_test, pred_xgb)\nmae_xgb = mean_absolute_error(y_test, pred_xgb)\nmape_xgb = np.mean(np.abs((y_test - pred_xgb) / y_test)) * 100\nr2_xgb = r2_score(y_test, pred_xgb)\n\npd.DataFrame([[\"XGBoost (Tuned)\", rmse_xgb, mae_xgb, mape_xgb, r2_xgb]],\n             columns=[\"Model\", \"RMSE\", \"MAE\", \"MAPE\", \"R2\"])\n\n\nBest XGBoost Parameters: {'subsample': 0.75, 'n_estimators': 50, 'max_depth': 5, 'learning_rate': 0.15, 'colsample_bytree': 0.5}\n\n\n\n\n\n\n\n\n\n&lt;Figure size 672x480 with 0 Axes&gt;\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nModel\nRMSE\nMAE\nMAPE\nR2\n\n\n\n\n0\nXGBoost (Tuned)\n1.133839e+09\n20819.921875\n13.330445\n0.772589",
-    "crumbs": [
-      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Tree Based Models - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "Tree_Based_Python2.html#final-model-comparison",
-    "href": "Tree_Based_Python2.html#final-model-comparison",
-    "title": "7  Tree Based Models - Python Version",
-    "section": "7.6 Final Model Comparison",
-    "text": "7.6 Final Model Comparison\n\n\nCode\nresults = pd.DataFrame([\n    [\"Decision Tree\", rmse_tree, mae_tree, mape_tree, r2_tree],\n    [\"Random Forest (Tuned)\", rmse_rf, mae_rf, mape_rf, r2_rf],\n    [\"XGBoost (Tuned)\", rmse_xgb, mae_xgb, mape_xgb, r2_xgb]\n], columns=[\"Model\", \"RMSE\", \"MAE\", \"MAPE\", \"R2\"]).sort_values(\"RMSE\")\nresults\n\n\n\n\n\n\n\n\n\nModel\nRMSE\nMAE\nMAPE\nR2\n\n\n\n\n1\nRandom Forest (Tuned)\n1.093313e+09\n19889.772151\n12.832756\n0.780717\n\n\n2\nXGBoost (Tuned)\n1.133839e+09\n20819.921875\n13.330445\n0.772589\n\n\n0\nDecision Tree\n2.378377e+09\n28465.348099\n17.701235\n0.522975\n\n\n\n\n\n\n\n\nSummary: The Decision Tree provides interpretability, Random Forest and XGBoost attempt to further reduce bias and manage variance error through randomization and ensembles of weak learners. The issue is that they become less and less interpretable, so we have to introduce other tools to understand what variables are important and how they are relating to the outcome.",
-    "crumbs": [
-      "<span class='chapter-number'>7</span>  <span class='chapter-title'>Tree Based Models - Python Version</span>"
-    ]
-  },
-  {
-    "objectID": "rf-xgb-params.html",
-    "href": "rf-xgb-params.html",
-    "title": "8  Understanding Random Forest and XGBoost Hyperparameters",
-    "section": "",
-    "text": "8.1 Random Forest Hyperparameters",
-    "crumbs": [
-      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Understanding Random Forest and XGBoost Hyperparameters</span>"
-    ]
-  },
-  {
-    "objectID": "rf-xgb-params.html#random-forest-hyperparameters",
-    "href": "rf-xgb-params.html#random-forest-hyperparameters",
-    "title": "8  Understanding Random Forest and XGBoost Hyperparameters",
-    "section": "",
-    "text": "8.1.1 ️ Switching Between Regression and Classification\n\n\n\n\n\n\n\n\nLanguage\nHow to Specify Regression\nHow to Specify Classification\n\n\n\n\nR\nrandomForest(y ~ ., data = df) where y is numeric\nrandomForest(y ~ ., data = df) where y is a factor\n\n\nPython\nRandomForestRegressor()\nRandomForestClassifier()\n\n\n\nIn R, the outcome type (numeric vs factor) determines whether the model performs regression or classification automatically.\nIn Python, you explicitly choose the class (RandomForestRegressor or RandomForestClassifier).\n\n\n\n\n\n\n\n\n\n\n\n\nConcept\nR (randomForest)\nPython (RandomForestRegressor / RandomForestClassifier)\nMeaning / Role\nTypical Values\nImpact / Interpretation\n\n\n\n\nModel type\nDetermined by outcome type (numeric vs factor)\nDifferent estimator class\nDefines whether the forest predicts continuous or categorical outcomes\n–\nChoose based on target type\n\n\nNumber of trees\nntree\nn_estimators\nNumber of trees to grow in the forest\n100–1000 (500 common)\nMore trees reduce variance but increase runtime\n\n\nFeatures per split\nmtry\nmax_features\n# of variables randomly selected at each split\nRegression: √p; Classification: p/3\nSmaller → higher bias, more diversity; larger → lower bias, more correlation\n\n\nMax tree depth\n(no direct arg, via nodesize)\nmax_depth\nMaximum depth of each tree\nNone, or 5–30\nDeeper trees capture complexity but risk overfitting\n\n\nMin samples per split\n(via nodesize indirectly)\nmin_samples_split\nMinimum # of samples to split a node\n2–10\nLarger → smoother, higher bias; smaller → lower bias, higher variance\n\n\nMin samples per leaf\n(via nodesize)\nmin_samples_leaf\nMinimum samples per terminal node\n1–5\nPrevents tiny leaves, reduces overfitting\n\n\nBootstrap sampling\nreplace\nbootstrap\nWhether to sample with replacement\nTRUE/FALSE\nAdds randomness; TRUE recommended\n\n\nSample fraction per tree\n(rarely tuned)\nmax_samples\nFraction of training data used per tree\n0.5–1.0\nLower → more randomness, higher bias\n\n\nLearning objective\nImplicit: minimize MSE (regression) or Gini/entropy (classification)\nImplicit: minimize MSE or Gini/entropy\nObjective changes automatically with model type\n–\nRegression averages numeric values; classification votes on class labels\n\n\nRandom seed\nset.seed()\nrandom_state\nEnsures reproducibility\nany integer\nUse same seed for consistency\n\n\n\n\n\n\n8.1.2 Thinking About Random Forest Tuning\n\nStart with many trees (≥ 500).\n\nTune mtry / max_features to balance bias vs variance.\n\nUse max_depth, min_samples_split, or min_samples_leaf to prevent overfitting.\n\nRF tuning is relatively forgiving — focus on efficiency and stability rather than micro‑optimization.\n\nFor classification, check OOB error or ROC‑AUC rather than RMSE.",
-    "crumbs": [
-      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Understanding Random Forest and XGBoost Hyperparameters</span>"
-    ]
-  },
-  {
-    "objectID": "rf-xgb-params.html#xgboost-hyperparameters",
-    "href": "rf-xgb-params.html#xgboost-hyperparameters",
-    "title": "8  Understanding Random Forest and XGBoost Hyperparameters",
-    "section": "8.2 XGBoost Hyperparameters",
-    "text": "8.2 XGBoost Hyperparameters\n\n\n\n\n\n\n\n\n\n\n\nConcept\nR (xgboost)\nPython (XGBRegressor / XGBClassifier)\nMeaning / Role\nTypical Values\nImpact / Interpretation\n\n\n\n\nBoosting rounds\nnrounds\nn_estimators\nTotal # of trees (boosting steps)\n100–1000\nToo high → overfit unless learning rate small\n\n\nLearning rate\neta\nlearning_rate\nShrinks each tree’s contribution\n0.01–0.3\nLower = slower, safer; higher = faster, riskier\n\n\nTree depth\nmax_depth\nmax_depth\nMax depth per tree\n3–10\nShallow = less overfit; deep = more complex\n\n\nMin child weight\nmin_child_weight\nmin_child_weight\nMin sum of instance weights per leaf\n1–10\nLarger = more conservative splits\n\n\nSubsample (rows)\nsubsample\nsubsample\nFraction of training rows used per round\n0.5–1.0\nLower adds randomness, improves generalization\n\n\nCol sample (features)\ncolsample_bytree\ncolsample_bytree\nFraction of features per tree\n0.5–1.0\nReduces feature correlation\n\n\nGamma\ngamma\ngamma\nMin loss reduction to split a node\n0–5\nHigher = more conservative, prevents overfitting\n\n\nL1 regularization\nalpha\nreg_alpha\nPenalty on abs(weights)\n0–10\nEncourages sparsity (feature selection)\n\n\nL2 regularization\nlambda\nreg_lambda\nPenalty on squared(weights)\n0–10\nControls weight magnitudes (stability)\n\n\nLearning objective\nobjective\nobjective\nSpecifies prediction type\n\"reg:squarederror\", \"binary:logistic\", etc.\nMust match your target type\n\n\nEarly stopping\nvia xgb.cv()\nearly_stopping_rounds\nStops when no improvement\n10–50 rounds\nPrevents unnecessary rounds\n\n\nSeed\nset.seed()\nrandom_state\nEnsures reproducibility\nany integer\nConsistent results across runs\n\n\n\n\n\n8.2.1 Thinking About XGBoost Tuning\n\nStart simple — tune n_estimators, max_depth, and learning_rate first.\n\nAdd regularization (gamma, alpha, lambda) to control overfitting.\n\nUse subsample and colsample_bytree to add randomness.",
-    "crumbs": [
-      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Understanding Random Forest and XGBoost Hyperparameters</span>"
-    ]
-  },
-  {
-    "objectID": "rf-xgb-params.html#practical-tips-and-heuristics",
-    "href": "rf-xgb-params.html#practical-tips-and-heuristics",
-    "title": "8  Understanding Random Forest and XGBoost Hyperparameters",
-    "section": "8.3 Practical Tips and Heuristics",
-    "text": "8.3 Practical Tips and Heuristics\n\n\n\n\n\n\n\n\nSituation\nRandom Forest Strategy\nXGBoost Strategy\n\n\n\n\nOverfitting\nIncrease min_samples_split, reduce max_depth\nLower learning_rate, increase gamma or min_child_weight\n\n\nUnderfitting\nIncrease n_estimators, allow deeper trees\nLower regularization, increase max_depth or n_estimators\n\n\nSlow training\nReduce trees or sample fraction\nIncrease learning_rate, reduce trees\n\n\nUnstable results\nFix random_state, use more trees\nFix random_state, enable early stopping\n\n\nHigh variance\nLower max_features, increase randomness\nIncrease subsample diversity, lower max_depth",
-    "crumbs": [
-      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Understanding Random Forest and XGBoost Hyperparameters</span>"
-    ]
-  },
-  {
-    "objectID": "rf-xgb-params.html#ruleofthumb-summary",
-    "href": "rf-xgb-params.html#ruleofthumb-summary",
-    "title": "8  Understanding Random Forest and XGBoost Hyperparameters",
-    "section": "8.4 Rule‑of‑Thumb Summary",
-    "text": "8.4 Rule‑of‑Thumb Summary\n\n\n\n\n\n\n\n\nParameter\nLow Value →\nHigh Value →\n\n\n\n\nn_estimators\nUnderfitting\nStable but slower\n\n\nmax_depth\nSimpler model (underfit)\nComplex model (overfit)\n\n\nlearning_rate\nSlow, steady, robust\nFast, risk of overfit\n\n\nsubsample / colsample_bytree\nMore bias, less variance\nLower bias, higher variance\n\n\nmtry / max_features\nMore randomization\nMore correlation between trees\n\n\nmin_samples_split / min_child_weight\nFlexible, low bias\nConservative, higher bias\n\n\n\n\n\n8.4.1 Key Takeaways\n\nRandom Forest\n\nRegression/classification determined by outcome type (R) or model class (Python).\n\nReduces variance through bagging.\n\nTuning focuses on stability and efficiency.\n\nXGBoost\n\nRequires explicit objective selection.\n\nReduces error via boosting and regularization.\n\nUse interpretability tools (importance, PDPs, SHAP) to understand why tuning changes model behavior.",
-    "crumbs": [
-      "<span class='chapter-number'>8</span>  <span class='chapter-title'>Understanding Random Forest and XGBoost Hyperparameters</span>"
+      "<span class='chapter-number'>9</span>  <span class='chapter-title'>Neural Networks in R</span>"
     ]
   }
 ]
