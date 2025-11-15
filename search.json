@@ -610,8 +610,8 @@
     ]
   },
   {
-    "objectID": "neural-network-Rversion.html",
-    "href": "neural-network-Rversion.html",
+    "objectID": "neural-network-Rversion.pdf.html",
+    "href": "neural-network-Rversion.pdf.html",
     "title": "9  Neural Networks in R",
     "section": "",
     "text": "9.1 Introduction\nThis chapter introduces neural networks in R, progressing from feed-forward to recurrent (RNN) and convolutional (CNN) architectures.\nIt uses the Ames housing dataset, a sine wave sequence, and the MNIST digit dataset to demonstrate increasingly complex network structures.\nEach example illustrates a different ANN architecture.",
@@ -620,8 +620,8 @@
     ]
   },
   {
-    "objectID": "neural-network-Rversion.html#feed-forward-neural-networks-ames-data",
-    "href": "neural-network-Rversion.html#feed-forward-neural-networks-ames-data",
+    "objectID": "neural-network-Rversion.pdf.html#feed-forward-neural-networks-ames-data",
+    "href": "neural-network-Rversion.pdf.html#feed-forward-neural-networks-ames-data",
     "title": "9  Neural Networks in R",
     "section": "9.2 1. Feed-Forward Neural Networks (Ames Data)",
     "text": "9.2 1. Feed-Forward Neural Networks (Ames Data)\nFeed-forward networks are the simplest type of neural networks. They map input features (like home size, rooms, or year built) to an output (home price) through layers of neurons.\nEach neuron applies a weighted sum and activation function, allowing the network to learn complex relationships between variables.\n\n\nCode\n#Note: This is specific to my environment \nlibrary(reticulate)\nuse_python(\"/Users/donaldhale/r-arm/bin/python\", required = TRUE)\n\nlibrary(keras3)\n\ntf &lt;- reticulate::import(\"tensorflow\", delay_load = FALSE)\ncat(\"TensorFlow version:\", tf$`__version__`, \"\\n\")\n\n\nTensorFlow version: 2.16.1 \n\n\n\n\nCode\nlibrary(tidyverse)\nlibrary(caret)\nlibrary(nnet)\nlibrary(NeuralNetTools)\nlibrary(AmesHousing)\n\nset.seed(4321)\n\n# Load and sample data\names &lt;- make_ordinal_ames() %&gt;% mutate(id = row_number())\ntrain_idx &lt;- sample(1:nrow(ames), 0.7 * nrow(ames))\ntraining &lt;- ames[train_idx, ]\ntesting  &lt;- ames[-train_idx, ]\n\n# Select a manageable subset of variables\nvars &lt;- c(\"Sale_Price\", \"Bedroom_AbvGr\", \"Year_Built\", \"Mo_Sold\", \"Lot_Area\",\n          \"Street\", \"Central_Air\", \"First_Flr_SF\", \"Second_Flr_SF\",\n          \"Full_Bath\", \"Half_Bath\", \"Fireplaces\", \"Garage_Area\",\n          \"Gr_Liv_Area\", \"TotRms_AbvGrd\")\ntraining &lt;- training[, vars]\ntesting  &lt;- testing[, vars]\n\n# Convert categorical predictors into dummy numeric columns\nx_train &lt;- model.matrix(Sale_Price ~ ., data = training)[, -1]\ny_train &lt;- training$Sale_Price\nx_test  &lt;- model.matrix(Sale_Price ~ ., data = testing)[, -1]\ny_test  &lt;- testing$Sale_Price\n\n# Drop low-variance predictors and scale for stable training\nnzv &lt;- nearZeroVar(x_train)\nif (length(nzv) &gt; 0) {\n  x_train &lt;- x_train[, -nzv, drop = FALSE]\n  x_test  &lt;- x_test[, -nzv, drop = FALSE]\n}\n\nx_train &lt;- scale(x_train)\nx_test  &lt;- scale(x_test, center = attr(x_train, \"scaled:center\"),\n                 scale = attr(x_train, \"scaled:scale\"))\n\ny_train_s &lt;- scale(y_train)\n\n# Combine into a single training dataframe\ntrain_df &lt;- data.frame(y = as.numeric(y_train_s), x_train)\n\nset.seed(123)\nnn.ames &lt;- nnet(y ~ ., data = train_df, size = 5, linout = TRUE, trace = FALSE)\nplotnet(nn.ames)\n\n\n\n\n\n\n\n\n\n\n\n9.2.1 1.2 Cross-Validation Tuning\nWe tune two important parameters: - size — number of neurons in the hidden layer\n- decay — regularization strength (prevents overfitting)\ncaret::train() automates this search using k-fold cross-validation.\n\n\nCode\ntune_grid &lt;- expand.grid(size = c(3,5,7,9), decay = c(0,0.1,0.5,1))\nctrl &lt;- trainControl(method = \"cv\", number = 5)\n\nset.seed(123)\nnn.tuned &lt;- train(\n  x = x_train, y = as.numeric(y_train_s),\n  method = \"nnet\",\n  tuneGrid = tune_grid,\n  trControl = ctrl,\n  linout = TRUE,\n  trace = FALSE\n)\n\nnn.tuned$bestTune\n\n\n   size decay\n15    9   0.5\n\n\nCode\nplot(nn.tuned)\n\n\n\n\n\n\n\n\n\n\n\n\n9.2.2 1.3 Evaluate Performance\nAfter identifying the best parameters, we retrain the model and evaluate its predictive accuracy.\n\n\nCode\nbest_size  &lt;- nn.tuned$bestTune$size\nbest_decay &lt;- nn.tuned$bestTune$decay\n\nset.seed(123)\nnn.final &lt;- nnet(\n  y ~ ., \n  data = train_df, \n  size = best_size, \n  decay = best_decay, \n  linout = TRUE, \n  trace = FALSE\n)\n\npred_std &lt;- predict(nn.final, newdata = as.data.frame(x_test))\npred_nn  &lt;- pred_std * attr(y_train_s, \"scaled:scale\") + attr(y_train_s, \"scaled:center\")\n\nperf &lt;- data.frame(\n  MAE  = mean(abs(y_test - pred_nn)),\n  MAPE = mean(abs((y_test - pred_nn) / y_test)) * 100\n)\nperf\n\n\n       MAE     MAPE\n1 20392.57 12.63864",
@@ -630,8 +630,8 @@
     ]
   },
   {
-    "objectID": "neural-network-Rversion.html#feed-forward-neural-networks-keras-3",
-    "href": "neural-network-Rversion.html#feed-forward-neural-networks-keras-3",
+    "objectID": "neural-network-Rversion.pdf.html#feed-forward-neural-networks-keras-3",
+    "href": "neural-network-Rversion.pdf.html#feed-forward-neural-networks-keras-3",
     "title": "9  Neural Networks in R",
     "section": "9.3 2. Feed-Forward Neural Networks (Keras 3)",
     "text": "9.3 2. Feed-Forward Neural Networks (Keras 3)\nThe Keras 3 API is a modern deep learning interface. It supports more complex models and GPUs while maintaining a simple syntax.\nThis example shows the same concept as above using a multi-layer perceptron (MLP).\n\n\nCode\n#library(keras3)\nset.seed(123)\n\nmodel_ff &lt;- keras_model_sequential() |&gt;\n  layer_dense(units = 16, activation = \"relu\", input_shape = ncol(x_train)) |&gt;\n  layer_dropout(rate = 0.1) |&gt;\n  layer_dense(units = 1)\n\ncompile(model_ff, optimizer = optimizer_adam(learning_rate = 0.01),\n        loss = \"mse\", metrics = \"mae\")\n\nhistory &lt;- fit(model_ff, x_train, as.numeric(y_train_s),\n               epochs = 40, batch_size = 32, validation_split = 0.2, verbose = 0)\n\nplot(history)",
@@ -640,8 +640,8 @@
     ]
   },
   {
-    "objectID": "neural-network-Rversion.html#recurrent-neural-network-rnn",
-    "href": "neural-network-Rversion.html#recurrent-neural-network-rnn",
+    "objectID": "neural-network-Rversion.pdf.html#recurrent-neural-network-rnn",
+    "href": "neural-network-Rversion.pdf.html#recurrent-neural-network-rnn",
     "title": "9  Neural Networks in R",
     "section": "9.4 3. Recurrent Neural Network (RNN)",
     "text": "9.4 3. Recurrent Neural Network (RNN)\nRNNs are ideal for sequential data such as time series, text, or speech.\nWe use a sine wave as a toy example because its repeating pattern requires the model to “remember” recent values — something feed-forward networks cannot do.\n\n\nCode\nset.seed(42)\nt &lt;- seq(0, 50, by = 0.1)\ny &lt;- sin(t)\nplot(t, y, type='l', main=\"Sine Wave Example\", ylab=\"y\", xlab=\"Time\")\n\n\n\n\n\n\n\n\n\nCode\nwindow_size &lt;- 20\nX &lt;- sapply(1:(length(y) - window_size), function(i) y[i:(i + window_size - 1)])\nX &lt;- t(X)\ny_out &lt;- y[(window_size + 1):length(y)]\nX &lt;- array(X, dim = c(nrow(X), window_size, 1))\n\nsplit &lt;- round(0.8 * nrow(X))\nx_train &lt;- X[1:split,,]; y_train &lt;- y_out[1:split]\nx_test  &lt;- X[(split + 1):nrow(X),,]; y_test  &lt;- y_out[(split + 1):length(y_out)]\n\nmodel_rnn &lt;- keras_model_sequential() |&gt;\n  layer_simple_rnn(units = 16, activation = \"tanh\", input_shape = c(window_size, 1)) |&gt;\n  layer_dense(units = 1)\n\ncompile(model_rnn, loss = \"mse\", optimizer = \"adam\")\n\nhistory_rnn &lt;- fit(model_rnn, x_train, y_train, epochs = 30, batch_size = 16,\n                   validation_split = 0.2, verbose = 0)\n\nplot(history_rnn)\n\n\n\n\n\n\n\n\n\nCode\npreds &lt;- predict(model_rnn, x_test)\n\n\n3/3 - 0s - 11ms/step\n\n\nCode\nplot(y_test, type='l', main=\"RNN Sine Prediction\", col='blue', ylab=\"y\")\nlines(preds, col='red')\nlegend(\"bottomleft\", legend=c(\"Actual\",\"Predicted\"), col=c(\"blue\",\"red\"), lty=1, bty=\"n\")",
@@ -650,8 +650,8 @@
     ]
   },
   {
-    "objectID": "neural-network-Rversion.html#convolutional-neural-network-cnn",
-    "href": "neural-network-Rversion.html#convolutional-neural-network-cnn",
+    "objectID": "neural-network-Rversion.pdf.html#convolutional-neural-network-cnn",
+    "href": "neural-network-Rversion.pdf.html#convolutional-neural-network-cnn",
     "title": "9  Neural Networks in R",
     "section": "9.5 4. Convolutional Neural Network (CNN)",
     "text": "9.5 4. Convolutional Neural Network (CNN)\nCNNs are built for spatial pattern recognition — ideal for images.\nThe MNIST dataset contains 70,000 grayscale images of handwritten digits (0–9), each 28×28 pixels.\nThese lines prepare the data for use in a CNN.\n\n\nCode\n#library(keras3)\n\n# Load and preview the MNIST data\nmnist &lt;- dataset_mnist()\n\n# We only use a subset (5k train, 1k test) for quick demonstration\nx_train &lt;- mnist$train$x[1:5000,,]\ny_train &lt;- mnist$train$y[1:5000]\nx_test  &lt;- mnist$test$x[1:1000,,]\ny_test  &lt;- mnist$test$y[1:1000]\n\n# Normalize pixel values: 0-255 -&gt; 0-1\nx_train &lt;- x_train / 255\nx_test  &lt;- x_test / 255\n\n# Reshape to [samples, height, width, channels]\n# MNIST images are grayscale, so channels = 1\nx_train &lt;- array_reshape(x_train, c(nrow(x_train), 28, 28, 1))\nx_test  &lt;- array_reshape(x_test,  c(nrow(x_test),  28, 28, 1))\n\n# Convert labels to categorical one-hot vectors (10 classes for digits 0-9)\ny_train_cat &lt;- to_categorical(y_train, 10)\ny_test_cat  &lt;- to_categorical(y_test, 10)\n\n\n\n9.5.1 Explanation of the MNIST Preprocessing\n\nLoad the built-in dataset from Keras.\n\nSubsample for faster training (5,000 train / 1,000 test).\n\nNormalize pixel intensities to the 0–1 range.\n\nReshape to the 4D structure required by CNNs: [samples, height, width, channels].\n\nOne-hot encode labels, converting a digit like 3 into a vector [0,0,0,1,0,0,0,0,0,0].\n\nThese steps turn raw pixel data into numeric tensors suitable for learning.\n\n\n\n9.5.2 4.1 Train and Evaluate the CNN\n\n\nCode\nmodel_cnn &lt;- keras_model_sequential() |&gt;\n  layer_conv_2d(filters = 16, kernel_size = c(3,3), activation = \"relu\", input_shape = c(28,28,1)) |&gt;\n  layer_max_pooling_2d(pool_size = c(2,2)) |&gt;\n  layer_flatten() |&gt;\n  layer_dense(units = 32, activation = \"relu\") |&gt;\n  layer_dense(units = 10, activation = \"softmax\")\n\ncompile(model_cnn, optimizer = \"adam\",\n        loss = \"categorical_crossentropy\",\n        metrics = \"accuracy\")\n\nhistory_cnn &lt;- fit(model_cnn, x_train, y_train_cat,\n                   epochs = 3, batch_size = 64, validation_split = 0.2, verbose = 0)\n\nplot(history_cnn)\n\n\n\n\n\n\n\n\n\nCode\nscore &lt;- evaluate(model_cnn, x_test, y_test_cat)\n\n\n32/32 - 0s - 745us/step - accuracy: 0.9000 - loss: 0.3169\n\n\nCode\nscore\n\n\n$accuracy\n[1] 0.9\n\n$loss\n[1] 0.3169269\n\n\n\n\n\n9.5.3 4.2 Visualizing Correct and Incorrect Predictions\nWe visualize examples of digits that the CNN classified correctly and incorrectly.\n\n\nCode\npred_probs &lt;- predict(model_cnn, x_test)\n\n\n32/32 - 0s - 1ms/step\n\n\nCode\npred_classes &lt;- apply(pred_probs, 1, which.max) - 1\n\ncorrect_idx &lt;- which(pred_classes == y_test)[1:6]\nincorrect_idx &lt;- which(pred_classes != y_test)[1:6]\n\npar(mfrow=c(2,6), mar=c(1,1,2,1))\nfor (i in correct_idx) {\n  img &lt;- x_test[i,,,1]\n  image(1:28, 1:28, t(apply(img, 2, rev)), col=gray.colors(255), axes=FALSE,\n        main=paste(\"✓\", y_test[i]))\n}\nfor (i in incorrect_idx) {\n  img &lt;- x_test[i,,,1]\n  image(1:28, 1:28, t(apply(img, 2, rev)), col=gray.colors(255), axes=FALSE,\n        main=paste(\"✗\", y_test[i], \"→\", pred_classes[i]))\n}",
@@ -660,13 +660,263 @@
     ]
   },
   {
-    "objectID": "neural-network-Rversion.html#summary",
-    "href": "neural-network-Rversion.html#summary",
+    "objectID": "neural-network-Rversion.pdf.html#summary",
+    "href": "neural-network-Rversion.pdf.html#summary",
     "title": "9  Neural Networks in R",
     "section": "9.6 Summary",
     "text": "9.6 Summary\n\nFeed-forward networks: handle static, tabular data (e.g., housing prices).\n\nRNNs: handle sequential data with temporal dependencies (e.g., sine wave, stock prices, text, timer series).\n\nCNNs: handle image and spatial data by learning patterns like edges and textures.",
     "crumbs": [
       "<span class='chapter-number'>9</span>  <span class='chapter-title'>Neural Networks in R</span>"
+    ]
+  },
+  {
+    "objectID": "nn1-python.html",
+    "href": "nn1-python.html",
+    "title": "10  Feedforward Neural Network - Python",
+    "section": "",
+    "text": "10.1 Feedforward Neural Network (MLP) Using Ames Housing (Python)\nThis chapter fits a feed-forward neural network to the Ame Housing subset used in the R version.\nRMSE is computed manually for compatibility with older scikit-learn versions.",
+    "crumbs": [
+      "<span class='chapter-number'>10</span>  <span class='chapter-title'>Feedforward Neural Network - Python</span>"
+    ]
+  },
+  {
+    "objectID": "nn1-python.html#feedforward-neural-network-mlp-using-ames-housing-python",
+    "href": "nn1-python.html#feedforward-neural-network-mlp-using-ames-housing-python",
+    "title": "10  Feedforward Neural Network - Python",
+    "section": "",
+    "text": "10.1.1 1. Load and Prepare Data\n\nimport numpy as np\nimport pandas as pd\n\nfrom sklearn.datasets import fetch_openml\nfrom sklearn.model_selection import train_test_split, GridSearchCV\nfrom sklearn.preprocessing import StandardScaler\nfrom sklearn.neural_network import MLPRegressor\nfrom sklearn.metrics import mean_squared_error\n\nnp.random.seed(12345)\n\names = fetch_openml(name=\"house_prices\", as_frame=True)\ndf = ames.frame\n\nselected_cols = [\n    \"SalePrice\",\"BedroomAbvGr\",\"YearBuilt\",\"MoSold\",\"LotArea\",\n    \"Street\",\"CentralAir\",\"1stFlrSF\",\"2ndFlrSF\",\"FullBath\",\n    \"HalfBath\",\"Fireplaces\",\"GarageArea\",\"GrLivArea\",\"TotRmsAbvGrd\"\n]\n\ndf_sub = df[selected_cols].dropna()\ndf_sub = pd.get_dummies(df_sub, columns=[\"Street\",\"CentralAir\"], drop_first=True)\n\ny = df_sub[\"SalePrice\"]\nX = df_sub.drop(\"SalePrice\", axis=1)\n\n\n\n\n10.1.2 2. Train/Test Split & Scaling\n\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.2, random_state=12345\n)\n\nscaler = StandardScaler()\nscaler.fit(X_train)\n\nX_train_s = scaler.transform(X_train)\nX_test_s = scaler.transform(X_test)\n\n\n\n\n10.1.3 3. Simple MLP Model\n\nnn_simple = MLPRegressor(\n    solver=\"lbfgs\",\n    alpha=1e-5,\n    hidden_layer_sizes=(5,),\n    random_state=12345,\n    max_iter=5000\n)\n\nnn_simple.fit(X_train_s, y_train)\npred_simple = nn_simple.predict(X_test_s)\n\nrmse_simple = mean_squared_error(y_test, pred_simple) ** 0.5\nrmse_simple\n\n38907.904754996634\n\n\n\n\n\n10.1.4 4. Grid Search Tuning\n\nparam_grid = {\n    \"hidden_layer_sizes\": [(h,) for h in [3,4,5,6,7]],\n    \"alpha\": [0.00005,0.0005],\n    \"solver\": [\"lbfgs\"]\n}\n\nnn_base = MLPRegressor(max_iter=5000, random_state=12345)\n\ngrid = GridSearchCV(\n    estimator=nn_base,\n    param_grid=param_grid,\n    cv=10,\n    scoring=\"neg_mean_squared_error\",\n    n_jobs=-1\n)\n\ngrid.fit(X_train_s, y_train)\n\ngrid.best_params_\n\n{'alpha': 5e-05, 'hidden_layer_sizes': (5,), 'solver': 'lbfgs'}\n\n\n\nbest_model = grid.best_estimator_\npred_gs = best_model.predict(X_test_s)\n\nrmse_gs = mean_squared_error(y_test, pred_gs) ** 0.5\nrmse_gs\n\n39176.951700141195",
+    "crumbs": [
+      "<span class='chapter-number'>10</span>  <span class='chapter-title'>Feedforward Neural Network - Python</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes.html",
+    "href": "naive-bayes.html",
+    "title": "11  Naive Bayes Classification R version",
+    "section": "",
+    "text": "11.1 1. Overview and Learning Objectives\nIn this chapter, we will:",
+    "crumbs": [
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>Naive Bayes Classification R version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes.html#overview-and-learning-objectives",
+    "href": "naive-bayes.html#overview-and-learning-objectives",
+    "title": "11  Naive Bayes Classification R version",
+    "section": "",
+    "text": "Use the Ames Housing data to create a binary classification problem:\n\nPredict whether a house is high price vs low price based on its features..\n\nUnderstand how Naive Bayes handles:\n\nCategorical vs numeric predictors\n\nLaplace correction (additive smoothing)\n\nKernel density estimation for numeric variables\n\n\nUse caret (train(method = \"nb\")) to:\n\nTune key hyperparameters (usekernel, fL)\nEvaluate performance with cross-validation\n\nInterpret:\n\nClass priors\n\nConditional feature distributions\n\nPredictions & confusion matrix\n\nROC curve and AUC",
+    "crumbs": [
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>Naive Bayes Classification R version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes.html#data-setup-and-binary-target-creation",
+    "href": "naive-bayes.html#data-setup-and-binary-target-creation",
+    "title": "11  Naive Bayes Classification R version",
+    "section": "11.2 2. Data Setup and Binary Target Creation",
+    "text": "11.2 2. Data Setup and Binary Target Creation\n\n\nCode\nlibrary(tidyverse)\nlibrary(caret)\nlibrary(AmesHousing)\nlibrary(pROC)\n\nset.seed(4321)\n\names &lt;- make_ordinal_ames() %&gt;% mutate(id = row_number())\n\ntraining &lt;- ames %&gt;% sample_frac(0.7)\ntesting  &lt;- anti_join(ames, training, by = \"id\")\n\npredictors &lt;- c(\n  \"Sale_Price\",\"Bedroom_AbvGr\",\"Year_Built\",\"Mo_Sold\",\"Lot_Area\",\n  \"Street\",\"Central_Air\",\"First_Flr_SF\",\"Second_Flr_SF\",\"Full_Bath\",\n  \"Half_Bath\",\"Fireplaces\",\"Garage_Area\",\"Gr_Liv_Area\",\"TotRms_AbvGrd\"\n)\n\ntraining &lt;- training %&gt;% select(all_of(predictors))\ntesting  &lt;- testing %&gt;% select(all_of(predictors))\n\n\nWe turn Sale_Price into a classification target:\n\n\"High\" if above the training-set median\n\n\"Low\" otherwise\n\nThis keeps the task aligned with Naive Bayes as a classification model.\n\n\nCode\nprice_median &lt;- median(training$Sale_Price)\n\ntraining &lt;- training %&gt;% mutate(Price_High = factor(ifelse(Sale_Price &gt; price_median,\"High\",\"Low\")))\ntesting  &lt;- testing  %&gt;% mutate(Price_High = factor(ifelse(Sale_Price &gt; price_median,\"High\",\"Low\")))\n\ntraining_nb &lt;- training %&gt;% select(-Sale_Price)\ntesting_nb  &lt;- testing  %&gt;% select(-Sale_Price)",
+    "crumbs": [
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>Naive Bayes Classification R version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes.html#naive-bayes-intuition",
+    "href": "naive-bayes.html#naive-bayes-intuition",
+    "title": "11  Naive Bayes Classification R version",
+    "section": "11.3 3. Naive Bayes Intuition",
+    "text": "11.3 3. Naive Bayes Intuition\nNaive Bayes is a generative classifier based on Bayes’ theorem:\n[ P(Y = k X) P(Y=k) _{j=1}^p P(x_j Y=k) ]\nKey assumptions:\n\n11.3.0.1 1. Conditional Independence\nGiven the class, features are treated as independent:\n[ P(x_1, x_2, , x_p Y=k) _j P(x_j Y=k) ]\nThis is rarely exactly true, yet often works surprisingly well.\n\n\n11.3.0.2 2. Modeling Numeric Features\nNaive Bayes supports two approaches:\n\nGaussian (Normal): assumes each numeric feature is normally distributed within each class.\n\nKernel Density Estimation: more flexible, handles skewness and multimodal distributions.\n\n\n\n11.3.0.3 3. Laplace Correction\nPrevents zero probabilities when a category never appears in a given class:\n’‘’text P(x=v | Y=k) = (count + 1) / (N + K)’’’\nThis keeps the model from collapsing.",
+    "crumbs": [
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>Naive Bayes Classification R version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes.html#fitting-naive-bayes-baseline-model",
+    "href": "naive-bayes.html#fitting-naive-bayes-baseline-model",
+    "title": "11  Naive Bayes Classification R version",
+    "section": "11.4 4. Fitting Naive Bayes (Baseline Model)",
+    "text": "11.4 4. Fitting Naive Bayes (Baseline Model)\n\n\nCode\nset.seed(12345)\n\nnb.ames &lt;- naiveBayes(\n  Price_High ~ ., \n  data = training_nb,\n  laplace = 0,\n  usekernel = TRUE\n)\n\nnb.ames\n\n\n\nNaive Bayes Classifier for Discrete Predictors\n\nCall:\nnaiveBayes.default(x = X, y = Y, laplace = laplace, usekernel = TRUE)\n\nA-priori probabilities:\nY\n     High       Low \n0.4987811 0.5012189 \n\nConditional probabilities:\n      Bedroom_AbvGr\nY          [,1]      [,2]\n  High 2.948192 0.8218245\n  Low  2.770428 0.8207514\n\n      Year_Built\nY          [,1]     [,2]\n  High 1989.604 23.12763\n  Low  1953.780 25.88135\n\n      Mo_Sold\nY          [,1]     [,2]\n  High 6.353861 2.732694\n  Low  6.157588 2.691989\n\n      Lot_Area\nY           [,1]      [,2]\n  High 11726.913 10345.651\n  Low   8673.011  4673.732\n\n      Street\nY              Grvl         Pave\n  High 0.0009775171 0.9990224829\n  Low  0.0058365759 0.9941634241\n\n      Central_Air\nY                N           Y\n  High 0.008797654 0.991202346\n  Low  0.122568093 0.877431907\n\n      First_Flr_SF\nY           [,1]     [,2]\n  High 1333.7087 408.4059\n  Low   986.6527 264.8090\n\n      Second_Flr_SF\nY          [,1]     [,2]\n  High 447.7625 493.0434\n  Low  222.7490 317.7090\n\n      Full_Bath\nY          [,1]      [,2]\n  High 1.913001 0.4415516\n  Low  1.233463 0.4412614\n\n      Half_Bath\nY           [,1]      [,2]\n  High 0.5259042 0.5168999\n  Low  0.2324903 0.4406718\n\n      Fireplaces\nY           [,1]      [,2]\n  High 0.8670577 0.6271108\n  Low  0.3180934 0.5359368\n\n      Garage_Area\nY          [,1]     [,2]\n  High 581.0430 173.7891\n  Low  362.3016 190.0580\n\n      Gr_Liv_Area\nY          [,1]     [,2]\n  High 1783.837 473.5654\n  Low  1215.255 342.4179\n\n      TotRms_AbvGrd\nY          [,1]     [,2]\n  High 7.043988 1.516711\n  Low  5.825875 1.373640\n\n\n\n11.4.0.1 Explanation of key settings\n\nlaplace = 0\nNo smoothing; probability estimates reflect raw counts.\nZero probabilities may occur for rare categorical levels.\nusekernel = TRUE\nNumeric features are modeled using kernel density estimates instead of assuming normality.\n\n\n\n11.4.0.2 What the output means\n\nA-priori probabilities:\nEstimated from class frequencies (High vs Low).\nConditional tables:\n\nFor categorical features: probability of each level given class.\n\nFor numerical features: kernel-based density info (not printed in summary).",
+    "crumbs": [
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>Naive Bayes Classification R version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes.html#predicting-on-test-data",
+    "href": "naive-bayes.html#predicting-on-test-data",
+    "title": "11  Naive Bayes Classification R version",
+    "section": "11.5 5. Predicting on Test Data",
+    "text": "11.5 5. Predicting on Test Data\n\n\nCode\ntest_pred_class &lt;- predict(nb.ames, testing_nb)\ntest_pred_prob  &lt;- predict(nb.ames, testing_nb, type=\"raw\")\nhead(test_pred_prob)\n\n\n          High          Low\n[1,] 0.9999965 3.462116e-06\n[2,] 0.9850961 1.490391e-02\n[3,] 0.9830462 1.695380e-02\n[4,] 0.5936144 4.063856e-01\n[5,] 0.9437367 5.626333e-02\n[6,] 0.9998253 1.746816e-04\n\n\n\ntest_pred_class: predicted High/Low label\n\ntest_pred_prob: estimated probability for each class",
+    "crumbs": [
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>Naive Bayes Classification R version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes.html#confusion-matrix-interpretation",
+    "href": "naive-bayes.html#confusion-matrix-interpretation",
+    "title": "11  Naive Bayes Classification R version",
+    "section": "11.6 6. Confusion Matrix Interpretation",
+    "text": "11.6 6. Confusion Matrix Interpretation\n\n\nCode\nconf_matrix &lt;- confusionMatrix(\n  test_pred_class,\n  testing_nb$Price_High,\n  positive=\"High\"\n)\n\nconf_matrix\n\n\nConfusion Matrix and Statistics\n\n          Reference\nPrediction High Low\n      High  373  49\n      Low    55 402\n                                          \n               Accuracy : 0.8817          \n                 95% CI : (0.8585, 0.9023)\n    No Information Rate : 0.5131          \n    P-Value [Acc &gt; NIR] : &lt;2e-16          \n                                          \n                  Kappa : 0.7631          \n                                          \n Mcnemar's Test P-Value : 0.6239          \n                                          \n            Sensitivity : 0.8715          \n            Specificity : 0.8914          \n         Pos Pred Value : 0.8839          \n         Neg Pred Value : 0.8796          \n             Prevalence : 0.4869          \n         Detection Rate : 0.4243          \n   Detection Prevalence : 0.4801          \n      Balanced Accuracy : 0.8814          \n                                          \n       'Positive' Class : High            \n                                          \n\n\n\n11.6.0.1 What the confusion matrix tells us\n\nAccuracy: overall correctness\n\nSensitivity (Recall for High): proportion of expensive homes correctly identified\n\nSpecificity (Recall for Low): proportion of cheaper homes correctly identified\n\nBalanced Accuracy: average of sensitivity & specificity\n\nKappa: agreement beyond chance\n\nThis is the primary evaluation for classification problems.",
+    "crumbs": [
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>Naive Bayes Classification R version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes.html#roc-curve-auc",
+    "href": "naive-bayes.html#roc-curve-auc",
+    "title": "11  Naive Bayes Classification R version",
+    "section": "11.7 7. ROC Curve & AUC",
+    "text": "11.7 7. ROC Curve & AUC\nROC curves evaluate model ranking ability — how well it separates High from Low across thresholds.\n\n\nCode\nroc_obj &lt;- roc(\n  response = testing_nb$Price_High,\n  predictor = test_pred_prob[,\"High\"],\n  levels = c(\"Low\",\"High\")\n)\n\nplot(roc_obj, col=\"#2E86C1\", lwd=3, main=\"ROC Curve - Naive Bayes\")\n\n\n\n\n\n\n\n\n\nCode\nauc_value &lt;- auc(roc_obj)\nauc_value\n\n\nArea under the curve: 0.9457\n\n\n\n11.7.0.1 Interpretation\n\nROC Curve: visual representation of sensitivity vs (1 - specificity)\n\nAUC: single summary metric\n\n0.5 = no better than random\n\n0.7 = decent\n\n0.8 = strong\n\n\n0.9 = outstanding",
+    "crumbs": [
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>Naive Bayes Classification R version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes.html#tuning-naive-bayes-using-carettrain",
+    "href": "naive-bayes.html#tuning-naive-bayes-using-carettrain",
+    "title": "11  Naive Bayes Classification R version",
+    "section": "11.8 8. Tuning Naive Bayes Using caret::train()",
+    "text": "11.8 8. Tuning Naive Bayes Using caret::train()\nWe now tune:\n\nusekernel ∈ {TRUE, FALSE}\n\nfL ∈ {0, 0.5, 1} (fractional Laplace)\n\n\n\nCode\nset.seed(12345)\n\ntune_grid &lt;- expand.grid(\n  usekernel = c(TRUE, FALSE),\n  fL        = c(0, 0.5, 1),\n  adjust    = 1\n)\n\nctrl &lt;- trainControl(\n  method = \"cv\",\n  number = 10,\n  classProbs = TRUE,\n  summaryFunction = twoClassSummary\n)\n\ntraining_nb$Price_High &lt;- relevel(training_nb$Price_High, ref=\"High\")\ntesting_nb$Price_High  &lt;- relevel(testing_nb$Price_High, ref=\"High\")\n\nnb.ames.caret &lt;- train(\n  Price_High ~ .,\n  data = training_nb,\n  method = \"nb\",\n  tuneGrid = tune_grid,\n  trControl = ctrl,\n  metric =\"ROC\"\n)\n\nnb.ames.caret\n\n\nNaive Bayes \n\n2051 samples\n  14 predictor\n   2 classes: 'High', 'Low' \n\nNo pre-processing\nResampling: Cross-Validated (10 fold) \nSummary of sample sizes: 1845, 1846, 1846, 1846, 1846, 1845, ... \nResampling results across tuning parameters:\n\n  usekernel  fL   ROC        Sens       Spec     \n  FALSE      0.0  0.9325587  0.9217484  0.8453794\n  FALSE      0.5  0.9325587  0.9217484  0.8453794\n  FALSE      1.0  0.9325587  0.9217484  0.8453794\n   TRUE      0.0  0.9549057  0.9197316  0.8589473\n   TRUE      0.5  0.9549057  0.9197316  0.8589473\n   TRUE      1.0  0.9549057  0.9197316  0.8589473\n\nTuning parameter 'adjust' was held constant at a value of 1\nROC was used to select the optimal model using the largest value.\nThe final values used for the model were fL = 0, usekernel = TRUE and adjust\n = 1.\n\n\n###$ How tuning works\n\nCross-validation evaluates each combination of hyperparameters.\n\nBest model chosen by the metric (ROC).\n\ncaret automatically handles class probabilities and ROC scoring.\n\n\n\nCode\nnb.ames.caret$results\n\n\n  usekernel  fL adjust       ROC      Sens      Spec      ROCSD     SensSD\n1     FALSE 0.0      1 0.9325587 0.9217484 0.8453794 0.02290800 0.03508486\n4      TRUE 0.0      1 0.9549057 0.9197316 0.8589473 0.01199907 0.04510391\n2     FALSE 0.5      1 0.9325587 0.9217484 0.8453794 0.02290800 0.03508486\n5      TRUE 0.5      1 0.9549057 0.9197316 0.8589473 0.01199907 0.04510391\n3     FALSE 1.0      1 0.9325587 0.9217484 0.8453794 0.02290800 0.03508486\n6      TRUE 1.0      1 0.9549057 0.9197316 0.8589473 0.01199907 0.04510391\n      SpecSD\n1 0.02659457\n4 0.03971772\n2 0.02659457\n5 0.03971772\n3 0.02659457\n6 0.03971772\n\n\nCode\nnb.ames.caret$bestTune\n\n\n  fL usekernel adjust\n4  0      TRUE      1\n\n\nCode\nplot(nb.ames.caret)",
+    "crumbs": [
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>Naive Bayes Classification R version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes.html#evaluating-the-tuned-model-on-the-test-set",
+    "href": "naive-bayes.html#evaluating-the-tuned-model-on-the-test-set",
+    "title": "11  Naive Bayes Classification R version",
+    "section": "11.9 9. Evaluating the Tuned Model on the Test Set",
+    "text": "11.9 9. Evaluating the Tuned Model on the Test Set\n\n\nCode\ntest_pred_class_tuned &lt;- predict(nb.ames.caret, testing_nb)\ntest_pred_prob_tuned &lt;- predict(nb.ames.caret, testing_nb, type=\"prob\")\n\nconfusionMatrix(\n  test_pred_class_tuned,\n  testing_nb$Price_High,\n  positive=\"High\"\n)\n\n\nConfusion Matrix and Statistics\n\n          Reference\nPrediction High Low\n      High  398  77\n      Low    30 374\n                                          \n               Accuracy : 0.8783          \n                 95% CI : (0.8548, 0.8992)\n    No Information Rate : 0.5131          \n    P-Value [Acc &gt; NIR] : &lt; 2.2e-16       \n                                          \n                  Kappa : 0.7571          \n                                          \n Mcnemar's Test P-Value : 8.708e-06       \n                                          \n            Sensitivity : 0.9299          \n            Specificity : 0.8293          \n         Pos Pred Value : 0.8379          \n         Neg Pred Value : 0.9257          \n             Prevalence : 0.4869          \n         Detection Rate : 0.4528          \n   Detection Prevalence : 0.5404          \n      Balanced Accuracy : 0.8796          \n                                          \n       'Positive' Class : High",
+    "crumbs": [
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>Naive Bayes Classification R version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes.html#summary",
+    "href": "naive-bayes.html#summary",
+    "title": "11  Naive Bayes Classification R version",
+    "section": "11.10 10. Summary",
+    "text": "11.10 10. Summary\n\nNaive Bayes is a probabilistic, generative classifier.\n\nIt models class priors + conditional likelihoods for each predictor.\n\nNumeric predictors can use:\n\nGaussian distributions, or\n\nKernel density estimates (usekernel = TRUE).\n\n\nLaplace smoothing protects against zero probabilities.\n\nROC and AUC evaluate ranking performance.\n\nConfusion matrix evaluates classification performance.\n\ncaret enables systematic tuning over smoothing and density options.",
+    "crumbs": [
+      "<span class='chapter-number'>11</span>  <span class='chapter-title'>Naive Bayes Classification R version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes-python.html",
+    "href": "naive-bayes-python.html",
+    "title": "12  Naive Bayes Classification - Python Version",
+    "section": "",
+    "text": "12.1 1. Overview and Learning Objectives\nIn this Python chapter, we will:",
+    "crumbs": [
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Naive Bayes Classification - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes-python.html#overview-and-learning-objectives",
+    "href": "naive-bayes-python.html#overview-and-learning-objectives",
+    "title": "12  Naive Bayes Classification - Python Version",
+    "section": "",
+    "text": "Load the Ames Housing dataset from OpenML.\nCreate a High vs Low price classification target.\nFit Gaussian Naive Bayes.\nProduce predictions and class probabilities.\nCompute a correct ROC curve and AUC.\nMirror the structure of the R version.",
+    "crumbs": [
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Naive Bayes Classification - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes-python.html#setup-and-data-preparation",
+    "href": "naive-bayes-python.html#setup-and-data-preparation",
+    "title": "12  Naive Bayes Classification - Python Version",
+    "section": "12.2 2. Setup and Data Preparation",
+    "text": "12.2 2. Setup and Data Preparation\n\n\nCode\nimport pandas as pd\nimport numpy as np\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.naive_bayes import GaussianNB\nfrom sklearn.metrics import confusion_matrix, classification_report, roc_curve, auc\nimport matplotlib.pyplot as plt\nimport seaborn as sns\nfrom sklearn.datasets import fetch_openml\n\n# Load Ames Housing dataset\names = fetch_openml(name=\"house_prices\", as_frame=True)\ndf = ames.frame.copy()\n\ndf.rename(columns={\"SalePrice\": \"Sale_Price\"}, inplace=True)\n\ndf.head()\n\n\n\n\n\n\n\n\n\nId\nMSSubClass\nMSZoning\nLotFrontage\nLotArea\nStreet\nAlley\nLotShape\nLandContour\nUtilities\n...\nPoolArea\nPoolQC\nFence\nMiscFeature\nMiscVal\nMoSold\nYrSold\nSaleType\nSaleCondition\nSale_Price\n\n\n\n\n0\n1\n60\nRL\n65.0\n8450\nPave\nNaN\nReg\nLvl\nAllPub\n...\n0\nNaN\nNaN\nNaN\n0\n2\n2008\nWD\nNormal\n208500\n\n\n1\n2\n20\nRL\n80.0\n9600\nPave\nNaN\nReg\nLvl\nAllPub\n...\n0\nNaN\nNaN\nNaN\n0\n5\n2007\nWD\nNormal\n181500\n\n\n2\n3\n60\nRL\n68.0\n11250\nPave\nNaN\nIR1\nLvl\nAllPub\n...\n0\nNaN\nNaN\nNaN\n0\n9\n2008\nWD\nNormal\n223500\n\n\n3\n4\n70\nRL\n60.0\n9550\nPave\nNaN\nIR1\nLvl\nAllPub\n...\n0\nNaN\nNaN\nNaN\n0\n2\n2006\nWD\nAbnorml\n140000\n\n\n4\n5\n60\nRL\n84.0\n14260\nPave\nNaN\nIR1\nLvl\nAllPub\n...\n0\nNaN\nNaN\nNaN\n0\n12\n2008\nWD\nNormal\n250000\n\n\n\n\n5 rows × 81 columns",
+    "crumbs": [
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Naive Bayes Classification - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes-python.html#select-variables-of-interest",
+    "href": "naive-bayes-python.html#select-variables-of-interest",
+    "title": "12  Naive Bayes Classification - Python Version",
+    "section": "12.3 2.1 Select Variables of Interest",
+    "text": "12.3 2.1 Select Variables of Interest\n\n\nCode\npredictors = [\n    \"Sale_Price\",\n    \"BedroomAbvGr\",\n    \"YearBuilt\",\n    \"MoSold\",\n    \"LotArea\",\n    \"Street\",\n    \"CentralAir\",\n    \"1stFlrSF\",\n    \"2ndFlrSF\",\n    \"FullBath\",\n    \"HalfBath\",\n    \"Fireplaces\",\n    \"GarageArea\",\n    \"GrLivArea\",\n    \"TotRmsAbvGrd\"\n]\n\ndf = df[predictors].dropna()",
+    "crumbs": [
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Naive Bayes Classification - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes-python.html#create-a-binary-target-variable",
+    "href": "naive-bayes-python.html#create-a-binary-target-variable",
+    "title": "12  Naive Bayes Classification - Python Version",
+    "section": "12.4 2.2 Create a Binary Target Variable",
+    "text": "12.4 2.2 Create a Binary Target Variable\n\n\nCode\nmedian_price = df[\"Sale_Price\"].median()\n\ndf[\"Price_High\"] = np.where(df[\"Sale_Price\"] &gt; median_price, \"High\", \"Low\")\ndf[\"Price_High\"] = df[\"Price_High\"].astype(\"category\")\n\ndf[\"Price_High\"].value_counts(normalize=True)\n\n\nPrice_High\nLow     0.50137\nHigh    0.49863\nName: proportion, dtype: float64",
+    "crumbs": [
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Naive Bayes Classification - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes-python.html#traintest-split",
+    "href": "naive-bayes-python.html#traintest-split",
+    "title": "12  Naive Bayes Classification - Python Version",
+    "section": "12.5 2.3 Train/Test Split",
+    "text": "12.5 2.3 Train/Test Split\n\n\nCode\nX = df.drop(columns=[\"Sale_Price\", \"Price_High\"])\ny = df[\"Price_High\"]\n\n# Encode categorical predictors\nX = pd.get_dummies(X, drop_first=True)\n\nX_train, X_test, y_train, y_test = train_test_split(\n    X, y, test_size=0.30, random_state=4321, stratify=y\n)\n\nX_train.shape, X_test.shape\n\n\n((1022, 14), (438, 14))",
+    "crumbs": [
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Naive Bayes Classification - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes-python.html#gaussian-naive-bayes-model",
+    "href": "naive-bayes-python.html#gaussian-naive-bayes-model",
+    "title": "12  Naive Bayes Classification - Python Version",
+    "section": "12.6 3. Gaussian Naive Bayes Model",
+    "text": "12.6 3. Gaussian Naive Bayes Model\n\n\nCode\ngnb = GaussianNB()\ngnb.fit(X_train, y_train)\n\n\nGaussianNB()In a Jupyter environment, please rerun this cell to show the HTML representation or trust the notebook. On GitHub, the HTML representation is unable to render, please try loading this page with nbviewer.org.GaussianNB?Documentation for GaussianNBiFittedGaussianNB()",
+    "crumbs": [
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Naive Bayes Classification - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes-python.html#predictions",
+    "href": "naive-bayes-python.html#predictions",
+    "title": "12  Naive Bayes Classification - Python Version",
+    "section": "12.7 4. Predictions",
+    "text": "12.7 4. Predictions\n\n\nCode\ny_pred = gnb.predict(X_test)\n\n# Extract the probability of the TRUE positive class (\"High\")\npos_index = np.where(gnb.classes_ == \"High\")[0][0]\ny_prob_high = gnb.predict_proba(X_test)[:, pos_index]",
+    "crumbs": [
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Naive Bayes Classification - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes-python.html#confusion-matrix-classification-report",
+    "href": "naive-bayes-python.html#confusion-matrix-classification-report",
+    "title": "12  Naive Bayes Classification - Python Version",
+    "section": "12.8 5. Confusion Matrix & Classification Report",
+    "text": "12.8 5. Confusion Matrix & Classification Report\n\n\nCode\ncm = confusion_matrix(y_test, y_pred)\ncm\n\n\narray([[187,  31],\n       [ 20, 200]])\n\n\n\n\nCode\nsns.heatmap(cm, annot=True, fmt=\"d\", cmap=\"Blues\")\nplt.title(\"Confusion Matrix\")\nplt.xlabel(\"Predicted\")\nplt.ylabel(\"Actual\")\nplt.show()\n\n\n\n\n\n\n\n\n\n\n\nCode\nprint(classification_report(y_test, y_pred))\n\n\n              precision    recall  f1-score   support\n\n        High       0.90      0.86      0.88       218\n         Low       0.87      0.91      0.89       220\n\n    accuracy                           0.88       438\n   macro avg       0.88      0.88      0.88       438\nweighted avg       0.88      0.88      0.88       438",
+    "crumbs": [
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Naive Bayes Classification - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes-python.html#roc-curve-corrected-and-auc",
+    "href": "naive-bayes-python.html#roc-curve-corrected-and-auc",
+    "title": "12  Naive Bayes Classification - Python Version",
+    "section": "12.9 6. ROC Curve (Corrected) and AUC",
+    "text": "12.9 6. ROC Curve (Corrected) and AUC\n\n\nCode\n# Convert y_test to binary (1 = High, 0 = Low)\ny_test_binary = (y_test == \"High\").astype(int)\n\n# Compute ROC using correct positive class probability\nfpr, tpr, thresholds = roc_curve(y_test_binary, y_prob_high)\nroc_auc = auc(fpr, tpr)\n\nroc_auc\n\n\nnp.float64(0.9547122602168474)\n\n\n\n\nCode\nplt.figure(figsize=(6,5))\nplt.plot(fpr, tpr, label=f\"AUC = {roc_auc:.3f}\", linewidth=3)\nplt.plot([0,1], [0,1], \"k--\")\nplt.xlabel(\"False Positive Rate\")\nplt.ylabel(\"True Positive Rate\")\nplt.title(\"ROC Curve - Naive Bayes (Corrected)\")\nplt.legend()\nplt.show()",
+    "crumbs": [
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Naive Bayes Classification - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes-python.html#interpretation-notes",
+    "href": "naive-bayes-python.html#interpretation-notes",
+    "title": "12  Naive Bayes Classification - Python Version",
+    "section": "12.10 7. Interpretation Notes",
+    "text": "12.10 7. Interpretation Notes\n\n12.10.1 Naive Bayes Assumptions\n\nPredictors are independent given the class.\nNumeric features follow Gaussian distributions.\nOne-hot encoded categorical variables behave like Bernoulli variables.\n\n\n\n12.10.2 Strengths\n\nFast and simple.\nWorks well as a baseline.\nHighly interpretable.\n\n\n\n12.10.3 Weaknesses\n\nIndependence assumption rarely holds.\nGaussian assumption is an approximation.",
+    "crumbs": [
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Naive Bayes Classification - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "naive-bayes-python.html#summary",
+    "href": "naive-bayes-python.html#summary",
+    "title": "12  Naive Bayes Classification - Python Version",
+    "section": "12.11 8. Summary",
+    "text": "12.11 8. Summary\nThis chapter:\n\nLoaded the Ames Housing dataset.\nCreated a binary classification target.\nFit Gaussian Naive Bayes.\nCorrectly computed ROC & AUC.\nProvided fully aligned interpretation with the R version.",
+    "crumbs": [
+      "<span class='chapter-number'>12</span>  <span class='chapter-title'>Naive Bayes Classification - Python Version</span>"
     ]
   }
 ]
