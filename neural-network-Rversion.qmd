@@ -6,10 +6,21 @@ format:
     code-fold: true
   pdf:
     toc: true
+    documentclass: scrreprt
+    mainfont: "Helvetica"
+    fontsize: 11pt
+    geometry:
+      - margin=1in
+    fig-width: 6
+    fig-height: 4
+    code-overflow: wrap
+    code-block-bg: "#f8f8f8"
+    code-block-border-left: "#CCCCCC"
 execute:
   echo: true
   warning: false
   message: false
+output-file: neural-network-Rversion.pdf
 ---
 
 ## Introduction

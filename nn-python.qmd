@@ -1,0 +1,490 @@
+
+---
+title: "Neural Networks in Python: MLP, RNN, and CNN"
+format:
+  html:
+    code-fold: false
+  pdf:
+    toc: true
+    number-sections: true
+jupyter: python3
+---
+
+# Introduction
+
+This chapter introduces neural networks in Python using `scikit-learn` and `tensorflow/keras`.
+
+We will mirror the structure of the R neural network chapter:
+
+1. **Feedforward (multilayer perceptron) network for regression** using a subset of the Ames Housing data.
+2. **Recurrent neural network (RNN / LSTM)** using a **sine wave** as the underlying time series.
+3. **Convolutional neural network (CNN)** for **image classification** using the MNIST handwritten digits dataset.
+
+Throughout, we will:
+
+- Use the **same conceptual variable set** as in the R version.
+- Clearly **comment each step** to emphasize what is happening and why.
+
+---
+
+# 1. Feedforward Neural Network (MLP) with Ames Housing
+
+In this section we:
+
+- Load the Ames Housing data (via the `house_prices` OpenML dataset, the same data used in many R examples).
+- Select a subset of predictors that parallels the R chapter:
+
+  - Sale price (target)
+  - Bedroom_AbvGr
+  - Year_Built
+  - Mo_Sold
+  - Lot_Area
+  - Street
+  - Central_Air
+  - First_Flr_SF
+  - Second_Flr_SF
+  - Full_Bath
+  - Half_Bath
+  - Fireplaces
+  - Garage_Area
+  - Gr_Liv_Area
+  - TotRms_AbvGrd
+
+- Encode categorical variables.
+- Standardize predictors using `StandardScaler`.
+- Fit an **MLPRegressor** with a simple architecture.
+- Use **GridSearchCV** to tune the hidden layer size and regularization (`alpha`).
+
+## 1.1 Load and Prepare the Data
+
+```{python}
+import numpy as np
+import pandas as pd
+
+from sklearn.datasets import fetch_openml
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.preprocessing import StandardScaler
+from sklearn.neural_network import MLPRegressor
+from sklearn.metrics import mean_squared_error
+
+# For reproducibility
+np.random.seed(12345)
+
+# Load the Ames "house_prices" dataset from OpenML
+ames = fetch_openml(name="house_prices", as_frame=True)
+df = ames.frame
+
+# These columns are the OpenML equivalents of the R variables:
+# R: Sale_Price        -> Python: SalePrice
+# R: Bedroom_AbvGr     -> Python: BedroomAbvGr
+# R: Year_Built        -> Python: YearBuilt
+# R: Mo_Sold           -> Python: MoSold
+# R: Lot_Area          -> Python: LotArea
+# R: Street            -> Python: Street
+# R: Central_Air       -> Python: CentralAir
+# R: First_Flr_SF      -> Python: 1stFlrSF
+# R: Second_Flr_SF     -> Python: 2ndFlrSF
+# R: Full_Bath         -> Python: FullBath
+# R: Half_Bath         -> Python: HalfBath
+# R: Fireplaces        -> Python: Fireplaces
+# R: Garage_Area       -> Python: GarageArea
+# R: Gr_Liv_Area       -> Python: GrLivArea
+# R: TotRms_AbvGrd     -> Python: TotRmsAbvGrd
+
+selected_cols = [
+    "SalePrice",
+    "BedroomAbvGr",
+    "YearBuilt",
+    "MoSold",
+    "LotArea",
+    "Street",
+    "CentralAir",
+    "1stFlrSF",
+    "2ndFlrSF",
+    "FullBath",
+    "HalfBath",
+    "Fireplaces",
+    "GarageArea",
+    "GrLivArea",
+    "TotRmsAbvGrd"
+]
+
+df_sub = df[selected_cols].dropna()
+
+# Encode categorical variables (Street, CentralAir) as numeric dummies.
+# We use drop_first=True to avoid multicollinearity (like reference levels in R).
+df_sub = pd.get_dummies(df_sub, columns=["Street", "CentralAir"], drop_first=True)
+
+# Separate target (y) and predictors (X)
+y = df_sub["SalePrice"]
+X = df_sub.drop("SalePrice", axis=1)
+
+X.head()
+```
+
+## 1.2 Train/Test Split and Standardization
+
+We follow your requested **StandardScaler** pattern:
+
+```python
+scaler = StandardScaler()
+scaler.fit(X_train)
+X_train_s = scaler.transform(X_train)
+```
+
+```{python}
+# Split into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=12345
+)
+
+# Initialize the scaler
+scaler = StandardScaler()
+
+# Fit the scaler on the training data only
+scaler.fit(X_train)
+
+# Transform training and test data using the fitted scaler
+X_train_s = scaler.transform(X_train)
+X_test_s = scaler.transform(X_test)
+```
+
+## 1.3 Simple MLPRegressor Model
+
+Here we replicate the structure you outlined in scikit-learn:
+
+- Solver: `'lbfgs'` (a quasi-Newton method).
+- Regularization (`alpha`): `1e-5`.
+- One hidden layer with 5 units.
+- Large `max_iter` to reduce convergence warnings.
+
+```{python}
+# Simple MLPRegressor with fixed architecture
+nn_ames_simple = MLPRegressor(
+    solver="lbfgs",
+    alpha=1e-5,
+    hidden_layer_sizes=(5,),
+    random_state=12345,
+    max_iter=5000
+)
+
+# Fit the model on the standardized training data
+nn_ames_simple.fit(X_train_s, y_train)
+
+# Predict on the test set
+y_pred_simple = nn_ames_simple.predict(X_test_s)
+
+# Compute RMSE for interpretability
+rmse_simple = mean_squared_error(y_test, y_pred_simple, squared=False)
+rmse_simple
+```
+
+## 1.4 Hyperparameter Tuning with GridSearchCV
+
+Now we wrap `MLPRegressor` in a `GridSearchCV`:
+
+- We vary the `hidden_layer_sizes` from 3 to 7 units.
+- We try two values for `alpha` (L2 penalty).
+- We keep `solver='lbfgs'` as specified.
+- We use 10-fold cross-validation (`cv=10`).
+- We use `neg_root_mean_squared_error` so that higher scores are better.
+
+```{python}
+from pprint import pprint
+
+# Define the parameter grid
+param_grid = {
+    "hidden_layer_sizes": [(h,) for h in [3, 4, 5, 6, 7]],
+    "alpha": [0.00005, 0.0005],
+    "solver": ["lbfgs"]
+}
+
+# Base model (without fixed hidden units)
+nn_base = MLPRegressor(max_iter=5000, random_state=12345)
+
+# Grid search object
+grid_search = GridSearchCV(
+    estimator=nn_base,
+    param_grid=param_grid,
+    cv=10,
+    scoring="neg_root_mean_squared_error",
+    n_jobs=-1
+)
+
+# Fit grid search on standardized training data
+grid_search.fit(X_train_s, y_train)
+
+# Best parameters and corresponding score
+best_params = grid_search.best_params_
+best_score = -grid_search.best_score_  # convert back from negative RMSE
+
+pprint(best_params)
+best_score
+```
+
+```{python}
+# Evaluate the tuned model on the test set
+best_model = grid_search.best_estimator_
+y_pred_gs = best_model.predict(X_test_s)
+rmse_gs = mean_squared_error(y_test, y_pred_gs, squared=False)
+rmse_gs
+```
+
+At this point you can compare:
+
+- `rmse_simple`: performance of the simple hand-specified MLP.
+- `rmse_gs`: performance of the tuned model.
+
+---
+
+# 2. Recurrent Neural Network (RNN/LSTM) with a Sine Wave
+
+In this section we:
+
+1. Generate a **sine wave** using NumPy.
+2. Turn the continuous time series into a **supervised learning problem**:
+   - Input: a window of past values (e.g., 50 time steps).
+   - Output: the next value in the sequence.
+3. Train an **LSTM** (a type of RNN) to predict the next value.
+4. Evaluate and visualize predictions.
+
+## 2.1 Generate a Sine Wave
+
+```{python}
+import matplotlib.pyplot as plt
+
+# Create a smooth grid of time points
+n_points = 2000
+t = np.linspace(0, 40 * np.pi, n_points)  # many cycles of sine
+signal = np.sin(t)
+
+plt.plot(t, signal)
+plt.title("Underlying Sine Wave")
+plt.xlabel("Time")
+plt.ylabel("sin(t)")
+plt.show()
+```
+
+## 2.2 Turn the Series into Supervised Sequences
+
+We define a helper function:
+
+- `seq_length` = number of time steps in each input window.
+- For each starting index `i`, the input `X[i]` is `signal[i : i+seq_length]`.
+- The target `y[i]` is the next point `signal[i+seq_length]`.
+
+```{python}
+def create_sequences(series, seq_length=50):
+    '''
+    Convert a 1D array "series" into a set of input/output pairs for sequence modeling.
+    X will have shape (num_samples, seq_length, 1)
+    y will have shape (num_samples,)
+    '''
+    X_list = []
+    y_list = []
+
+    for i in range(len(series) - seq_length):
+        X_list.append(series[i:i+seq_length])
+        y_list.append(series[i+seq_length])
+
+    X_arr = np.array(X_list)
+    y_arr = np.array(y_list)
+
+    # Add a "feature" dimension so the shape is (samples, timesteps, features)
+    X_arr = X_arr[..., np.newaxis]
+    return X_arr, y_arr
+
+seq_length = 50
+X_seq, y_seq = create_sequences(signal, seq_length=seq_length)
+X_seq.shape, y_seq.shape
+```
+
+## 2.3 Train/Test Split
+
+We will:
+
+- Use the first 80% of the sequences for training.
+- The remaining 20% for testing (future time points).
+
+```{python}
+split_index = int(0.8 * X_seq.shape[0])
+
+X_train_seq = X_seq[:split_index]
+y_train_seq = y_seq[:split_index]
+X_test_seq = X_seq[split_index:]
+y_test_seq = y_seq[split_index:]
+
+X_train_seq.shape, X_test_seq.shape
+```
+
+## 2.4 Build and Train an LSTM Model
+
+Here we use `tensorflow.keras`:
+
+- One LSTM layer with 32 units.
+- A Dense output layer to predict the next time step.
+- MSE loss with the Adam optimizer.
+
+```{python}
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+
+tf.random.set_seed(12345)
+
+model_lstm = keras.Sequential([
+    layers.LSTM(32, input_shape=(seq_length, 1)),
+    layers.Dense(1)
+])
+
+model_lstm.compile(optimizer="adam", loss="mse")
+model_lstm.summary()
+```
+
+```{python}
+history_lstm = model_lstm.fit(
+    X_train_seq,
+    y_train_seq,
+    epochs=20,
+    batch_size=32,
+    validation_split=0.2,
+    verbose=0
+)
+
+plt.plot(history_lstm.history["loss"], label="Train Loss")
+plt.plot(history_lstm.history["val_loss"], label="Validation Loss")
+plt.legend()
+plt.title("LSTM Training on Sine Wave")
+plt.xlabel("Epoch")
+plt.ylabel("MSE Loss")
+plt.show()
+```
+
+## 2.5 Evaluate on Test Data
+
+```{python}
+from sklearn.metrics import mean_squared_error
+
+y_pred_seq = model_lstm.predict(X_test_seq).flatten()
+
+rmse_lstm = mean_squared_error(y_test_seq, y_pred_seq, squared=False)
+rmse_lstm
+```
+
+```{python}
+# Visual comparison for a subset of the test predictions
+n_plot = 200
+
+plt.plot(y_test_seq[:n_plot], label="Actual")
+plt.plot(y_pred_seq[:n_plot], label="Predicted")
+plt.legend()
+plt.title("LSTM Next-Step Predictions on Sine Wave (Test Segment)")
+plt.xlabel("Time index (relative within test set)")
+plt.ylabel("Value")
+plt.show()
+```
+
+---
+
+# 3. Convolutional Neural Network (CNN) for Image Classification (MNIST)
+
+In this final section we:
+
+1. Load the **MNIST** dataset (handwritten digits 0–9).
+2. Scale pixel values to the [0, 1] range.
+3. Add a channel dimension to match CNN expectations.
+4. Build a simple CNN with:
+   - Two convolutional layers and max pooling.
+   - A fully connected dense layer.
+   - A softmax output for multi-class classification.
+5. Train and evaluate the model.
+
+## 3.1 Load and Preprocess MNIST
+
+```{python}
+from tensorflow.keras.datasets import mnist
+
+# Load data: 60,000 train images, 10,000 test images
+(X_train_m, y_train_m), (X_test_m, y_test_m) = mnist.load_data()
+
+# Scale pixel intensities to [0, 1]
+X_train_m = X_train_m.astype("float32") / 255.0
+X_test_m = X_test_m.astype("float32") / 255.0
+
+# Add channel dimension for CNN (28, 28) -> (28, 28, 1)
+X_train_m = np.expand_dims(X_train_m, -1)
+X_test_m = np.expand_dims(X_test_m, -1)
+
+X_train_m.shape, X_test_m.shape
+```
+
+## 3.2 Build the CNN Model
+
+```{python}
+model_cnn = keras.Sequential([
+    # First convolution + pooling block
+    layers.Conv2D(32, (3, 3), activation="relu", input_shape=(28, 28, 1)),
+    layers.MaxPooling2D((2, 2)),
+
+    # Second convolution + pooling block
+    layers.Conv2D(64, (3, 3), activation="relu"),
+    layers.MaxPooling2D((2, 2)),
+
+    # Flatten and dense layers
+    layers.Flatten(),
+    layers.Dense(64, activation="relu"),
+    layers.Dense(10, activation="softmax")  # 10 classes for digits 0-9
+])
+
+model_cnn.compile(
+    optimizer="adam",
+    loss="sparse_categorical_crossentropy",
+    metrics=["accuracy"]
+)
+
+model_cnn.summary()
+```
+
+## 3.3 Train the CNN
+
+```{python}
+history_cnn = model_cnn.fit(
+    X_train_m,
+    y_train_m,
+    epochs=3,
+    batch_size=64,
+    validation_split=0.1,
+    verbose=0
+)
+
+plt.plot(history_cnn.history["accuracy"], label="Train Accuracy")
+plt.plot(history_cnn.history["val_accuracy"], label="Validation Accuracy")
+plt.legend()
+plt.title("CNN Accuracy on MNIST")
+plt.xlabel("Epoch")
+plt.ylabel("Accuracy")
+plt.show()
+```
+
+## 3.4 Evaluate on Test Data
+
+```{python}
+test_loss, test_acc = model_cnn.evaluate(X_test_m, y_test_m, verbose=0)
+test_acc
+```
+
+---
+
+# 4. Summary
+
+In this Python chapter we have:
+
+- Implemented a **feedforward neural network (MLP)** for tabular regression using the Ames data subset, including:
+  - Standardization with `StandardScaler`.
+  - Hyperparameter tuning of hidden layer size and regularization using `GridSearchCV`.
+
+- Built an **LSTM-based RNN** to learn a **sine wave** next-step prediction problem.
+
+- Trained a **CNN** on the **MNIST** dataset for handwritten digit classification.
+
+These three examples parallel the R neural network chapter but use Python tools, giving students a side-by-side view of neural networks in both languages.

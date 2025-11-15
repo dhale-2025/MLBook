@@ -17,8 +17,9 @@ book:
     - Tree_Based_Python2.qmd
     - rf-xgb-params.qmd
     - neural-network-Rversion.qmd
-    - neural-networks-python.qmd
-    - naive-bayes-models.qmd
+    - nn1-python.qmd
+    - naive-bayes.qmd
+    - naive-bayes-python.qmd
     - model-agnostic-interpretability.qmd
     - support-vector-machines.qmd
 
@@ -35,7 +36,7 @@ execute:
   keep-md: false
 
 # ---------------------------------------------------------------------
-# Ensure R chapters use your ARM-native Python for reticulate
+# Specific to making the code load when rendering book
 # ---------------------------------------------------------------------
 env:
   RETICULATE_PYTHON: "/Users/donaldhale/r-arm/bin/python"

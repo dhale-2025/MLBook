@@ -51,9 +51,26 @@
     "rf-xgb-params.html": "92dfe60a"
   },
   "neural-network-Rversion.qmd": {
-    "neural-network-Rversion.html": "2cb2d69e"
+    "neural-network-Rversion.html": "2cb2d69e",
+    "neural-network-Rversion.pdf.html": "7438a87f",
+    "neural-network-Rversion.pdf": "d5b31656"
   },
   "neural-networks-python.qmd": {
     "neural-networks-python.html": "2d7eb174"
+  },
+  "nn-python.qmd": {
+    "nn-python.html": "958bb0b1"
+  },
+  "nn1-python.qmd": {
+    "nn1-python.html": "889c283e"
+  },
+  "nn2-python.qmd": {
+    "nn2-python.html": "9310b766"
+  },
+  "naive-bayes.qmd": {
+    "naive-bayes.html": "b5780441"
+  },
+  "naive-bayes-python.qmd": {
+    "naive-bayes-python.html": "1d4614ed"
   }
 }

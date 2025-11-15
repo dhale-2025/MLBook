@@ -1,0 +1,296 @@
+
+---
+title: "Naive Bayes Classification R version"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## 1. Overview and Learning Objectives
+
+In this chapter, we will:
+
+1. Use the **Ames Housing** data to create a **binary classification** problem:
+   - Predict whether a house is **high price** vs **low price** based on its features..
+2. Understand how Naive Bayes handles:
+   - **Categorical vs numeric** predictors  
+   - **Laplace correction** (additive smoothing)  
+   - **Kernel density estimation** for numeric variables  
+3. Use **caret** (`train(method = "nb")`) to:
+   - **Tune** key hyperparameters (`usekernel`, `fL`)
+   - Evaluate performance with **cross-validation**
+4. Interpret:
+   - Class priors  
+   - Conditional feature distributions  
+   - Predictions & confusion matrix  
+   - ROC curve and AUC
+
+---
+
+## 2. Data Setup and Binary Target Creation
+
+```{r}
+library(tidyverse)
+library(caret)
+library(AmesHousing)
+library(pROC)
+
+set.seed(4321)
+
+ames <- make_ordinal_ames() %>% mutate(id = row_number())
+
+training <- ames %>% sample_frac(0.7)
+testing  <- anti_join(ames, training, by = "id")
+
+predictors <- c(
+  "Sale_Price","Bedroom_AbvGr","Year_Built","Mo_Sold","Lot_Area",
+  "Street","Central_Air","First_Flr_SF","Second_Flr_SF","Full_Bath",
+  "Half_Bath","Fireplaces","Garage_Area","Gr_Liv_Area","TotRms_AbvGrd"
+)
+
+training <- training %>% select(all_of(predictors))
+testing  <- testing %>% select(all_of(predictors))
+```
+
+We turn `Sale_Price` into a **classification target**:
+
+- `"High"` if above the training-set median  
+- `"Low"` otherwise  
+
+This keeps the task aligned with Naive Bayes as a **classification** model.
+
+```{r}
+price_median <- median(training$Sale_Price)
+
+training <- training %>% mutate(Price_High = factor(ifelse(Sale_Price > price_median,"High","Low")))
+testing  <- testing  %>% mutate(Price_High = factor(ifelse(Sale_Price > price_median,"High","Low")))
+
+training_nb <- training %>% select(-Sale_Price)
+testing_nb  <- testing  %>% select(-Sale_Price)
+```
+
+---
+
+## 3. Naive Bayes Intuition
+
+Naive Bayes is a **generative classifier** based on Bayes’ theorem:
+
+\[
+P(Y = k \mid X) \propto P(Y=k) \prod_{j=1}^p P(x_j \mid Y=k)
+\]
+
+Key assumptions:
+
+#### **1. Conditional Independence**
+Given the class, features are treated as independent:
+
+\[
+P(x_1, x_2, \dots, x_p \mid Y=k)
+\approx \prod_j P(x_j \mid Y=k)
+\]
+
+This is rarely exactly true, yet often works surprisingly well.
+
+#### **2. Modeling Numeric Features**
+Naive Bayes supports two approaches:
+
+- **Gaussian (Normal):** assumes each numeric feature is normally distributed within each class.  
+- **Kernel Density Estimation:** more flexible, handles skewness and multimodal distributions.
+
+#### **3. Laplace Correction**
+Prevents zero probabilities when a category never appears in a given class:
+
+'''text
+P(x=v | Y=k) = (count + 1) / (N + K)
+'''
+
+This keeps the model from collapsing.
+
+---
+
+## 4. Fitting Naive Bayes (Baseline Model)
+
+```{r}
+set.seed(12345)
+
+nb.ames <- naiveBayes(
+  Price_High ~ ., 
+  data = training_nb,
+  laplace = 0,
+  usekernel = TRUE
+)
+
+nb.ames
+```
+
+#### Explanation of key settings
+
+- **laplace = 0**  
+  No smoothing; probability estimates reflect raw counts.  
+  Zero probabilities may occur for rare categorical levels.
+
+- **usekernel = TRUE**  
+  Numeric features are modeled using **kernel density estimates** instead of assuming normality.
+
+#### What the output means
+
+- **A-priori probabilities:**  
+  Estimated from class frequencies (High vs Low).
+
+- **Conditional tables:**  
+  - For categorical features: probability of each level given class.  
+  - For numerical features: kernel-based density info (not printed in summary).
+
+---
+
+## 5. Predicting on Test Data
+
+```{r}
+test_pred_class <- predict(nb.ames, testing_nb)
+test_pred_prob  <- predict(nb.ames, testing_nb, type="raw")
+head(test_pred_prob)
+```
+
+- `test_pred_class`: predicted High/Low label  
+- `test_pred_prob`: estimated probability for each class
+
+---
+
+## 6. Confusion Matrix Interpretation
+
+```{r}
+conf_matrix <- confusionMatrix(
+  test_pred_class,
+  testing_nb$Price_High,
+  positive="High"
+)
+
+conf_matrix
+```
+
+#### What the confusion matrix tells us
+
+- **Accuracy**: overall correctness  
+- **Sensitivity (Recall for High)**: proportion of expensive homes correctly identified  
+- **Specificity (Recall for Low)**: proportion of cheaper homes correctly identified  
+- **Balanced Accuracy**: average of sensitivity & specificity  
+- **Kappa**: agreement beyond chance  
+
+This is the primary evaluation for classification problems.
+
+---
+
+## 7. ROC Curve & AUC
+
+ROC curves evaluate model ranking ability — how well it separates High from Low across thresholds.
+
+```{r}
+roc_obj <- roc(
+  response = testing_nb$Price_High,
+  predictor = test_pred_prob[,"High"],
+  levels = c("Low","High")
+)
+
+plot(roc_obj, col="#2E86C1", lwd=3, main="ROC Curve - Naive Bayes")
+auc_value <- auc(roc_obj)
+auc_value
+```
+
+#### Interpretation
+
+- **ROC Curve:** visual representation of sensitivity vs (1 - specificity)  
+- **AUC:** single summary metric  
+  - 0.5 = no better than random  
+  - 0.7 = decent  
+  - 0.8 = strong  
+  - >0.9 = outstanding  
+
+---
+
+## 8. Tuning Naive Bayes Using `caret::train()`
+
+We now tune:
+
+- `usekernel` ∈ {TRUE, FALSE}  
+- `fL` ∈ {0, 0.5, 1} *(fractional Laplace)*  
+
+```{r}
+set.seed(12345)
+
+tune_grid <- expand.grid(
+  usekernel = c(TRUE, FALSE),
+  fL        = c(0, 0.5, 1),
+  adjust    = 1
+)
+
+ctrl <- trainControl(
+  method = "cv",
+  number = 10,
+  classProbs = TRUE,
+  summaryFunction = twoClassSummary
+)
+
+training_nb$Price_High <- relevel(training_nb$Price_High, ref="High")
+testing_nb$Price_High  <- relevel(testing_nb$Price_High, ref="High")
+
+nb.ames.caret <- train(
+  Price_High ~ .,
+  data = training_nb,
+  method = "nb",
+  tuneGrid = tune_grid,
+  trControl = ctrl,
+  metric ="ROC"
+)
+
+nb.ames.caret
+```
+
+###$ How tuning works
+
+- **Cross-validation** evaluates each combination of hyperparameters.  
+- Best model chosen by the metric (`ROC`).  
+- caret automatically handles class probabilities and ROC scoring.
+
+```{r}
+nb.ames.caret$results
+nb.ames.caret$bestTune
+plot(nb.ames.caret)
+```
+
+---
+
+## 9. Evaluating the Tuned Model on the Test Set
+
+```{r}
+test_pred_class_tuned <- predict(nb.ames.caret, testing_nb)
+test_pred_prob_tuned <- predict(nb.ames.caret, testing_nb, type="prob")
+
+confusionMatrix(
+  test_pred_class_tuned,
+  testing_nb$Price_High,
+  positive="High"
+)
+```
+
+---
+
+## 10. Summary
+
+- Naive Bayes is a **probabilistic, generative classifier**.  
+- It models **class priors** + **conditional likelihoods** for each predictor.  
+- Numeric predictors can use:
+  - **Gaussian distributions**, or  
+  - **Kernel density estimates** (`usekernel = TRUE`).  
+- **Laplace smoothing** protects against zero probabilities.  
+- **ROC** and **AUC** evaluate ranking performance.  
+- **Confusion matrix** evaluates classification performance.  
+- **caret** enables systematic tuning over smoothing and density options.
+
+
+

@@ -1,0 +1,86 @@
+
+---
+title: "Convolutional Neural Network (CNN) — MNIST"
+format:
+  html:
+    code-fold: false
+  pdf:
+    toc: true
+jupyter: python3
+---
+
+# CNN for MNIST Classification (Python)
+
+This chapter replicates the R CNN approach using Keras, with smaller models to avoid kernel crashes.
+
+---
+
+## 1. Load MNIST
+
+```{python}
+import numpy as np
+from tensorflow.keras.datasets import mnist
+import matplotlib.pyplot as plt
+
+(X_train, y_train), (X_test, y_test) = mnist.load_data()
+
+X_train = X_train.astype("float32")/255.0
+X_test  = X_test.astype("float32")/255.0
+
+X_train = np.expand_dims(X_train,-1)
+X_test  = np.expand_dims(X_test,-1)
+```
+
+---
+
+## 2. Build CNN
+
+```{python}
+from tensorflow import keras
+from tensorflow.keras import layers
+
+model = keras.Sequential([
+    layers.Conv2D(16,(3,3),activation="relu",input_shape=(28,28,1)),
+    layers.MaxPooling2D((2,2)),
+    layers.Conv2D(32,(3,3),activation="relu"),
+    layers.MaxPooling2D((2,2)),
+    layers.Flatten(),
+    layers.Dense(32,activation="relu"),
+    layers.Dense(10,activation="softmax")
+])
+
+model.compile(
+    optimizer="adam",
+    loss="sparse_categorical_crossentropy",
+    metrics=["accuracy"]
+)
+
+model.summary()
+```
+
+---
+
+## 3. Train CNN
+
+```{python}
+history = model.fit(
+    X_train, y_train,
+    epochs=2, batch_size=64,
+    validation_split=0.1, verbose=0
+)
+
+plt.plot(history.history["accuracy"], label="Train")
+plt.plot(history.history["val_accuracy"], label="Val")
+plt.legend()
+plt.title("CNN Accuracy")
+plt.show()
+```
+
+---
+
+## 4. Evaluate
+
+```{python}
+test_loss, test_acc = model.evaluate(X_test, y_test, verbose=0)
+test_acc
+```

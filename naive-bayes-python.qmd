@@ -1,0 +1,202 @@
+---
+title: "Naive Bayes Classification - Python Version"
+format:
+  html:
+    toc: true
+    toc-depth: 4
+    code-fold: true
+jupyter: python3
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## 1. Overview and Learning Objectives
+
+In this Python chapter, we will:
+
+1. Load the **Ames Housing** dataset from OpenML.
+2. Create a **High vs Low** price classification target.
+3. Fit **Gaussian Naive Bayes**.
+4. Produce predictions and class probabilities.
+5. Compute a **correct ROC curve and AUC**.
+6. Mirror the structure of the R version.
+
+---
+
+## 2. Setup and Data Preparation
+
+```{python}
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import confusion_matrix, classification_report, roc_curve, auc
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.datasets import fetch_openml
+
+# Load Ames Housing dataset
+ames = fetch_openml(name="house_prices", as_frame=True)
+df = ames.frame.copy()
+
+df.rename(columns={"SalePrice": "Sale_Price"}, inplace=True)
+
+df.head()
+```
+
+---
+
+## 2.1 Select Variables of Interest
+
+```{python}
+predictors = [
+    "Sale_Price",
+    "BedroomAbvGr",
+    "YearBuilt",
+    "MoSold",
+    "LotArea",
+    "Street",
+    "CentralAir",
+    "1stFlrSF",
+    "2ndFlrSF",
+    "FullBath",
+    "HalfBath",
+    "Fireplaces",
+    "GarageArea",
+    "GrLivArea",
+    "TotRmsAbvGrd"
+]
+
+df = df[predictors].dropna()
+```
+
+---
+
+## 2.2 Create a Binary Target Variable
+
+```{python}
+median_price = df["Sale_Price"].median()
+
+df["Price_High"] = np.where(df["Sale_Price"] > median_price, "High", "Low")
+df["Price_High"] = df["Price_High"].astype("category")
+
+df["Price_High"].value_counts(normalize=True)
+```
+
+---
+
+## 2.3 Train/Test Split
+
+```{python}
+X = df.drop(columns=["Sale_Price", "Price_High"])
+y = df["Price_High"]
+
+# Encode categorical predictors
+X = pd.get_dummies(X, drop_first=True)
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.30, random_state=4321, stratify=y
+)
+
+X_train.shape, X_test.shape
+```
+
+---
+
+## 3. Gaussian Naive Bayes Model
+
+```{python}
+gnb = GaussianNB()
+gnb.fit(X_train, y_train)
+```
+
+---
+
+## 4. Predictions
+
+```{python}
+y_pred = gnb.predict(X_test)
+
+# Extract the probability of the TRUE positive class ("High")
+pos_index = np.where(gnb.classes_ == "High")[0][0]
+y_prob_high = gnb.predict_proba(X_test)[:, pos_index]
+```
+
+---
+
+## 5. Confusion Matrix & Classification Report
+
+```{python}
+cm = confusion_matrix(y_test, y_pred)
+cm
+```
+
+```{python}
+sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+plt.title("Confusion Matrix")
+plt.xlabel("Predicted")
+plt.ylabel("Actual")
+plt.show()
+```
+
+```{python}
+print(classification_report(y_test, y_pred))
+```
+
+---
+
+## 6. ROC Curve (Corrected) and AUC
+
+```{python}
+# Convert y_test to binary (1 = High, 0 = Low)
+y_test_binary = (y_test == "High").astype(int)
+
+# Compute ROC using correct positive class probability
+fpr, tpr, thresholds = roc_curve(y_test_binary, y_prob_high)
+roc_auc = auc(fpr, tpr)
+
+roc_auc
+```
+
+```{python}
+plt.figure(figsize=(6,5))
+plt.plot(fpr, tpr, label=f"AUC = {roc_auc:.3f}", linewidth=3)
+plt.plot([0,1], [0,1], "k--")
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("ROC Curve - Naive Bayes (Corrected)")
+plt.legend()
+plt.show()
+```
+
+---
+
+## 7. Interpretation Notes
+
+### Naive Bayes Assumptions
+- Predictors are independent given the class.
+- Numeric features follow Gaussian distributions.
+- One-hot encoded categorical variables behave like Bernoulli variables.
+
+### Strengths
+- Fast and simple.
+- Works well as a baseline.
+- Highly interpretable.
+
+### Weaknesses
+- Independence assumption rarely holds.
+- Gaussian assumption is an approximation.
+
+---
+
+## 8. Summary
+
+This chapter:
+
+- Loaded the Ames Housing dataset.
+- Created a binary classification target.
+- Fit Gaussian Naive Bayes.
+- Correctly computed ROC & AUC.
+- Provided fully aligned interpretation with the R version.
