@@ -918,5 +918,225 @@
     "crumbs": [
       "<span class='chapter-number'>12</span>  <span class='chapter-title'>Naive Bayes Classification - Python Version</span>"
     ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-r.html",
+    "href": "model-agnostic-interpretability-r.html",
+    "title": "13  Model-Agnostic Interpretability - R Version",
+    "section": "",
+    "text": "13.1 Learning Objectives\nBy the end of this section you should be able to:",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Model-Agnostic Interpretability - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-r.html#learning-objectives",
+    "href": "model-agnostic-interpretability-r.html#learning-objectives",
+    "title": "13  Model-Agnostic Interpretability - R Version",
+    "section": "",
+    "text": "Explain what model-agnostic interpretability means and why it is useful.\nCompute and interpret permutation feature importance for several models.\nUse partial dependence plots (PDP) and individual conditional expectation (ICE) plots.\nUse accumulated local effects (ALE) plots and understand how they differ from PDP.\nExplain local surrogate ideas in the spirit of LIME and interpret a local explanation.\nCompute Shapley value–based explanations for individual predictions.\nCompare how these tools behave for:\n\na regression target (Sale Price), and\n\na binary classification target (High vs Low price, based on the median).",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Model-Agnostic Interpretability - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-r.html#data-and-modeling-setup",
+    "href": "model-agnostic-interpretability-r.html#data-and-modeling-setup",
+    "title": "13  Model-Agnostic Interpretability - R Version",
+    "section": "13.2 1. Data and Modeling Setup",
+    "text": "13.2 1. Data and Modeling Setup\nWe will reuse the Ames housing data and the same subset of predictors used earlier in the book.\n\n\nCode\nset.seed(4321)\n\names &lt;- make_ordinal_ames() |&gt;\n  mutate(\n    id = row_number()\n  ) |&gt;\n  select(\n    id, Sale_Price,\n    Bedroom_AbvGr,\n    Year_Built,\n    Mo_Sold,\n    Lot_Area,\n    Street,\n    Central_Air,\n    First_Flr_SF,\n    Second_Flr_SF,\n    Full_Bath,\n    Half_Bath,\n    Fireplaces,\n    Garage_Area,\n    Gr_Liv_Area, \n    TotRms_AbvGrd\n  )\n\n# Create a binary classification target: High vs Low price\nmedian_price &lt;- median(ames$Sale_Price)\names &lt;- ames |&gt;\n  mutate(\n    HighPrice = if_else(Sale_Price &gt;= median_price, \"High\", \"Low\"),\n    HighPrice = factor(HighPrice, levels = c(\"Low\", \"High\"))\n  )\n\n# Train / test split (same seed for reproducibility)\ntrain_ids &lt;- sample(ames$id, size = 0.7 * nrow(ames))\ntrain &lt;- ames |&gt; filter(id %in% train_ids)\ntest  &lt;- ames |&gt; filter(!id %in% train_ids)\n\n# Predictors only (same X for regression and classification)\nX_train &lt;- train |&gt;\n  select(-id, -Sale_Price, -HighPrice)\nX_test  &lt;- test |&gt;\n  select(-id, -Sale_Price, -HighPrice)\n\n# Targets\ny_train_reg &lt;- train$Sale_Price\ny_test_reg  &lt;- test$Sale_Price\n\ny_train_cls &lt;- train$HighPrice\ny_test_cls  &lt;- test$HighPrice\ny_train_cls_num &lt;- if_else(y_train_cls == \"High\", 1, 0)",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Model-Agnostic Interpretability - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-r.html#models-to-interpret",
+    "href": "model-agnostic-interpretability-r.html#models-to-interpret",
+    "title": "13  Model-Agnostic Interpretability - R Version",
+    "section": "13.3 2. Models to Interpret",
+    "text": "13.3 2. Models to Interpret\nWe will fit three models:\n\nA linear regression model (simple, transparent baseline).\nA Random Forest (nonlinear, interaction-rich).\nAn XGBoost model (gradient-boosted trees).\n\nWe fit each model for the regression task. Then we fit classification versions for the high/low price target.\n\n13.3.1 2.1 Regression Models\n\n\nCode\n# Linear regression\nlm_reg &lt;- lm(Sale_Price ~ . - id - HighPrice, data = train)\n\n# Random Forest regression\nrf_reg &lt;- ranger(\n  Sale_Price ~ . - id - HighPrice,\n  data       = train,\n  num.trees  = 500,\n  mtry       = 4,\n  importance = \"permutation\",\n  seed       = 4321\n)\n\n# XGBoost regression: use model.matrix on the predictor set\nxgb_train_reg &lt;- model.matrix(~ ., data = X_train)\n\nxgb_reg &lt;- xgboost(\n  data              = xgb_train_reg,\n  label             = y_train_reg,\n  nrounds           = 200,\n  objective         = \"reg:squarederror\",\n  max_depth         = 4,\n  eta               = 0.1,\n  subsample         = 0.8,\n  colsample_bytree  = 0.8,\n  verbose           = 0\n)\n\n\n\n\n13.3.2 2.2 Classification Models (High vs Low Price)\n\n\nCode\n# Logistic regression (glm)\nglm_cls &lt;- glm(\n  HighPrice ~ . - id - Sale_Price,\n  data   = train,\n  family = binomial\n)\n\n# Random Forest classification\nrf_cls &lt;- ranger(\n  HighPrice ~ . - id - Sale_Price,\n  data        = train,\n  num.trees   = 500,\n  mtry        = 4,\n  probability = TRUE,\n  seed        = 4321\n)\n\n# XGBoost classification (probability of \"High\")\nxgb_train_cls &lt;- xgb_train_reg  # same predictors as regression\nxgb_cls &lt;- xgboost(\n  data              = xgb_train_cls,\n  label             = y_train_cls_num,\n  nrounds           = 200,\n  objective         = \"binary:logistic\",\n  max_depth         = 4,\n  eta               = 0.1,\n  subsample         = 0.8,\n  colsample_bytree  = 0.8,\n  verbose           = 0\n)",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Model-Agnostic Interpretability - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-r.html#wrapping-models-in-imlpredictor",
+    "href": "model-agnostic-interpretability-r.html#wrapping-models-in-imlpredictor",
+    "title": "13  Model-Agnostic Interpretability - R Version",
+    "section": "13.4 3. Wrapping Models in iml::Predictor",
+    "text": "13.4 3. Wrapping Models in iml::Predictor\nThe iml package provides a common interface to models. Once a model is wrapped in a Predictor, we can apply:\n\npermutation importance\nPDP, ICE, ALE\nlocal surrogate models (LIME-style)\nShapley value explanations\n\n\n13.4.1 3.1 Regression Predictors\n\n\nCode\n# Predictors for regression models\npred_lm_reg &lt;- Predictor$new(\n  model = lm_reg,\n  data  = X_train,\n  y     = y_train_reg\n)\n\npred_rf_reg &lt;- Predictor$new(\n  model = rf_reg,\n  data  = X_train,\n  y     = y_train_reg,\n  predict.function = function(m, newdata) {\n    predict(m, data = newdata)$predictions\n  }\n)\n\npred_xgb_reg &lt;- Predictor$new(\n  model = xgb_reg,\n  data  = X_train,\n  y     = y_train_reg,\n  predict.function = function(m, newdata) {\n    new_mat &lt;- model.matrix(~ ., data = newdata)\n    predict(m, new_mat)\n  }\n)\n\n\n\n\n13.4.2 3.2 Classification Predictors (Probability of High Price)\nFor classification, we will interpret the predicted probability that a home is “High” price (above the median).\n\n\nCode\n# Logistic regression: probability of \"High\"\npred_glm_cls &lt;- Predictor$new(\n  model = glm_cls,\n  data  = X_train,\n  y     = y_train_cls_num,\n  predict.function = function(m, newdata) {\n    predict(m, newdata, type = \"response\")\n  }\n)\n\n# Random Forest classification: use probability for \"High\"\npred_rf_cls &lt;- Predictor$new(\n  model = rf_cls,\n  data  = X_train,\n  y     = y_train_cls_num,\n  predict.function = function(m, newdata) {\n    preds &lt;- predict(m, data = newdata)$predictions\n    preds[, \"High\"]\n  }\n)\n\n# XGBoost classification: probability of \"High\"\npred_xgb_cls &lt;- Predictor$new(\n  model = xgb_cls,\n  data  = X_train,\n  y     = y_train_cls_num,\n  predict.function = function(m, newdata) {\n    new_mat &lt;- model.matrix(~ ., data = newdata)\n    predict(m, new_mat)\n  }\n)\n\n\n\n\n13.4.3 3.3 Why Some Models Need predict.function\nThe iml package expects the wrapped model to behave like a simple prediction function:\n\ninput: a data frame of new observations\noutput: a numeric vector of predictions\n\nDifferent R model objects behave differently:\n\nlm() already satisfies this contract:\npredict(lm_reg, newdata) returns a numeric vector of fitted values.\n→ No custom predict.function is needed.\nranger (Random Forest) returns a list, whose $predictions element contains the numeric predictions.\n→ We supply a predict.function that calls predict() and pulls out $predictions.\nxgboost expects a numeric matrix, not a data frame, and does not understand formulas or factors.\n→ We supply a predict.function that first converts newdata to a design matrix via model.matrix(), then calls predict().\n\n\n\nCode\n# Linear model works out of the box:\n# predict(lm_reg, newdata) -&gt; numeric vector\npred_lm_reg &lt;- Predictor$new(\n  model = lm_reg,\n  data  = X_train,\n  y     = y_train_reg\n)\n\n# ranger: extract $predictions from the list\npred_rf_reg &lt;- Predictor$new(\n  model = rf_reg,\n  data  = X_train,\n  y     = y_train_reg,\n  predict.function = function(m, newdata) {\n    predict(m, data = newdata)$predictions\n  }\n)\n\n# xgboost: convert data frame to numeric matrix\npred_xgb_reg &lt;- Predictor$new(\n  model = xgb_reg,\n  data  = X_train,\n  y     = y_train_reg,\n  predict.function = function(m, newdata) {\n    new_mat &lt;- model.matrix(~ ., data = newdata)\n    predict(m, new_mat)\n  }\n)",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Model-Agnostic Interpretability - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-r.html#permutation-feature-importance",
+    "href": "model-agnostic-interpretability-r.html#permutation-feature-importance",
+    "title": "13  Model-Agnostic Interpretability - R Version",
+    "section": "13.5 4. Permutation Feature Importance",
+    "text": "13.5 4. Permutation Feature Importance\nIdea: Shuffle one feature at a time and see how much model performance degrades.\nLarger performance loss ⇒ feature was more important.\nWe’ll start with the Random Forest regression model.\n\n\nCode\nset.seed(4321)\nimp_rf_reg &lt;- FeatureImp$new(\n  predictor = pred_rf_reg,\n  loss      = \"rmse\"\n)\n\nplot(imp_rf_reg)\n\n\n\n\n\nPermutation feature importance for Random Forest regression.\n\n\n\n\nYou can repeat this for XGBoost:\n\n\nCode\nset.seed(4321)\nimp_xgb_reg &lt;- FeatureImp$new(\n  predictor = pred_xgb_reg,\n  loss      = \"rmse\"\n)\n\nplot(imp_xgb_reg)\n\n\n\n\n\nPermutation feature importance for XGBoost regression.\n\n\n\n\n\n13.5.1 4.1 Classification: Importance for Probability of High Price\nNow compare to the Random Forest classification model, where the outcome is a probability.\n\n\nCode\nset.seed(4321)\nimp_rf_cls &lt;- FeatureImp$new(\n  predictor = pred_rf_cls,\n  loss      = \"ce\"  # cross-entropy for probabilities\n)\n\nplot(imp_rf_cls)\n\n\n\n\n\nPermutation feature importance for RF probability of High price.",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Model-Agnostic Interpretability - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-r.html#partial-dependence-and-ice",
+    "href": "model-agnostic-interpretability-r.html#partial-dependence-and-ice",
+    "title": "13  Model-Agnostic Interpretability - R Version",
+    "section": "13.6 5. Partial Dependence and ICE",
+    "text": "13.6 5. Partial Dependence and ICE\nPartial Dependence Plot (PDP):\nAverage prediction as we vary one feature, holding others “as observed” and averaging over them.\nIndividual Conditional Expectation (ICE):\nOne curve per observation—shows heterogeneity across individual observations.\nWe’ll focus on Gr_Liv_Area (above-ground living area) as a key driver.\n\n13.6.1 5.1 PDP for RF Regression\n\n\nCode\npdp_rf_reg &lt;- FeatureEffect$new(\n  predictor = pred_rf_reg,\n  feature   = \"Gr_Liv_Area\",\n  method    = \"pdp\"\n)\n\nplot(pdp_rf_reg)\n\n\n\n\n\nPartial dependence of Sale Price on Gr_Liv_Area (Random Forest regression).\n\n\n\n\n\n\n13.6.2 5.2 ICE for RF Regression\n\n\nCode\nice_rf_reg &lt;- FeatureEffect$new(\n  predictor = pred_rf_reg,\n  feature   = \"Gr_Liv_Area\",\n  method    = \"ice\"\n)\n\nplot(ice_rf_reg)\n\n\n\n\n\nICE curves of Sale Price vs Gr_Liv_Area (Random Forest regression).\n\n\n\n\n\nInterpretation point:\n- PDP: one smooth curve (average effect).\n- ICE: many curves, one per home.\nDifferences between ICE curves indicate interactions or nonlinearities that the average PDP hides.\n\n\n\n13.6.3 5.3 Classification: PDP for Probability of High Price\nNow, look at the probability the home is High price vs. Gr_Liv_Area for RF classification.\n\n\nCode\npdp_rf_cls &lt;- FeatureEffect$new(\n  predictor = pred_rf_cls,\n  feature   = \"Gr_Liv_Area\",\n  method    = \"pdp\"\n)\n\nplot(pdp_rf_cls)\n\n\n\n\n\nPDP of probability(HighPrice) vs Gr_Liv_Area (Random Forest classification).",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Model-Agnostic Interpretability - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-r.html#accumulated-local-effects-ale",
+    "href": "model-agnostic-interpretability-r.html#accumulated-local-effects-ale",
+    "title": "13  Model-Agnostic Interpretability - R Version",
+    "section": "13.7 6. Accumulated Local Effects (ALE)",
+    "text": "13.7 6. Accumulated Local Effects (ALE)\nALE plots estimate the effect of a feature in a more local way:\n\nInstead of averaging over unrealistic combinations of features (a PDP problem),\n\nALE looks at changes in predictions as we move within small intervals of the feature.\n\nWe’ll compute ALE for Gr_Liv_Area for the RF regression model.\n\n\nCode\nale_rf_reg &lt;- FeatureEffect$new(\n  predictor = pred_rf_reg,\n  feature   = \"Gr_Liv_Area\",\n  method    = \"ale\"\n)\n\nplot(ale_rf_reg)\n\n\n\n\n\nALE plot for Gr_Liv_Area (Random Forest regression).\n\n\n\n\n\nTeaching point:\n- PDP assumes features are independent; ALE relaxes this by focusing on local neighborhoods.\n- ALE is often more reliable when predictors are correlated (as they often are in housing data).",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Model-Agnostic Interpretability - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-r.html#local-surrogate-models-lime-style",
+    "href": "model-agnostic-interpretability-r.html#local-surrogate-models-lime-style",
+    "title": "13  Model-Agnostic Interpretability - R Version",
+    "section": "13.8 7. Local Surrogate Models (LIME-Style)",
+    "text": "13.8 7. Local Surrogate Models (LIME-Style)\nLIME idea: For one specific observation:\n\nGenerate small perturbations around that point.\n\nGet model predictions for the perturbed points.\n\nFit a simple, local surrogate model (e.g., a linear regression) to approximate the complex model nearby.\n\nUse the surrogate’s coefficients as a local explanation.\n\niml::LocalModel provides a LIME-style explanation.\n\n13.8.1 7.1 Choose a House to Explain\n\n\nCode\n# Pick a test-set observation to explain\nobs_index &lt;- 10\nx_interest &lt;- X_test[obs_index, , drop = FALSE]\nx_interest\n\n\n# A tibble: 1 × 14\n  Bedroom_AbvGr Year_Built Mo_Sold Lot_Area Street Central_Air First_Flr_SF\n          &lt;int&gt;      &lt;int&gt;   &lt;int&gt;    &lt;int&gt; &lt;fct&gt;  &lt;fct&gt;              &lt;int&gt;\n1             3       1971       3     1680 Pave   Y                    525\n# ℹ 7 more variables: Second_Flr_SF &lt;int&gt;, Full_Bath &lt;int&gt;, Half_Bath &lt;int&gt;,\n#   Fireplaces &lt;int&gt;, Garage_Area &lt;dbl&gt;, Gr_Liv_Area &lt;int&gt;, TotRms_AbvGrd &lt;int&gt;\n\n\n\n\n13.8.2 7.2 Local Explanation for RF Regression\n\n\nCode\nlocal_rf_reg &lt;- LocalModel$new(\n  predictor   = pred_rf_reg,\n  x.interest  = x_interest\n)\n\nplot(local_rf_reg)\n\n\n\n\n\nLocal surrogate explanation (LIME-style) for RF regression prediction.\n\n\n\n\n\n\n13.8.3 7.3 Local Explanation for RF Classification (Probability of High Price)\n\n\nCode\nlocal_rf_cls &lt;- LocalModel$new(\n  predictor   = pred_rf_cls,\n  x.interest  = x_interest\n)\n\nplot(local_rf_cls)\n\n\n\n\n\nLocal surrogate explanation (LIME-style) for RF classification probability of HighPrice.\n\n\n\n\n\nNote:\nThis is the same home, explained two different ways: - contribution to predicted price,\n- contribution to probability of being High price.",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Model-Agnostic Interpretability - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-r.html#shapley-values",
+    "href": "model-agnostic-interpretability-r.html#shapley-values",
+    "title": "13  Model-Agnostic Interpretability - R Version",
+    "section": "13.9 8. Shapley Values",
+    "text": "13.9 8. Shapley Values\nShapley values come from cooperative game theory:\n\nThink of each feature as a “player” in a game whose payoff is the model prediction.\nShapley values allocate the difference between the prediction and a baseline fairly across features.\nThey are local explanations for one observation, but with nice global averaging properties.\n\n\n13.9.1 8.1 Shapley Values for RF Regression\n\n\nCode\nset.seed(4321)\nshap_rf_reg &lt;- Shapley$new(\n  predictor  = pred_rf_reg,\n  x.interest = x_interest\n)\n\nplot(shap_rf_reg)\n\n\n\n\n\nShapley value explanation for RF regression prediction.\n\n\n\n\n\n\n13.9.2 8.2 Shapley Values for RF Classification\nNow explain the probability of High price for the same home.\n\n\nCode\nset.seed(4321)\nshap_rf_cls &lt;- Shapley$new(\n  predictor  = pred_rf_cls,\n  x.interest = x_interest\n)\n\nplot(shap_rf_cls)\n\n\n\n\n\nShapley value explanation for RF classification probability of HighPrice.\n\n\n\n\n\nInterpretation:\n- Shapley values are additive: the sum of contributions (plus baseline) equals the prediction.\n- Comparing regression vs classification Shapley results shows how the “story” changes when we move from dollar predictions to probabilities.",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Model-Agnostic Interpretability - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-r.html#alternatives-and-model-specific-tools",
+    "href": "model-agnostic-interpretability-r.html#alternatives-and-model-specific-tools",
+    "title": "13  Model-Agnostic Interpretability - R Version",
+    "section": "13.10 9. Alternatives and Model-Specific Tools",
+    "text": "13.10 9. Alternatives and Model-Specific Tools\nThere are some other tools to use in R.\n\n13.10.1 9.1 Random Forest Variable Importance with randomForest\nHere we refit a Random Forest using the randomForest package and use its built-in variable importance tools.\n\n\nCode\n# Create a training data frame consistent with earlier setup\ntraining &lt;- train |&gt;\n  select(\n    Sale_Price,\n    Bedroom_AbvGr,\n    Year_Built,\n    Mo_Sold,\n    Lot_Area,\n    Street,\n    Central_Air,\n    First_Flr_SF,\n    Second_Flr_SF,\n    Full_Bath,\n    Half_Bath,\n    Fireplaces,\n    Garage_Area,\n    Gr_Liv_Area, \n    TotRms_AbvGrd\n  )\n\ntraining.df &lt;- as.data.frame(training)\n\nset.seed(12345)\nrf.ames &lt;- randomForest(\n  Sale_Price ~ .,\n  data     = training.df,\n  ntree    = 250,\n  importance = TRUE\n)\n\n# Look at variable importance\nvarImpPlot(\n  rf.ames,\n  sort = TRUE,\n  n.var = 10,\n  main = \"Top 10 - Variable Importance\",\n  type = 1\n)\n\n\n\n\n\n\n\n\n\nCode\nimportance(rf.ames)\n\n\n                %IncMSE IncNodePurity\nBedroom_AbvGr 12.539754  1.882775e+11\nYear_Built    51.755973  2.825361e+12\nMo_Sold        2.341797  1.865486e+11\nLot_Area      13.616999  5.594206e+11\nStreet         4.048947  4.826931e+09\nCentral_Air   15.143605  8.973762e+10\nFirst_Flr_SF  25.743101  2.087213e+12\nSecond_Flr_SF 18.068988  5.829487e+11\nFull_Bath     10.525856  5.160484e+11\nHalf_Bath     11.073376  1.102183e+11\nFireplaces    19.031528  5.394140e+11\nGarage_Area   20.848758  1.967501e+12\nGr_Liv_Area   26.954713  2.461302e+12\nTotRms_AbvGrd 12.164865  3.738709e+11\n\n\n\nComparison:\n- randomForest::varImpPlot() is model-specific and convenient.\n- iml::FeatureImp is model-agnostic and can be applied to any model with a suitable prediction function.\n\n\n\n13.10.2 9.2 Permutation Importance for Linear Regression (Again with iml)\n\n\nCode\nlm.ames &lt;- lm(Sale_Price ~ ., data = training)\n\nlinear_pred &lt;- Predictor$new(\n  lm.ames,\n  data = training[,-1],\n  y    = training$Sale_Price,\n  type = \"response\"\n)\n\nplot(FeatureImp$new(linear_pred, loss = \"mse\"))\n\n\n\n\n\n\n\n\n\n\n\n13.10.3 9.3 ICE / PDP / ALE via FeatureEffects\nThe FeatureEffects (plural) helper in iml creates multiple types of effects in one object and then uses a $plot() method.\n\n\nCode\nforest_pred &lt;- Predictor$new(\n  rf.ames,\n  data = training[,-1],\n  y    = training$Sale_Price,\n  type = \"response\"\n)\n\n# ICE\nice_plot &lt;- FeatureEffects$new(forest_pred, method = \"ice\")\nice_plot$plot(\"Garage_Area\")\n\n\n\n\n\n\n\n\n\nCode\n# PDP\npd_plot &lt;- FeatureEffects$new(forest_pred, method = \"pdp\")\npd_plot$plot(\"Garage_Area\")\n\n\n\n\n\n\n\n\n\nCode\n# PDP + ICE overlay\npdice_plot &lt;- FeatureEffects$new(forest_pred, method = \"pdp+ice\")\npdice_plot$plot(\"Mo_Sold\")\n\n\n\n\n\n\n\n\n\nCode\n# ALE\nale_plot &lt;- FeatureEffects$new(forest_pred, method = \"ale\")\nale_plot$plot(\"Garage_Area\")\n\n\n\n\n\n\n\n\n\n\n\n13.10.4 9.4 LIME-Style LocalModel and Shapley (Alternative Examples)\n\n\nCode\n# LIME-style explanation for a particular point\npoint &lt;- 132\nlime.explain &lt;- LocalModel$new(\n  forest_pred,\n  x.interest = training[point,-1],\n  k = 5\n)\nplot(lime.explain)\n\n\n\n\n\n\n\n\n\nCode\n# Shapley values for a particular point\npoint &lt;- 100\nshap_alt &lt;- Shapley$new(\n  forest_pred,\n  x.interest = training[point,-1]\n)\nshap_alt$plot()\n\n\n\n\n\n\n\n\n\n\nTeaching point:\nThese examples show that: - You can work entirely within iml for a consistent, model-agnostic interface, or\n- You can mix iml tools with model-specific utilities like randomForest::varImpPlot() depending on your audience and goals.",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Model-Agnostic Interpretability - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-r.html#summary-and-comparison",
+    "href": "model-agnostic-interpretability-r.html#summary-and-comparison",
+    "title": "13  Model-Agnostic Interpretability - R Version",
+    "section": "13.11 10. Summary and Comparison",
+    "text": "13.11 10. Summary and Comparison\nKey takeaways:\n\nPermutation importance tells us which features matter globally for predictions.\nPDP and ICE show how predictions change as one feature moves:\n\nPDP: average effect\n\nICE: individual-level variation\n\nALE is often preferred when predictors are correlated.\nLocal surrogate (LIME-style) and Shapley values:\n\nprovide local, observation-level explanations,\n\nbut can be averaged to create global stories.\n\nModel-specific tools (like varImpPlot) are convenient but tie you to a particular algorithm, whereas iml gives you a common language across very different models.",
+    "crumbs": [
+      "<span class='chapter-number'>13</span>  <span class='chapter-title'>Model-Agnostic Interpretability - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-python.html",
+    "href": "model-agnostic-interpretability-python.html",
+    "title": "14  Model-Agnostic Interpretability - Python Version",
+    "section": "",
+    "text": "15 Setup: Libraries\nCode\nimport pandas as pd\nimport numpy as np\n\nfrom sklearn.model_selection import train_test_split\nfrom sklearn.linear_model import LinearRegression, LogisticRegression\nfrom sklearn.ensemble import RandomForestRegressor, RandomForestClassifier\nfrom xgboost import XGBRegressor, XGBClassifier\n\nfrom sklearn.inspection import permutation_importance, PartialDependenceDisplay\nfrom sklearn.preprocessing import OneHotEncoder\nfrom sklearn.compose import ColumnTransformer\nfrom sklearn.pipeline import Pipeline\n\nimport matplotlib.pyplot as plt\n\n# Python ALE + SHAP\n#from pyALE import ale\n#import shap",
+    "crumbs": [
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Model-Agnostic Interpretability - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-python.html#load-the-ames-housing-dataset",
+    "href": "model-agnostic-interpretability-python.html#load-the-ames-housing-dataset",
+    "title": "14  Model-Agnostic Interpretability - Python Version",
+    "section": "15.1 Load the Ames Housing Dataset",
+    "text": "15.1 Load the Ames Housing Dataset\n\n\nCode\nfrom sklearn.datasets import fetch_openml\n\names = fetch_openml(name=\"house_prices\", as_frame=True)\ndf = ames.frame.copy()\n\n# Rename to match R version\ndf.rename(columns={\"SalePrice\":\"Sale_Price\"}, inplace=True)\n\ncols = [\n    \"Sale_Price\",\"BedroomAbvGr\",\"YearBuilt\",\"MoSold\",\"LotArea\",\"Street\",\n    \"CentralAir\",\"1stFlrSF\",\"2ndFlrSF\",\"FullBath\",\"HalfBath\",\"Fireplaces\",\n    \"GarageArea\",\"GrLivArea\",\"TotRmsAbvGrd\"\n]\ndf = df[cols].dropna()\n\nmedian_price = df[\"Sale_Price\"].median()\ndf[\"HighPrice\"] = (df[\"Sale_Price\"] &gt;= median_price).astype(int)",
+    "crumbs": [
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Model-Agnostic Interpretability - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-python.html#traintest-split",
+    "href": "model-agnostic-interpretability-python.html#traintest-split",
+    "title": "14  Model-Agnostic Interpretability - Python Version",
+    "section": "15.2 Train/Test Split",
+    "text": "15.2 Train/Test Split\n\n\nCode\nX = df.drop(columns=[\"Sale_Price\",\"HighPrice\"])\ny_reg = df[\"Sale_Price\"]\ny_cls = df[\"HighPrice\"]\n\nX_train, X_test, y_train_reg, y_test_reg = train_test_split(\n    X, y_reg, test_size=0.3, random_state=4321\n)\n\n_, _, y_train_cls, y_test_cls = train_test_split(\n    X, y_cls, test_size=0.3, random_state=4321\n)",
+    "crumbs": [
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Model-Agnostic Interpretability - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-python.html#preprocessing",
+    "href": "model-agnostic-interpretability-python.html#preprocessing",
+    "title": "14  Model-Agnostic Interpretability - Python Version",
+    "section": "15.3 Preprocessing",
+    "text": "15.3 Preprocessing\n\n\nCode\ncategorical = [\"Street\",\"CentralAir\"]\nnumeric = [c for c in X.columns if c not in categorical]\n\npreprocess = ColumnTransformer(\n    transformers=[\n        (\"num\", \"passthrough\", numeric),\n        (\"cat\", OneHotEncoder(handle_unknown=\"ignore\"), categorical)\n    ]\n)",
+    "crumbs": [
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Model-Agnostic Interpretability - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-python.html#regression-models",
+    "href": "model-agnostic-interpretability-python.html#regression-models",
+    "title": "14  Model-Agnostic Interpretability - Python Version",
+    "section": "15.4 Regression Models",
+    "text": "15.4 Regression Models\n\n\nCode\nlm_reg = Pipeline([\n    (\"prep\", preprocess),\n    (\"model\", LinearRegression())\n]).fit(X_train, y_train_reg)\n\nrf_reg = Pipeline([\n    (\"prep\", preprocess),\n    (\"model\", RandomForestRegressor(\n        n_estimators=500, max_features=4, random_state=4321))\n]).fit(X_train, y_train_reg)\n\nxgb_reg = Pipeline([\n    (\"prep\", preprocess),\n    (\"model\", XGBRegressor(\n        n_estimators=200, max_depth=4, subsample=0.8,\n        colsample_bytree=0.8, eta=0.1, random_state=4321))\n]).fit(X_train, y_train_reg)",
+    "crumbs": [
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Model-Agnostic Interpretability - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-python.html#classification-models",
+    "href": "model-agnostic-interpretability-python.html#classification-models",
+    "title": "14  Model-Agnostic Interpretability - Python Version",
+    "section": "15.5 Classification Models",
+    "text": "15.5 Classification Models\n\n\nCode\nlog_cls = Pipeline([\n    (\"prep\", preprocess),\n    (\"model\", LogisticRegression(max_iter=500))\n]).fit(X_train, y_train_cls)\n\nrf_cls = Pipeline([\n    (\"prep\", preprocess),\n    (\"model\", RandomForestClassifier(\n        n_estimators=500, max_features=4, random_state=4321))\n]).fit(X_train, y_train_cls)\n\nxgb_cls = Pipeline([\n    (\"prep\", preprocess),\n    (\"model\", XGBClassifier(\n        n_estimators=200, max_depth=4, subsample=0.8,\n        colsample_bytree=0.8, eta=0.1, random_state=4321,\n        eval_metric=\"logloss\"))\n]).fit(X_train, y_train_cls)",
+    "crumbs": [
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Model-Agnostic Interpretability - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-python.html#permutation-importance",
+    "href": "model-agnostic-interpretability-python.html#permutation-importance",
+    "title": "14  Model-Agnostic Interpretability - Python Version",
+    "section": "15.6 Permutation Importance",
+    "text": "15.6 Permutation Importance\n\n\nCode\nr = permutation_importance(rf_reg, X_test, y_test_reg, n_repeats=10, random_state=4321)\n\nsorted_idx = r.importances_mean.argsort()\nplt.barh(np.array(X.columns)[sorted_idx], r.importances_mean[sorted_idx])\nplt.title(\"Random Forest Regression – Permutation Importance\")\nplt.show()",
+    "crumbs": [
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Model-Agnostic Interpretability - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-python.html#pdp-example",
+    "href": "model-agnostic-interpretability-python.html#pdp-example",
+    "title": "14  Model-Agnostic Interpretability - Python Version",
+    "section": "15.7 PDP Example",
+    "text": "15.7 PDP Example\n\n\nCode\nfig = PartialDependenceDisplay.from_estimator(\n    rf_reg, X_train, features=[\"GrLivArea\"]\n)\nplt.show()",
+    "crumbs": [
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Model-Agnostic Interpretability - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-python.html#ale-example-pyale",
+    "href": "model-agnostic-interpretability-python.html#ale-example-pyale",
+    "title": "14  Model-Agnostic Interpretability - Python Version",
+    "section": "15.8 ALE Example (pyALE)",
+    "text": "15.8 ALE Example (pyALE)\n\n\nCode\n# ale_df = ale(\n#     X=X_train,\n#     model=rf_reg,\n#     feature=\"GrLivArea\",\n#     include_CI=False\n# )\n# plt.plot(ale_df[\"GrLivArea\"], ale_df[\"ale\"])\n# plt.xlabel(\"GrLivArea\")\n# plt.ylabel(\"ALE Effect\")\n# plt.title(\"ALE Plot – GrLivArea (Random Forest)\")\n# plt.show()",
+    "crumbs": [
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Model-Agnostic Interpretability - Python Version</span>"
+    ]
+  },
+  {
+    "objectID": "model-agnostic-interpretability-python.html#shap-example",
+    "href": "model-agnostic-interpretability-python.html#shap-example",
+    "title": "14  Model-Agnostic Interpretability - Python Version",
+    "section": "15.9 SHAP Example",
+    "text": "15.9 SHAP Example\n\n\nCode\n# X_small = X_train.sample(50, random_state=1)\n# \n# explainer = shap.KernelExplainer(\n#     rf_reg.predict,\n#     X_small\n# )\n# \n# shap_values = explainer.shap_values(X_test.iloc[0:1])\n# \n# shap.plots.waterfall(shap_values[0])",
+    "crumbs": [
+      "<span class='chapter-number'>14</span>  <span class='chapter-title'>Model-Agnostic Interpretability - Python Version</span>"
+    ]
   }
 ]

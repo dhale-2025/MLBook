@@ -1,0 +1,187 @@
+
+---
+title: "Model-Agnostic Interpretability - Python Version"
+format:
+  html:
+    toc: true
+    number-sections: true
+    code-fold: true
+execute:
+  echo: true
+  warning: false
+  message: false
+jupyter: python3
+---
+
+# Setup: Libraries
+
+```{python}
+import pandas as pd
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
+from xgboost import XGBRegressor, XGBClassifier
+
+from sklearn.inspection import permutation_importance, PartialDependenceDisplay
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+
+import matplotlib.pyplot as plt
+
+# Python ALE + SHAP
+#from pyALE import ale
+#import shap
+```
+
+## Load the Ames Housing Dataset
+
+```{python}
+from sklearn.datasets import fetch_openml
+
+ames = fetch_openml(name="house_prices", as_frame=True)
+df = ames.frame.copy()
+
+# Rename to match R version
+df.rename(columns={"SalePrice":"Sale_Price"}, inplace=True)
+
+cols = [
+    "Sale_Price","BedroomAbvGr","YearBuilt","MoSold","LotArea","Street",
+    "CentralAir","1stFlrSF","2ndFlrSF","FullBath","HalfBath","Fireplaces",
+    "GarageArea","GrLivArea","TotRmsAbvGrd"
+]
+df = df[cols].dropna()
+
+median_price = df["Sale_Price"].median()
+df["HighPrice"] = (df["Sale_Price"] >= median_price).astype(int)
+```
+
+## Train/Test Split
+
+```{python}
+X = df.drop(columns=["Sale_Price","HighPrice"])
+y_reg = df["Sale_Price"]
+y_cls = df["HighPrice"]
+
+X_train, X_test, y_train_reg, y_test_reg = train_test_split(
+    X, y_reg, test_size=0.3, random_state=4321
+)
+
+_, _, y_train_cls, y_test_cls = train_test_split(
+    X, y_cls, test_size=0.3, random_state=4321
+)
+```
+
+## Preprocessing
+
+```{python}
+categorical = ["Street","CentralAir"]
+numeric = [c for c in X.columns if c not in categorical]
+
+preprocess = ColumnTransformer(
+    transformers=[
+        ("num", "passthrough", numeric),
+        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical)
+    ]
+)
+```
+
+## Regression Models
+
+```{python}
+lm_reg = Pipeline([
+    ("prep", preprocess),
+    ("model", LinearRegression())
+]).fit(X_train, y_train_reg)
+
+rf_reg = Pipeline([
+    ("prep", preprocess),
+    ("model", RandomForestRegressor(
+        n_estimators=500, max_features=4, random_state=4321))
+]).fit(X_train, y_train_reg)
+
+xgb_reg = Pipeline([
+    ("prep", preprocess),
+    ("model", XGBRegressor(
+        n_estimators=200, max_depth=4, subsample=0.8,
+        colsample_bytree=0.8, eta=0.1, random_state=4321))
+]).fit(X_train, y_train_reg)
+```
+
+## Classification Models
+
+```{python}
+log_cls = Pipeline([
+    ("prep", preprocess),
+    ("model", LogisticRegression(max_iter=500))
+]).fit(X_train, y_train_cls)
+
+rf_cls = Pipeline([
+    ("prep", preprocess),
+    ("model", RandomForestClassifier(
+        n_estimators=500, max_features=4, random_state=4321))
+]).fit(X_train, y_train_cls)
+
+xgb_cls = Pipeline([
+    ("prep", preprocess),
+    ("model", XGBClassifier(
+        n_estimators=200, max_depth=4, subsample=0.8,
+        colsample_bytree=0.8, eta=0.1, random_state=4321,
+        eval_metric="logloss"))
+]).fit(X_train, y_train_cls)
+```
+
+## Permutation Importance
+
+```{python}
+r = permutation_importance(rf_reg, X_test, y_test_reg, n_repeats=10, random_state=4321)
+
+sorted_idx = r.importances_mean.argsort()
+plt.barh(np.array(X.columns)[sorted_idx], r.importances_mean[sorted_idx])
+plt.title("Random Forest Regression – Permutation Importance")
+plt.show()
+```
+
+## PDP Example
+
+```{python}
+fig = PartialDependenceDisplay.from_estimator(
+    rf_reg, X_train, features=["GrLivArea"]
+)
+plt.show()
+```
+
+## ALE Example (pyALE)
+
+```{python}
+# ale_df = ale(
+#     X=X_train,
+#     model=rf_reg,
+#     feature="GrLivArea",
+#     include_CI=False
+# )
+# plt.plot(ale_df["GrLivArea"], ale_df["ale"])
+# plt.xlabel("GrLivArea")
+# plt.ylabel("ALE Effect")
+# plt.title("ALE Plot – GrLivArea (Random Forest)")
+# plt.show()
+```
+
+## SHAP Example
+
+```{python}
+# X_small = X_train.sample(50, random_state=1)
+# 
+# explainer = shap.KernelExplainer(
+#     rf_reg.predict,
+#     X_small
+# )
+# 
+# shap_values = explainer.shap_values(X_test.iloc[0:1])
+# 
+# shap.plots.waterfall(shap_values[0])
+```
+
+

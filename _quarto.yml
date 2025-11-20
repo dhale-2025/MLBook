@@ -20,7 +20,8 @@ book:
     - nn1-python.qmd
     - naive-bayes.qmd
     - naive-bayes-python.qmd
-    - model-agnostic-interpretability.qmd
+    - model-agnostic-interpretability-r.qmd
+    - model-agnostic-interpretability-python.qmd
     - support-vector-machines.qmd
 
 # ---------------------------------------------------------------------

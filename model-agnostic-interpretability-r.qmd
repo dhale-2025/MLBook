@@ -1,0 +1,750 @@
+
+---
+title: "Model-Agnostic Interpretability - R Version"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup-packages
+#| include: true
+
+# Core data wrangling and modeling
+library(tidyverse)
+library(AmesHousing)
+library(ranger)
+library(xgboost)
+
+# Model-agnostic interpretability
+library(iml)      # permutation importance, PD, ICE, ALE, local models, Shapley
+
+# Alternatives / model-specific tools
+library(randomForest)
+```
+
+## Learning Objectives
+
+By the end of this section you should be able to:
+
+- Explain what *model-agnostic* interpretability means and why it is useful.
+- Compute and interpret **permutation feature importance** for several models.
+- Use **partial dependence plots (PDP)** and **individual conditional expectation (ICE)** plots.
+- Use **accumulated local effects (ALE)** plots and understand how they differ from PDP.
+- Explain **local surrogate** ideas in the spirit of **LIME** and interpret a local explanation.
+- Compute **Shapley value**–based explanations for individual predictions.
+- Compare how these tools behave for:
+  - a **regression** target (Sale Price), and  
+  - a **binary classification** target (High vs Low price, based on the median).
+
+---
+
+## 1. Data and Modeling Setup
+
+We will reuse the Ames housing data and the same subset of predictors used earlier in the book.
+
+```{r}
+#| label: load-data
+#| fig-cap: "Ames housing data with selected predictors."
+
+set.seed(4321)
+
+ames <- make_ordinal_ames() |>
+  mutate(
+    id = row_number()
+  ) |>
+  select(
+    id, Sale_Price,
+    Bedroom_AbvGr,
+    Year_Built,
+    Mo_Sold,
+    Lot_Area,
+    Street,
+    Central_Air,
+    First_Flr_SF,
+    Second_Flr_SF,
+    Full_Bath,
+    Half_Bath,
+    Fireplaces,
+    Garage_Area,
+    Gr_Liv_Area, 
+    TotRms_AbvGrd
+  )
+
+# Create a binary classification target: High vs Low price
+median_price <- median(ames$Sale_Price)
+ames <- ames |>
+  mutate(
+    HighPrice = if_else(Sale_Price >= median_price, "High", "Low"),
+    HighPrice = factor(HighPrice, levels = c("Low", "High"))
+  )
+
+# Train / test split (same seed for reproducibility)
+train_ids <- sample(ames$id, size = 0.7 * nrow(ames))
+train <- ames |> filter(id %in% train_ids)
+test  <- ames |> filter(!id %in% train_ids)
+
+# Predictors only (same X for regression and classification)
+X_train <- train |>
+  select(-id, -Sale_Price, -HighPrice)
+X_test  <- test |>
+  select(-id, -Sale_Price, -HighPrice)
+
+# Targets
+y_train_reg <- train$Sale_Price
+y_test_reg  <- test$Sale_Price
+
+y_train_cls <- train$HighPrice
+y_test_cls  <- test$HighPrice
+y_train_cls_num <- if_else(y_train_cls == "High", 1, 0)
+```
+
+---
+
+## 2. Models to Interpret
+
+We will fit three models:
+
+- A **linear regression** model (simple, transparent baseline).
+- A **Random Forest** (nonlinear, interaction-rich).
+- An **XGBoost** model (gradient-boosted trees).
+
+We fit each model for the **regression** task. Then we fit classification versions for the **high/low** price target.
+
+### 2.1 Regression Models
+
+```{r}
+#| label: fit-regression-models
+
+# Linear regression
+lm_reg <- lm(Sale_Price ~ . - id - HighPrice, data = train)
+
+# Random Forest regression
+rf_reg <- ranger(
+  Sale_Price ~ . - id - HighPrice,
+  data       = train,
+  num.trees  = 500,
+  mtry       = 4,
+  importance = "permutation",
+  seed       = 4321
+)
+
+# XGBoost regression: use model.matrix on the predictor set
+xgb_train_reg <- model.matrix(~ ., data = X_train)
+
+xgb_reg <- xgboost(
+  data              = xgb_train_reg,
+  label             = y_train_reg,
+  nrounds           = 200,
+  objective         = "reg:squarederror",
+  max_depth         = 4,
+  eta               = 0.1,
+  subsample         = 0.8,
+  colsample_bytree  = 0.8,
+  verbose           = 0
+)
+```
+
+### 2.2 Classification Models (High vs Low Price)
+
+```{r}
+#| label: fit-classification-models
+
+# Logistic regression (glm)
+glm_cls <- glm(
+  HighPrice ~ . - id - Sale_Price,
+  data   = train,
+  family = binomial
+)
+
+# Random Forest classification
+rf_cls <- ranger(
+  HighPrice ~ . - id - Sale_Price,
+  data        = train,
+  num.trees   = 500,
+  mtry        = 4,
+  probability = TRUE,
+  seed        = 4321
+)
+
+# XGBoost classification (probability of "High")
+xgb_train_cls <- xgb_train_reg  # same predictors as regression
+xgb_cls <- xgboost(
+  data              = xgb_train_cls,
+  label             = y_train_cls_num,
+  nrounds           = 200,
+  objective         = "binary:logistic",
+  max_depth         = 4,
+  eta               = 0.1,
+  subsample         = 0.8,
+  colsample_bytree  = 0.8,
+  verbose           = 0
+)
+```
+
+---
+
+## 3. Wrapping Models in `iml::Predictor`
+
+The **iml** package provides a common interface to models. Once a model is wrapped in a `Predictor`, we can apply:
+
+- permutation importance
+- PDP, ICE, ALE
+- local surrogate models (LIME-style)
+- Shapley value explanations
+
+### 3.1 Regression Predictors
+
+```{r}
+#| label: iml-regression-predictors
+
+# Predictors for regression models
+pred_lm_reg <- Predictor$new(
+  model = lm_reg,
+  data  = X_train,
+  y     = y_train_reg
+)
+
+pred_rf_reg <- Predictor$new(
+  model = rf_reg,
+  data  = X_train,
+  y     = y_train_reg,
+  predict.function = function(m, newdata) {
+    predict(m, data = newdata)$predictions
+  }
+)
+
+pred_xgb_reg <- Predictor$new(
+  model = xgb_reg,
+  data  = X_train,
+  y     = y_train_reg,
+  predict.function = function(m, newdata) {
+    new_mat <- model.matrix(~ ., data = newdata)
+    predict(m, new_mat)
+  }
+)
+```
+
+### 3.2 Classification Predictors (Probability of High Price)
+
+For classification, we will interpret the **predicted probability that a home is “High” price** (above the median).
+
+```{r}
+#| label: iml-classification-predictors
+
+# Logistic regression: probability of "High"
+pred_glm_cls <- Predictor$new(
+  model = glm_cls,
+  data  = X_train,
+  y     = y_train_cls_num,
+  predict.function = function(m, newdata) {
+    predict(m, newdata, type = "response")
+  }
+)
+
+# Random Forest classification: use probability for "High"
+pred_rf_cls <- Predictor$new(
+  model = rf_cls,
+  data  = X_train,
+  y     = y_train_cls_num,
+  predict.function = function(m, newdata) {
+    preds <- predict(m, data = newdata)$predictions
+    preds[, "High"]
+  }
+)
+
+# XGBoost classification: probability of "High"
+pred_xgb_cls <- Predictor$new(
+  model = xgb_cls,
+  data  = X_train,
+  y     = y_train_cls_num,
+  predict.function = function(m, newdata) {
+    new_mat <- model.matrix(~ ., data = newdata)
+    predict(m, new_mat)
+  }
+)
+```
+
+### 3.3 Why Some Models Need `predict.function`
+
+The `iml` package expects the wrapped model to behave like a simple prediction function:
+
+> **input:** a data frame of new observations  
+> **output:** a numeric vector of predictions
+
+Different R model objects behave differently:
+
+- **`lm()`** already satisfies this contract:  
+  `predict(lm_reg, newdata)` returns a numeric vector of fitted values.  
+  → No custom `predict.function` is needed.
+
+- **`ranger` (Random Forest)** returns a **list**, whose `$predictions` element contains the numeric predictions.  
+  → We supply a `predict.function` that calls `predict()` and pulls out `$predictions`.
+
+- **`xgboost`** expects a **numeric matrix**, not a data frame, and does not understand formulas or factors.  
+  → We supply a `predict.function` that first converts `newdata` to a design matrix via `model.matrix()`, then calls `predict()`.
+
+```{r}
+#| label: predictor-functions-explained
+
+# Linear model works out of the box:
+# predict(lm_reg, newdata) -> numeric vector
+pred_lm_reg <- Predictor$new(
+  model = lm_reg,
+  data  = X_train,
+  y     = y_train_reg
+)
+
+# ranger: extract $predictions from the list
+pred_rf_reg <- Predictor$new(
+  model = rf_reg,
+  data  = X_train,
+  y     = y_train_reg,
+  predict.function = function(m, newdata) {
+    predict(m, data = newdata)$predictions
+  }
+)
+
+# xgboost: convert data frame to numeric matrix
+pred_xgb_reg <- Predictor$new(
+  model = xgb_reg,
+  data  = X_train,
+  y     = y_train_reg,
+  predict.function = function(m, newdata) {
+    new_mat <- model.matrix(~ ., data = newdata)
+    predict(m, new_mat)
+  }
+)
+```
+
+---
+
+## 4. Permutation Feature Importance
+
+**Idea:** Shuffle one feature at a time and see how much model performance degrades.  
+Larger performance loss ⇒ feature was more important.
+
+We’ll start with the **Random Forest regression** model.
+
+```{r}
+#| label: perm-importance-rf-reg
+#| fig-cap: "Permutation feature importance for Random Forest regression."
+#| fig-width: 7
+#| fig-height: 5
+
+set.seed(4321)
+imp_rf_reg <- FeatureImp$new(
+  predictor = pred_rf_reg,
+  loss      = "rmse"
+)
+
+plot(imp_rf_reg)
+```
+
+You can repeat this for XGBoost:
+
+```{r}
+#| label: perm-importance-xgb-reg
+#| fig-cap: "Permutation feature importance for XGBoost regression."
+#| fig-width: 7
+#| fig-height: 5
+
+set.seed(4321)
+imp_xgb_reg <- FeatureImp$new(
+  predictor = pred_xgb_reg,
+  loss      = "rmse"
+)
+
+plot(imp_xgb_reg)
+```
+
+### 4.1 Classification: Importance for Probability of High Price
+
+Now compare to the **Random Forest classification** model, where the outcome is a *probability*.
+
+```{r}
+#| label: perm-importance-rf-cls
+#| fig-cap: "Permutation feature importance for RF probability of High price."
+#| fig-width: 7
+#| fig-height: 5
+
+set.seed(4321)
+imp_rf_cls <- FeatureImp$new(
+  predictor = pred_rf_cls,
+  loss      = "ce"  # cross-entropy for probabilities
+)
+
+plot(imp_rf_cls)
+```
+
+---
+
+## 5. Partial Dependence and ICE
+
+**Partial Dependence Plot (PDP):**  
+Average prediction as we vary one feature, holding others “as observed” and averaging over them.
+
+**Individual Conditional Expectation (ICE):**  
+One curve per observation—shows heterogeneity across individual observations.
+
+We’ll focus on **Gr_Liv_Area** (above-ground living area) as a key driver.
+
+### 5.1 PDP for RF Regression
+
+```{r}
+#| label: pdp-rf-reg
+#| fig-cap: "Partial dependence of Sale Price on Gr_Liv_Area (Random Forest regression)."
+#| fig-width: 7
+#| fig-height: 5
+
+pdp_rf_reg <- FeatureEffect$new(
+  predictor = pred_rf_reg,
+  feature   = "Gr_Liv_Area",
+  method    = "pdp"
+)
+
+plot(pdp_rf_reg)
+```
+
+### 5.2 ICE for RF Regression
+
+```{r}
+#| label: ice-rf-reg
+#| fig-cap: "ICE curves of Sale Price vs Gr_Liv_Area (Random Forest regression)."
+#| fig-width: 7
+#| fig-height: 5
+
+ice_rf_reg <- FeatureEffect$new(
+  predictor = pred_rf_reg,
+  feature   = "Gr_Liv_Area",
+  method    = "ice"
+)
+
+plot(ice_rf_reg)
+```
+
+> **Interpretation point:**  
+> - PDP: one smooth curve (average effect).  
+> - ICE: many curves, one per home.  
+> Differences between ICE curves indicate **interactions** or **nonlinearities** that the average PDP hides.
+
+### 5.3 Classification: PDP for Probability of High Price
+
+Now, look at the **probability the home is High price** vs. `Gr_Liv_Area` for RF classification.
+
+```{r}
+#| label: pdp-rf-cls
+#| fig-cap: "PDP of probability(HighPrice) vs Gr_Liv_Area (Random Forest classification)."
+#| fig-width: 7
+#| fig-height: 5
+
+pdp_rf_cls <- FeatureEffect$new(
+  predictor = pred_rf_cls,
+  feature   = "Gr_Liv_Area",
+  method    = "pdp"
+)
+
+plot(pdp_rf_cls)
+```
+
+
+---
+
+## 6. Accumulated Local Effects (ALE)
+
+**ALE plots** estimate the effect of a feature in a more *local* way:
+
+- Instead of averaging over unrealistic combinations of features (a PDP problem),  
+- ALE looks at changes in predictions as we move within small intervals of the feature.
+
+We’ll compute ALE for `Gr_Liv_Area` for the RF regression model.
+
+```{r}
+#| label: ale-rf-reg
+#| fig-cap: "ALE plot for Gr_Liv_Area (Random Forest regression)."
+#| fig-width: 7
+#| fig-height: 5
+
+ale_rf_reg <- FeatureEffect$new(
+  predictor = pred_rf_reg,
+  feature   = "Gr_Liv_Area",
+  method    = "ale"
+)
+
+plot(ale_rf_reg)
+```
+
+> **Teaching point:**  
+> - PDP assumes features are independent; ALE relaxes this by focusing on local neighborhoods.  
+> - ALE is often more reliable when predictors are correlated (as they often are in housing data).
+
+---
+
+## 7. Local Surrogate Models (LIME-Style)
+
+**LIME idea:** For one specific observation:
+
+1. Generate small perturbations around that point.  
+2. Get model predictions for the perturbed points.  
+3. Fit a simple, local surrogate model (e.g., a linear regression) to approximate the complex model nearby.  
+4. Use the surrogate’s coefficients as a local explanation.
+
+`iml::LocalModel` provides a LIME-style explanation.
+
+### 7.1 Choose a House to Explain
+
+```{r}
+#| label: pick-observation
+
+# Pick a test-set observation to explain
+obs_index <- 10
+x_interest <- X_test[obs_index, , drop = FALSE]
+x_interest
+```
+
+### 7.2 Local Explanation for RF Regression
+
+```{r}
+#| label: lime-style-rf-reg
+#| fig-cap: "Local surrogate explanation (LIME-style) for RF regression prediction."
+#| fig-width: 7
+#| fig-height: 5
+
+local_rf_reg <- LocalModel$new(
+  predictor   = pred_rf_reg,
+  x.interest  = x_interest
+)
+
+plot(local_rf_reg)
+```
+
+### 7.3 Local Explanation for RF Classification (Probability of High Price)
+
+```{r}
+#| label: lime-style-rf-cls
+#| fig-cap: "Local surrogate explanation (LIME-style) for RF classification probability of HighPrice."
+#| fig-width: 7
+#| fig-height: 5
+
+local_rf_cls <- LocalModel$new(
+  predictor   = pred_rf_cls,
+  x.interest  = x_interest
+)
+
+plot(local_rf_cls)
+```
+
+> **Note:**  
+> This is the same home, explained two different ways:
+> - contribution to **predicted price**,  
+> - contribution to **probability of being High price**.
+
+---
+
+## 8. Shapley Values
+
+**Shapley values** come from cooperative game theory:
+
+- Think of each feature as a “player” in a game whose payoff is the model prediction.
+- Shapley values allocate the difference between the prediction and a baseline fairly across features.
+- They are **local** explanations for one observation, but with nice global averaging properties.
+
+### 8.1 Shapley Values for RF Regression
+
+```{r}
+#| label: shapley-rf-reg
+#| fig-cap: "Shapley value explanation for RF regression prediction."
+#| fig-width: 7
+#| fig-height: 5
+
+set.seed(4321)
+shap_rf_reg <- Shapley$new(
+  predictor  = pred_rf_reg,
+  x.interest = x_interest
+)
+
+plot(shap_rf_reg)
+```
+
+### 8.2 Shapley Values for RF Classification
+
+Now explain the **probability of High price** for the same home.
+
+```{r}
+#| label: shapley-rf-cls
+#| fig-cap: "Shapley value explanation for RF classification probability of HighPrice."
+#| fig-width: 7
+#| fig-height: 5
+
+set.seed(4321)
+shap_rf_cls <- Shapley$new(
+  predictor  = pred_rf_cls,
+  x.interest = x_interest
+)
+
+plot(shap_rf_cls)
+```
+
+> **Interpretation:**  
+> - Shapley values are additive: the sum of contributions (plus baseline) equals the prediction.  
+> - Comparing regression vs classification Shapley results shows how the “story” changes when we move from dollar predictions to probabilities.
+
+---
+
+## 9. Alternatives and Model-Specific Tools
+
+There are some other tools to use in R.
+
+### 9.1 Random Forest Variable Importance with `randomForest`
+
+Here we refit a Random Forest using the `randomForest` package and use its built-in variable importance tools.
+
+```{r}
+#| label: rf-randomForest-alt
+
+# Create a training data frame consistent with earlier setup
+training <- train |>
+  select(
+    Sale_Price,
+    Bedroom_AbvGr,
+    Year_Built,
+    Mo_Sold,
+    Lot_Area,
+    Street,
+    Central_Air,
+    First_Flr_SF,
+    Second_Flr_SF,
+    Full_Bath,
+    Half_Bath,
+    Fireplaces,
+    Garage_Area,
+    Gr_Liv_Area, 
+    TotRms_AbvGrd
+  )
+
+training.df <- as.data.frame(training)
+
+set.seed(12345)
+rf.ames <- randomForest(
+  Sale_Price ~ .,
+  data     = training.df,
+  ntree    = 250,
+  importance = TRUE
+)
+
+# Look at variable importance
+varImpPlot(
+  rf.ames,
+  sort = TRUE,
+  n.var = 10,
+  main = "Top 10 - Variable Importance",
+  type = 1
+)
+
+importance(rf.ames)
+```
+
+> **Comparison:**  
+> - `randomForest::varImpPlot()` is *model-specific* and convenient.  
+> - `iml::FeatureImp` is *model-agnostic* and can be applied to any model with a suitable prediction function.
+
+### 9.2 Permutation Importance for Linear Regression (Again with `iml`)
+
+```{r}
+#| label: alt-linear-perm-imp
+
+lm.ames <- lm(Sale_Price ~ ., data = training)
+
+linear_pred <- Predictor$new(
+  lm.ames,
+  data = training[,-1],
+  y    = training$Sale_Price,
+  type = "response"
+)
+
+plot(FeatureImp$new(linear_pred, loss = "mse"))
+```
+
+### 9.3 ICE / PDP / ALE via `FeatureEffects`
+
+The `FeatureEffects` (plural) helper in `iml` creates multiple types of effects in one object and then uses a `$plot()` method.
+
+```{r}
+#| label: alt-feature-effects
+
+forest_pred <- Predictor$new(
+  rf.ames,
+  data = training[,-1],
+  y    = training$Sale_Price,
+  type = "response"
+)
+
+# ICE
+ice_plot <- FeatureEffects$new(forest_pred, method = "ice")
+ice_plot$plot("Garage_Area")
+
+# PDP
+pd_plot <- FeatureEffects$new(forest_pred, method = "pdp")
+pd_plot$plot("Garage_Area")
+
+# PDP + ICE overlay
+pdice_plot <- FeatureEffects$new(forest_pred, method = "pdp+ice")
+pdice_plot$plot("Mo_Sold")
+
+# ALE
+ale_plot <- FeatureEffects$new(forest_pred, method = "ale")
+ale_plot$plot("Garage_Area")
+```
+
+### 9.4 LIME-Style LocalModel and Shapley (Alternative Examples)
+
+```{r}
+#| label: alt-lime-shapley
+
+# LIME-style explanation for a particular point
+point <- 132
+lime.explain <- LocalModel$new(
+  forest_pred,
+  x.interest = training[point,-1],
+  k = 5
+)
+plot(lime.explain)
+
+# Shapley values for a particular point
+point <- 100
+shap_alt <- Shapley$new(
+  forest_pred,
+  x.interest = training[point,-1]
+)
+shap_alt$plot()
+```
+
+> **Teaching point:**  
+> These examples show that:
+> - You can work *entirely* within `iml` for a consistent, model-agnostic interface, or  
+> - You can mix `iml` tools with model-specific utilities like `randomForest::varImpPlot()` depending on your audience and goals.
+
+---
+
+## 10. Summary and Comparison
+
+Key takeaways:
+
+- **Permutation importance** tells us which features matter *globally* for predictions.
+- **PDP and ICE** show how predictions change as one feature moves:
+  - PDP: average effect  
+  - ICE: individual-level variation
+- **ALE** is often preferred when predictors are correlated.
+- **Local surrogate (LIME-style)** and **Shapley values**:
+  - provide *local*, observation-level explanations,  
+  - but can be averaged to create *global* stories.
+- Model-specific tools (like `varImpPlot`) are convenient but tie you to a particular algorithm, whereas `iml` gives you a common language across very different models.
+
+

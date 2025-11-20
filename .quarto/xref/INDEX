@@ -72,5 +72,11 @@
   },
   "naive-bayes-python.qmd": {
     "naive-bayes-python.html": "1d4614ed"
+  },
+  "model-agnostic-interpretability-python.qmd": {
+    "model-agnostic-interpretability-python.html": "596a93d9"
+  },
+  "model-agnostic-interpretability-r.qmd": {
+    "model-agnostic-interpretability-r.html": "5a72eaab"
   }
 }

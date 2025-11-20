@@ -6,7 +6,6 @@ format:
     code-fold: false
   pdf:
     toc: true
-jupyter: python3
 ---
 
 ## Feedforward Neural Network (MLP) Using Ames Housing (Python)
