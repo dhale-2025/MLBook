@@ -1138,5 +1138,175 @@
     "crumbs": [
       "<span class='chapter-number'>14</span>  <span class='chapter-title'>Model-Agnostic Interpretability - Python Version</span>"
     ]
+  },
+  {
+    "objectID": "clustering.html",
+    "href": "clustering.html",
+    "title": "15  Clustering with K-means, DBSCAN, and Hierarchical R Version",
+    "section": "",
+    "text": "15.1 Learning Objectives\nBy the end of this section, you will be able to:",
+    "crumbs": [
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Clustering with K-means, DBSCAN, and Hierarchical R Version</span>"
+    ]
+  },
+  {
+    "objectID": "clustering.html#learning-objectives",
+    "href": "clustering.html#learning-objectives",
+    "title": "15  Clustering with K-means, DBSCAN, and Hierarchical R Version",
+    "section": "",
+    "text": "Apply K-means, DBSCAN, and Hierarchical clustering.\nInterpret common graphs.\nProduce parallel coordinates plots for each clustering solution.\nCompare cluster assignments to true Iris species.",
+    "crumbs": [
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Clustering with K-means, DBSCAN, and Hierarchical R Version</span>"
+    ]
+  },
+  {
+    "objectID": "clustering.html#setup",
+    "href": "clustering.html#setup",
+    "title": "15  Clustering with K-means, DBSCAN, and Hierarchical R Version",
+    "section": "15.2 Setup",
+    "text": "15.2 Setup\n\n\nCode\nlibrary(tidyverse)\nlibrary(factoextra)\nlibrary(cluster)\nlibrary(dbscan)\nlibrary(NbClust)\nlibrary(GGally)   # for parallel coordinate plots\nset.seed(4321)",
+    "crumbs": [
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Clustering with K-means, DBSCAN, and Hierarchical R Version</span>"
+    ]
+  },
+  {
+    "objectID": "clustering.html#dataset",
+    "href": "clustering.html#dataset",
+    "title": "15  Clustering with K-means, DBSCAN, and Hierarchical R Version",
+    "section": "15.3 Dataset",
+    "text": "15.3 Dataset\n\n\nCode\ndata(iris)\niris_num &lt;- iris %&gt;% select(where(is.numeric))\niris_scaled &lt;- scale(iris_num)\nhead(iris_scaled)\n\n\n     Sepal.Length Sepal.Width Petal.Length Petal.Width\n[1,]   -0.8976739  1.01560199    -1.335752   -1.311052\n[2,]   -1.1392005 -0.13153881    -1.335752   -1.311052\n[3,]   -1.3807271  0.32731751    -1.392399   -1.311052\n[4,]   -1.5014904  0.09788935    -1.279104   -1.311052\n[5,]   -1.0184372  1.24503015    -1.335752   -1.311052\n[6,]   -0.5353840  1.93331463    -1.165809   -1.048667\n\n\n\n15.3.1 Explanation\nWe extract the numeric features of the Iris dataset and scale them so that all variables contribute equally. Scaling is crucial because distance-based clustering is sensitive to variable magnitude.",
+    "crumbs": [
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Clustering with K-means, DBSCAN, and Hierarchical R Version</span>"
+    ]
+  },
+  {
+    "objectID": "clustering.html#pca-visualization",
+    "href": "clustering.html#pca-visualization",
+    "title": "15  Clustering with K-means, DBSCAN, and Hierarchical R Version",
+    "section": "15.4 PCA Visualization",
+    "text": "15.4 PCA Visualization\n\n\nCode\npca &lt;- prcomp(iris_scaled)\nfviz_pca_ind(pca, geom=\"point\", title=\"PCA Visualization of Iris\")\n\n\n\n\n\n\n\n\n\n\n15.4.1 Explanation\nA PCA scatterplot allows us to see the structure of high-dimensional data in two dimensions. If clusters exist naturally, PCA often reveals them visually.",
+    "crumbs": [
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Clustering with K-means, DBSCAN, and Hierarchical R Version</span>"
+    ]
+  },
+  {
+    "objectID": "clustering.html#part-1-determining-k-for-k-means",
+    "href": "clustering.html#part-1-determining-k-for-k-means",
+    "title": "15  Clustering with K-means, DBSCAN, and Hierarchical R Version",
+    "section": "15.5 PART 1 — Determining k for K-means",
+    "text": "15.5 PART 1 — Determining k for K-means\n\n15.5.1 Elbow Plot\n\n\nCode\nfviz_nbclust(iris_scaled, kmeans, method=\"wss\") +\n  labs(title=\"Elbow Method (WSS vs k)\")\n\n\n\n\n\n\n\n\n\n\n15.5.1.1 Explanation\nThe elbow plot shows how total within-cluster variation decreases as k increases.\nWe select the k where improvement slows down — the “elbow.”\n\n\n\n\n15.5.2 Silhouette Plot\n\n\nCode\nfviz_nbclust(iris_scaled, kmeans, method=\"silhouette\") +\n  labs(title=\"Silhouette Method\")\n\n\n\n\n\n\n\n\n\n\n15.5.2.1 Explanation\nThe silhouette method evaluates how well-separated clusters are.\nHigher values indicate clearer boundaries. The optimal k maximizes silhouette width.\n\n\n\n\n15.5.3 Gap Statistic\n\n\nCode\nset.seed(4321)\ngap &lt;- clusGap(iris_scaled, FUN=kmeans, nstart=25, K.max=10, B=30)\nfviz_gap_stat(gap)\n\n\n\n\n\n\n\n\n\n\n15.5.3.1 Explanation\nThe gap statistic compares cluster dispersion to what would be expected if no clustering existed.\nA large “gap” indicates strong underlying cluster structure.\n\n\n\n\n15.5.4 NBClust\n\n\nCode\nset.seed(4321)\nnb_res &lt;- NbClust(iris_scaled, distance=\"euclidean\",\n                  min.nc=2, max.nc=10, method=\"kmeans\")\n\n\n\n\n\n\n\n\n\n*** : The Hubert index is a graphical method of determining the number of clusters.\n                In the plot of Hubert index, we seek a significant knee that corresponds to a \n                significant increase of the value of the measure i.e the significant peak in Hubert\n                index second differences plot. \n \n\n\n\n\n\n\n\n\n\n*** : The D index is a graphical method of determining the number of clusters. \n                In the plot of D index, we seek a significant knee (the significant peak in Dindex\n                second differences plot) that corresponds to a significant increase of the value of\n                the measure. \n \n******************************************************************* \n* Among all indices:                                                \n* 11 proposed 2 as the best number of clusters \n* 10 proposed 3 as the best number of clusters \n* 1 proposed 4 as the best number of clusters \n* 1 proposed 6 as the best number of clusters \n* 1 proposed 10 as the best number of clusters \n\n                   ***** Conclusion *****                            \n \n* According to the majority rule, the best number of clusters is  2 \n \n \n******************************************************************* \n\n\nCode\nbest_k &lt;- nb_res$Best.nc[1]\nbest_k\n\n\n[1] 3\n\n\n\n\nCode\nvote_dist &lt;- as.data.frame(table(nb_res$Best.nc[1, ]))\n\nggplot(vote_dist, aes(Var1, Freq)) +\n  geom_col(fill=\"steelblue\") +\n  labs(title=\"NbClust: Votes for k\")\n\n\n\n\n\n\n\n\n\n\n15.5.4.1 Explanation\nNBClust computes 30+ indices to recommend the number of clusters.\nWe visualize the vote distribution and use the majority vote.",
+    "crumbs": [
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Clustering with K-means, DBSCAN, and Hierarchical R Version</span>"
+    ]
+  },
+  {
+    "objectID": "clustering.html#k-means-clustering",
+    "href": "clustering.html#k-means-clustering",
+    "title": "15  Clustering with K-means, DBSCAN, and Hierarchical R Version",
+    "section": "15.6 K-means Clustering",
+    "text": "15.6 K-means Clustering\n\n\nCode\nkmeans_fit &lt;- kmeans(iris_scaled, centers = best_k, nstart=30)\nfviz_cluster(kmeans_fit, iris_scaled,\n             main=paste(\"K-means Clusters (k=\", best_k, \")\", sep=\"\"))\n\n\n\n\n\n\n\n\n\n\n15.6.1 Explanation\nK-means partitions data into spherical clusters using centroids.\nThe PCA visualization shows how those clusters look in reduced space.",
+    "crumbs": [
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Clustering with K-means, DBSCAN, and Hierarchical R Version</span>"
+    ]
+  },
+  {
+    "objectID": "clustering.html#compare-k-means-to-true-species",
+    "href": "clustering.html#compare-k-means-to-true-species",
+    "title": "15  Clustering with K-means, DBSCAN, and Hierarchical R Version",
+    "section": "15.7 Compare K-means to True Species",
+    "text": "15.7 Compare K-means to True Species\n\n\nCode\ntable(KMeans = kmeans_fit$cluster, Species = iris$Species)\n\n\n      Species\nKMeans setosa versicolor virginica\n     1      0         39        14\n     2     50          0         0\n     3      0         11        36\n\n\n\n15.7.1 Explanation\nThis table shows how well K-means clusters match the true species.\nK-means typically identifies Setosa perfectly but overlaps Versicolor and Virginica.",
+    "crumbs": [
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Clustering with K-means, DBSCAN, and Hierarchical R Version</span>"
+    ]
+  },
+  {
+    "objectID": "clustering.html#parallel-coordinates-for-k-means",
+    "href": "clustering.html#parallel-coordinates-for-k-means",
+    "title": "15  Clustering with K-means, DBSCAN, and Hierarchical R Version",
+    "section": "15.8 Parallel Coordinates for K-means",
+    "text": "15.8 Parallel Coordinates for K-means\n\n\nCode\niris_km &lt;- iris_num %&gt;% mutate(Cluster = factor(kmeans_fit$cluster))\nGGally::ggparcoord(iris_km, columns = 1:4, groupColumn = \"Cluster\",\n                   title=\"Parallel Coordinates: K-means Clusters\")\n\n\n\n\n\n\n\n\n\n\n15.8.1 Explanation\nParallel coordinate plots show variable profiles across clusters.\nK-means clusters should show distinct shape patterns if clustering is meaningful.",
+    "crumbs": [
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Clustering with K-means, DBSCAN, and Hierarchical R Version</span>"
+    ]
+  },
+  {
+    "objectID": "clustering.html#part-2-hierarchical-clustering",
+    "href": "clustering.html#part-2-hierarchical-clustering",
+    "title": "15  Clustering with K-means, DBSCAN, and Hierarchical R Version",
+    "section": "15.9 PART 2 — Hierarchical Clustering",
+    "text": "15.9 PART 2 — Hierarchical Clustering\n\n15.9.1 Dendrogram\n\n\nCode\nd &lt;- dist(iris_scaled)\nhc_complete &lt;- hclust(d, method=\"complete\")\nfviz_dend(hc_complete, k=3, rect=TRUE,\n          main=\"Hierarchical Clustering (Complete Linkage)\")\n\n\n\n\n\n\n\n\n\n\n15.9.1.1 Explanation\nHierarchical clustering builds a tree structure showing merging of points/clusters.\nCutting the dendrogram at height = 3 yields three clusters.\n\n\n\n\n15.9.2 Cut into 3 Clusters and Compare\n\n\nCode\nhc_clusters &lt;- cutree(hc_complete, k=3)\ntable(Hierarchical = hc_clusters, Species = iris$Species)\n\n\n            Species\nHierarchical setosa versicolor virginica\n           1     49          0         0\n           2      1         21         2\n           3      0         29        48\n\n\n\n15.9.2.1 Explanation\nHierarchical clustering does not require pre-specifying k — we “cut” the dendrogram.\nThis table shows how hierarchical groupings align with real species.\n\n\n\n\n15.9.3 PCA Visualization of Hierarchical Clusters\n\n\nCode\nfviz_cluster(list(data=iris_scaled, cluster=hc_clusters),\n             geom=\"point\",\n             main=\"Hierarchical Clusters (k=3)\")\n\n\n\n\n\n\n\n\n\n\n15.9.3.1 Explanation\nA PCA scatterplot shows how hierarchical clusters spread in low-dimensional space.\nComplete linkage tends to produce compact clusters.\n\n\n\n\n15.9.4 Parallel Coordinates for Hierarchical\n\n\nCode\niris_hc &lt;- iris_num %&gt;% mutate(Cluster = factor(hc_clusters))\nGGally::ggparcoord(iris_hc, columns = 1:4, groupColumn = \"Cluster\",\n                   title=\"Parallel Coordinates: Hierarchical Clusters\")\n\n\n\n\n\n\n\n\n\n\n\n15.9.5 Explanation\nParallel coordinates allow us to compare variable patterns across hierarchical clusters.",
+    "crumbs": [
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Clustering with K-means, DBSCAN, and Hierarchical R Version</span>"
+    ]
+  },
+  {
+    "objectID": "clustering.html#part-3-dbscan",
+    "href": "clustering.html#part-3-dbscan",
+    "title": "15  Clustering with K-means, DBSCAN, and Hierarchical R Version",
+    "section": "15.10 PART 3 — DBSCAN",
+    "text": "15.10 PART 3 — DBSCAN\n\n15.10.1 kNN Distance Plot\n\n\nCode\nminPts &lt;- 2 * ncol(iris_scaled)\nkNNdistplot(iris_scaled, k=minPts)\nabline(h=0.9, lty=2)\n\n\n\n\n\n\n\n\n\n\n15.10.1.1 Explanation\nThe kNN plot helps choose eps by showing the distance to each point’s k-th neighbor.\nThe “knee” in the curve is the suggested eps threshold.\n\n\n\n\n15.10.2 Fit DBSCAN\n\n\nCode\ndb_fit &lt;- dbscan(iris_scaled, eps=0.9, minPts=minPts)\ndb_fit\n\n\nDBSCAN clustering for 150 objects.\nParameters: eps = 0.9, minPts = 8\nUsing euclidean distances and borderpoints = TRUE\nThe clustering contains 2 cluster(s) and 7 noise points.\n\n 0  1  2 \n 7 48 95 \n\nAvailable fields: cluster, eps, minPts, metric, borderPoints\n\n\n\n15.10.2.1 Explanation\nDBSCAN groups high-density regions and labels low-density points as noise (cluster 0).\n\n\n\n\n15.10.3 DBSCAN Clusters in PCA Space\n\n\nCode\nfviz_cluster(list(data=iris_scaled, cluster=db_fit$cluster),\n             geom=\"point\",\n             ellipse.type=\"convex\",\n             main=\"DBSCAN Clusters\")\n\n\n\n\n\n\n\n\n\n\n15.10.3.1 Explanation\nDBSCAN finds arbitrary-shaped clusters that density-based methods capture better than K-means.\n\n\n\n\n15.10.4 Compare DBSCAN to True Species\n\n\nCode\ntable(DBSCAN = db_fit$cluster, Species = iris$Species)\n\n\n      Species\nDBSCAN setosa versicolor virginica\n     0      2          1         4\n     1     48          0         0\n     2      0         49        46\n\n\n\n15.10.4.1 Explanation\nDBSCAN often segments Setosa well but may merge Versicolor and Virginica depending on eps.\n\n\n\n\n15.10.5 Parallel Coordinates for DBSCAN\n\n\nCode\niris_db &lt;- iris_num %&gt;% mutate(Cluster = factor(db_fit$cluster))\nGGally::ggparcoord(iris_db, columns = 1:4, groupColumn = \"Cluster\",\n                   title=\"Parallel Coordinates: DBSCAN Clusters\")\n\n\n\n\n\n\n\n\n\n\n15.10.5.1 Explanation\nParallel coordinates show how DBSCAN clusters differ in variable space and highlight noise points.",
+    "crumbs": [
+      "<span class='chapter-number'>15</span>  <span class='chapter-title'>Clustering with K-means, DBSCAN, and Hierarchical R Version</span>"
+    ]
+  },
+  {
+    "objectID": "isolation-forest.html",
+    "href": "isolation-forest.html",
+    "title": "16  Isolation Forest - R Version",
+    "section": "",
+    "text": "16.1 Learning Objectives\nAfter this notebook, you will be able to:",
+    "crumbs": [
+      "<span class='chapter-number'>16</span>  <span class='chapter-title'>Isolation Forest - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "isolation-forest.html#learning-objectives",
+    "href": "isolation-forest.html#learning-objectives",
+    "title": "16  Isolation Forest - R Version",
+    "section": "",
+    "text": "Understand Isolation Forest intuition\n\nGenerate synthetic data with injected anomalies\nFit Isolation Forest",
+    "crumbs": [
+      "<span class='chapter-number'>16</span>  <span class='chapter-title'>Isolation Forest - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "isolation-forest.html#setup",
+    "href": "isolation-forest.html#setup",
+    "title": "16  Isolation Forest - R Version",
+    "section": "16.2 Setup",
+    "text": "16.2 Setup\n\n\nCode\nlibrary(tidyverse)\nlibrary(isotree)\nset.seed(4321)\n\n\n\n\n16.2.1 1. Isolation Forest Overview\nIsolation Forest finds anomalies by isolating points with random partitions:\n\nNormal points require many splits\n\nOutliers isolate quickly\n\nFewer splits → higher anomaly score\n\n\n\n\n16.2.2 2. Generate Synthetic Data (Two Clusters + Outliers)\n\n\nCode\nn &lt;- 500\n\ncluster1 &lt;- tibble(\n  x = rnorm(n/2, 0, 1),\n  y = rnorm(n/2, 0, 1),\n  true_type = \"normal\"\n)\n\ncluster2 &lt;- tibble(\n  x = rnorm(n/2, 3, 1),\n  y = rnorm(n/2, 3, 1),\n  true_type = \"normal\"\n)\n\n# Inject anomalies\nanoms &lt;- tibble(\n  x = rnorm(20, 8, 0.4),\n  y = rnorm(20, -2, 0.4),\n  true_type = \"anomaly\"\n)\n\ndf &lt;- bind_rows(cluster1, cluster2, anoms)\n\nggplot(df, aes(x, y, color = true_type)) +\n  geom_point(size = 2) +\n  labs(title = \"Synthetic Data with Injected Anomalies\",\n       color = \"True Label\")\n\n\n\n\n\n\n\n\n\n\n\n\n16.2.3 3. Fit Isolation Forest\n\n\nCode\niso_model &lt;- isolation.forest(df[, c(\"x\", \"y\")], ntrees = 500)\n\ndf$score &lt;- predict(iso_model,\n                    df[, c(\"x\", \"y\")],\n                    type = \"score\")\n\nsummary(df$score)\n\n\n   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. \n 0.4033  0.4227  0.4400  0.4608  0.4760  0.7149 \n\n\n\n\n\n16.2.4 4. Visualize Anomaly Scores\n\n\nCode\nggplot(df, aes(x, y, color = score)) +\n  geom_point(size = 2) +\n  scale_color_viridis_c() +\n  labs(title = \"Isolation Forest Anomaly Scores\",\n       color = \"Score\")\n\n\n\n\n\n\n\n\n\n\n\n\n16.2.5 5. Flag Outliers (Top 5%)\n\n\nCode\ncutoff &lt;- quantile(df$score, 0.95)\ndf$flag &lt;- ifelse(df$score &gt;= cutoff, \"Outlier\", \"Normal\")\n\ntable(df$flag)\n\n\n\n Normal Outlier \n    494      26 \n\n\n\n\nCode\nggplot(df, aes(x, y, color = flag)) +\n  geom_point(size = 2, alpha = 0.9) +\n  labs(title = \"Flagged Outliers (Top 5% by Score)\",\n       color = \"Flag\")\n\n\n\n\n\n\n\n\n\n\n\n\n16.2.6 6. Print Top Anomalies\n\n\nCode\ndf %&gt;%\n  arrange(desc(score)) %&gt;%\n  slice(1:10)\n\n\n# A tibble: 10 × 5\n        x     y true_type score flag   \n    &lt;dbl&gt; &lt;dbl&gt; &lt;chr&gt;     &lt;dbl&gt; &lt;chr&gt;  \n 1  7.02   2.97 normal    0.715 Outlier\n 2  8.83  -2.24 anomaly   0.691 Outlier\n 3 -1.36  -2.62 normal    0.671 Outlier\n 4  0.780 -2.75 normal    0.665 Outlier\n 5  8.43  -1.77 anomaly   0.653 Outlier\n 6  7.64  -2.38 anomaly   0.653 Outlier\n 7  0.252  4.53 normal    0.641 Outlier\n 8 -2.45   1.43 normal    0.641 Outlier\n 9  7.29  -2.17 anomaly   0.641 Outlier\n10  5.34   1.13 normal    0.624 Outlier\n\n\n\n\n\n16.2.7 7. Benchmarked Accuracy (for synthetic data)\n\n\nCode\ntable(Predicted = df$flag, Truth = df$true_type)\n\n\n         Truth\nPredicted anomaly normal\n  Normal       12    482\n  Outlier       8     18\n\n\n\n\n\n16.2.8 8. Parallel Coordinates\nThis version is 100% Quarto-safe, with no row_number() inside aes()\nand no ggparcoord dependency.\n\n\nCode\n# Clean factor\ndf_pc &lt;- df %&gt;%\n  mutate(flag = factor(flag, levels = c(\"Normal\", \"Outlier\")))\n\n# Create explicit, stable row ID\ndf_pc &lt;- df_pc %&gt;%\n  mutate(id = row_number())\n\n# Long format for parallel-style plot\ndf_long &lt;- df_pc %&gt;%\n  pivot_longer(cols = c(x, y),\n               names_to = \"Variable\",\n               values_to = \"Value\")\n\n# Plot\nggplot(df_long,\n       aes(x = Variable,\n           y = Value,\n           group = id,\n           color = flag)) +\n  geom_line(alpha = 0.5) +\n  labs(title = \"Parallel-Style Coordinates: Normal vs Outlier Profiles\",\n       color = \"Flag\")\n\n\n\n\n\n\n\n\n\n\n\n16.2.9 Interpretation\nThis shows how outliers differ from normal points across variables.\nIf outliers consistently sit higher/lower on certain dimensions, they appear as distinct paths.",
+    "crumbs": [
+      "<span class='chapter-number'>16</span>  <span class='chapter-title'>Isolation Forest - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "isolation-forest.html#part-2-business-context-example",
+    "href": "isolation-forest.html#part-2-business-context-example",
+    "title": "16  Isolation Forest - R Version",
+    "section": "16.3 PART 2 — Business-Context Example",
+    "text": "16.3 PART 2 — Business-Context Example",
+    "crumbs": [
+      "<span class='chapter-number'>16</span>  <span class='chapter-title'>Isolation Forest - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "isolation-forest.html#simulated-credit-transactions-dataset-multidimensional",
+    "href": "isolation-forest.html#simulated-credit-transactions-dataset-multidimensional",
+    "title": "16  Isolation Forest - R Version",
+    "section": "16.4 Simulated Credit Transactions Dataset (Multidimensional)",
+    "text": "16.4 Simulated Credit Transactions Dataset (Multidimensional)\nWe simulate fraud-like behavior with:\n\nUnusually large transaction amounts\n\nTransactions at unusual times\n\nRare merchant categories\n\nAbnormal distances between transactions\n\nToo-many transactions in a short window\n\nHigh-risk device scores\n\n\n\n16.4.1 1. Generate Synthetic Credit Transaction Data\n\n\nCode\nset.seed(1234)\n\nn &lt;- 2000\n\n# Normal transactions\nnorm &lt;- tibble(\n  amount = rgamma(n, shape=2, scale=40),\n  hour = sample(6:22, n, replace=TRUE),\n  merchant_risk = rbeta(n, 2, 8),\n  device_score = rnorm(n, mean=50, sd=10),\n  distance_km = rgamma(n, shape=2, scale=3),\n  trans_per_24h = rpois(n, lambda=3),\n  true_type = \"normal\"\n)\n\n# Fraudulent transactions\nfraud &lt;- tibble(\n  amount = rgamma(60, shape=9, scale=60),             # large\n  hour = sample(c(0,1,2,3,4), 60, replace=TRUE),      # late night\n  merchant_risk = rbeta(60, 8, 1),                    # high risk\n  device_score = rnorm(60, mean=20, sd=5),            # bad device score\n  distance_km = rgamma(60, shape=1, scale=20),        # far distances\n  trans_per_24h = rpois(60, lambda=12),               # high velocity\n  true_type = \"fraud\"\n)\n\ndf &lt;- bind_rows(norm, fraud)\n\n\n\n\n\n16.4.2 2. Fit Isolation Forest\n\n\nCode\niso &lt;- isolation.forest(df %&gt;% select(-true_type), ntrees=600)\n\ndf$score &lt;- predict(iso, df %&gt;% select(-true_type), type=\"score\")\n\nsummary(df$score)\n\n\n   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. \n 0.3653  0.3969  0.4150  0.4279  0.4423  0.7326 \n\n\n\n\n\n16.4.3 3. Visualize Score Distribution\n\n\nCode\nggplot(df, aes(score)) +\n  geom_histogram(bins=40, fill=\"steelblue\", alpha=0.8) +\n  labs(title=\"Anomaly Score Distribution (Credit Transactions)\")\n\n\n\n\n\n\n\n\n\n\n\n\n16.4.4 4. Flag Top 5% as Suspected Fraud\n\n\nCode\ncutoff &lt;- quantile(df$score, 0.95)\ndf$flag &lt;- ifelse(df$score &gt;= cutoff, \"Suspected Fraud\", \"Legit\")\n\ntable(df$flag)\n\n\n\n          Legit Suspected Fraud \n           1957             103 \n\n\n\n\n\n16.4.5 5. Compare Predictions to True Fraud Labels\n\n\nCode\ntable(Predicted=df$flag, Truth=df$true_type)\n\n\n                 Truth\nPredicted         fraud normal\n  Legit               0   1957\n  Suspected Fraud    60     43\n\n\nThis gives insight into:\n\nTrue positives (fraud detected)\nFalse positives (legit transactions flagged)\nFalse negatives (missed fraud)\n\n\n\n\n16.4.6 6. Visual Diagnostics\n\n\n16.4.7 Scatterplot: Amount vs Hour\n\n\nCode\nggplot(df, aes(amount, hour, color=score)) +\n  geom_point(alpha=0.7) +\n  scale_color_viridis_c() +\n  labs(title=\"Amount vs Hour with Anomaly Scores\")\n\n\n\n\n\n\n\n\n\nFraud transactions cluster at:\n\nLarge amounts\n\nExtreme nighttime hours (0–4 AM)\n\n\n\n\n16.4.8 Scatterplot: Merchant Risk vs Device Score\n\n\nCode\nggplot(df, aes(merchant_risk, device_score, color=score)) +\n  geom_point(alpha=0.7) +\n  scale_color_viridis_c() +\n  labs(title=\"Risky Merchant vs Bad Device Score (Anomaly Colored)\")\n\n\n\n\n\n\n\n\n\nFraud behaviors:\n\nHigh merchant risk\n\nLow device trust score\n\n\n\n\n16.4.9 7. Parallel Coordinates\n\n\nCode\ndf_pc &lt;- df %&gt;%\n  mutate(flag = factor(flag, levels=c(\"Legit\",\"Suspected Fraud\"))) %&gt;%\n  mutate(id = row_number())\n\ndf_long &lt;- df_pc %&gt;%\n  pivot_longer(cols = c(amount, hour, merchant_risk, device_score, distance_km, trans_per_24h),\n               names_to = \"Variable\",\n               values_to = \"Value\")\n\nggplot(df_long, aes(x=Variable, y=Value, group=id, color=flag)) +\n  geom_line(alpha=0.15) +\n  labs(title=\"Parallel-Style Coordinates: Fraud vs Legit\",\n       color=\"Flag\")\n\n\n\n\n\n\n\n\n\nThis reveals fraud profiles across dimensions:\n\nHigher amount\n\nHigher merchant risk\n\nOut-of-bounds distance\n\nHigh transaction velocity\n\nLow device reputation\n\n\n\n\n16.4.10 8. Print Most Suspicious Transactions\n\n\nCode\ndf %&gt;%\n  arrange(desc(score)) %&gt;%\n  slice(1:15)\n\n\n# A tibble: 15 × 9\n   amount  hour merchant_risk device_score distance_km trans_per_24h true_type\n    &lt;dbl&gt; &lt;dbl&gt;         &lt;dbl&gt;        &lt;dbl&gt;       &lt;dbl&gt;         &lt;int&gt; &lt;chr&gt;    \n 1   737.     3         0.975         24.3    112.                10 fraud    \n 2   338.     2         0.924         22.9     80.4                5 fraud    \n 3   829.     2         0.992         29.2      0.0882            17 fraud    \n 4   693.     2         0.945         31.9     71.8               10 fraud    \n 5   292.     0         0.634         31.1     46.1                9 fraud    \n 6   462.     0         0.707         13.1     25.8               15 fraud    \n 7   987.     4         0.900         17.9      1.44              10 fraud    \n 8   673.     0         0.999         23.6     27.3               17 fraud    \n 9   316.     3         0.717         26.6     15.6               18 fraud    \n10   883.     4         0.905         24.8     32.6                7 fraud    \n11   540.     4         0.983         18.8      8.63              19 fraud    \n12   842.     3         0.943         13.8     17.8                8 fraud    \n13   709.     0         0.824         12.5      5.25              12 fraud    \n14   295.     4         0.887         22.1      2.25              18 fraud    \n15   776.     3         0.824         24.8     27.8                5 fraud    \n# ℹ 2 more variables: score &lt;dbl&gt;, flag &lt;chr&gt;\n\n\nThese represent the most abnormal behavior across multiple dimensions.",
+    "crumbs": [
+      "<span class='chapter-number'>16</span>  <span class='chapter-title'>Isolation Forest - R Version</span>"
+    ]
+  },
+  {
+    "objectID": "isolation-forest.html#summary-business-interpretation",
+    "href": "isolation-forest.html#summary-business-interpretation",
+    "title": "16  Isolation Forest - R Version",
+    "section": "16.5 Summary & Business Interpretation",
+    "text": "16.5 Summary & Business Interpretation\nIsolation Forest in fraud analytics:\n\nFlags behavior that deviates from customer norms\n\nUseful for pre-screening before rule-based or analyst review\n\nHelps detect evolving fraud patterns not captured by rules\n\nImbalanced classes do not harm the model\n\nSupports many dimensions (amount, risk, device, geography)",
+    "crumbs": [
+      "<span class='chapter-number'>16</span>  <span class='chapter-title'>Isolation Forest - R Version</span>"
+    ]
   }
 ]

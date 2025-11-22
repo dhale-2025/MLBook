@@ -1,0 +1,361 @@
+---
+title: "Isolation Forest - R Version"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Learning Objectives
+
+After this notebook, you will be able to:
+
+-   Understand Isolation Forest intuition\
+
+-   Generate synthetic data with injected anomalies
+
+-   Fit Isolation Forest
+
+## Setup
+
+```{r}
+library(tidyverse)
+library(isotree)
+set.seed(4321)
+```
+
+------------------------------------------------------------------------
+
+### 1. Isolation Forest Overview
+
+Isolation Forest finds anomalies by isolating points with random partitions:
+
+-   Normal points require **many** splits\
+-   Outliers isolate **quickly**\
+-   Fewer splits → **higher anomaly score**
+
+------------------------------------------------------------------------
+
+### 2. Generate Synthetic Data (Two Clusters + Outliers)
+
+```{r}
+n <- 500
+
+cluster1 <- tibble(
+  x = rnorm(n/2, 0, 1),
+  y = rnorm(n/2, 0, 1),
+  true_type = "normal"
+)
+
+cluster2 <- tibble(
+  x = rnorm(n/2, 3, 1),
+  y = rnorm(n/2, 3, 1),
+  true_type = "normal"
+)
+
+# Inject anomalies
+anoms <- tibble(
+  x = rnorm(20, 8, 0.4),
+  y = rnorm(20, -2, 0.4),
+  true_type = "anomaly"
+)
+
+df <- bind_rows(cluster1, cluster2, anoms)
+
+ggplot(df, aes(x, y, color = true_type)) +
+  geom_point(size = 2) +
+  labs(title = "Synthetic Data with Injected Anomalies",
+       color = "True Label")
+```
+
+------------------------------------------------------------------------
+
+### 3. Fit Isolation Forest
+
+```{r}
+iso_model <- isolation.forest(df[, c("x", "y")], ntrees = 500)
+
+df$score <- predict(iso_model,
+                    df[, c("x", "y")],
+                    type = "score")
+
+summary(df$score)
+```
+
+------------------------------------------------------------------------
+
+### 4. Visualize Anomaly Scores
+
+```{r}
+ggplot(df, aes(x, y, color = score)) +
+  geom_point(size = 2) +
+  scale_color_viridis_c() +
+  labs(title = "Isolation Forest Anomaly Scores",
+       color = "Score")
+```
+
+------------------------------------------------------------------------
+
+### 5. Flag Outliers (Top 5%)
+
+```{r}
+cutoff <- quantile(df$score, 0.95)
+df$flag <- ifelse(df$score >= cutoff, "Outlier", "Normal")
+
+table(df$flag)
+```
+
+```{r}
+ggplot(df, aes(x, y, color = flag)) +
+  geom_point(size = 2, alpha = 0.9) +
+  labs(title = "Flagged Outliers (Top 5% by Score)",
+       color = "Flag")
+```
+
+------------------------------------------------------------------------
+
+### 6. Print Top Anomalies
+
+```{r}
+df %>%
+  arrange(desc(score)) %>%
+  slice(1:10)
+```
+
+------------------------------------------------------------------------
+
+### 7. Benchmarked Accuracy (for synthetic data)
+
+```{r}
+table(Predicted = df$flag, Truth = df$true_type)
+```
+
+------------------------------------------------------------------------
+
+### 8. Parallel Coordinates
+
+This version is **100% Quarto-safe**, with no `row_number()` inside `aes()`\
+and no ggparcoord dependency.
+
+```{r}
+# Clean factor
+df_pc <- df %>%
+  mutate(flag = factor(flag, levels = c("Normal", "Outlier")))
+
+# Create explicit, stable row ID
+df_pc <- df_pc %>%
+  mutate(id = row_number())
+
+# Long format for parallel-style plot
+df_long <- df_pc %>%
+  pivot_longer(cols = c(x, y),
+               names_to = "Variable",
+               values_to = "Value")
+
+# Plot
+ggplot(df_long,
+       aes(x = Variable,
+           y = Value,
+           group = id,
+           color = flag)) +
+  geom_line(alpha = 0.5) +
+  labs(title = "Parallel-Style Coordinates: Normal vs Outlier Profiles",
+       color = "Flag")
+```
+
+### Interpretation
+
+This shows how outliers differ from normal points across variables.\
+If outliers consistently sit higher/lower on certain dimensions, they appear as distinct paths.
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+## PART 2 — Business-Context Example
+
+## **Simulated Credit Transactions Dataset (Multidimensional)**
+
+We simulate **fraud-like behavior** with:
+
+-   Unusually large transaction amounts\
+-   Transactions at unusual times\
+-   Rare merchant categories\
+-   Abnormal distances between transactions\
+-   Too-many transactions in a short window\
+-   High-risk device scores
+
+------------------------------------------------------------------------
+
+### 1. Generate Synthetic Credit Transaction Data
+
+```{r}
+set.seed(1234)
+
+n <- 2000
+
+# Normal transactions
+norm <- tibble(
+  amount = rgamma(n, shape=2, scale=40),
+  hour = sample(6:22, n, replace=TRUE),
+  merchant_risk = rbeta(n, 2, 8),
+  device_score = rnorm(n, mean=50, sd=10),
+  distance_km = rgamma(n, shape=2, scale=3),
+  trans_per_24h = rpois(n, lambda=3),
+  true_type = "normal"
+)
+
+# Fraudulent transactions
+fraud <- tibble(
+  amount = rgamma(60, shape=9, scale=60),             # large
+  hour = sample(c(0,1,2,3,4), 60, replace=TRUE),      # late night
+  merchant_risk = rbeta(60, 8, 1),                    # high risk
+  device_score = rnorm(60, mean=20, sd=5),            # bad device score
+  distance_km = rgamma(60, shape=1, scale=20),        # far distances
+  trans_per_24h = rpois(60, lambda=12),               # high velocity
+  true_type = "fraud"
+)
+
+df <- bind_rows(norm, fraud)
+```
+
+------------------------------------------------------------------------
+
+### 2. Fit Isolation Forest
+
+```{r}
+iso <- isolation.forest(df %>% select(-true_type), ntrees=600)
+
+df$score <- predict(iso, df %>% select(-true_type), type="score")
+
+summary(df$score)
+```
+
+------------------------------------------------------------------------
+
+### 3. Visualize Score Distribution
+
+```{r}
+ggplot(df, aes(score)) +
+  geom_histogram(bins=40, fill="steelblue", alpha=0.8) +
+  labs(title="Anomaly Score Distribution (Credit Transactions)")
+```
+
+------------------------------------------------------------------------
+
+### 4. Flag Top 5% as Suspected Fraud
+
+```{r}
+cutoff <- quantile(df$score, 0.95)
+df$flag <- ifelse(df$score >= cutoff, "Suspected Fraud", "Legit")
+
+table(df$flag)
+```
+
+------------------------------------------------------------------------
+
+### 5. Compare Predictions to True Fraud Labels
+
+```{r}
+table(Predicted=df$flag, Truth=df$true_type)
+```
+
+This gives insight into:
+
+-   **True positives** (fraud detected)
+-   **False positives** (legit transactions flagged)
+-   **False negatives** (missed fraud)
+
+------------------------------------------------------------------------
+
+### 6. Visual Diagnostics
+
+### Scatterplot: Amount vs Hour
+
+```{r}
+ggplot(df, aes(amount, hour, color=score)) +
+  geom_point(alpha=0.7) +
+  scale_color_viridis_c() +
+  labs(title="Amount vs Hour with Anomaly Scores")
+```
+
+Fraud transactions cluster at:
+
+-   Large amounts\
+-   Extreme nighttime hours (0–4 AM)
+
+------------------------------------------------------------------------
+
+### Scatterplot: Merchant Risk vs Device Score
+
+```{r}
+ggplot(df, aes(merchant_risk, device_score, color=score)) +
+  geom_point(alpha=0.7) +
+  scale_color_viridis_c() +
+  labs(title="Risky Merchant vs Bad Device Score (Anomaly Colored)")
+```
+
+Fraud behaviors:
+
+-   High merchant risk\
+-   Low device trust score
+
+------------------------------------------------------------------------
+
+### 7. Parallel Coordinates 
+
+```{r}
+df_pc <- df %>%
+  mutate(flag = factor(flag, levels=c("Legit","Suspected Fraud"))) %>%
+  mutate(id = row_number())
+
+df_long <- df_pc %>%
+  pivot_longer(cols = c(amount, hour, merchant_risk, device_score, distance_km, trans_per_24h),
+               names_to = "Variable",
+               values_to = "Value")
+
+ggplot(df_long, aes(x=Variable, y=Value, group=id, color=flag)) +
+  geom_line(alpha=0.15) +
+  labs(title="Parallel-Style Coordinates: Fraud vs Legit",
+       color="Flag")
+```
+
+This reveals fraud profiles across dimensions:
+
+-   Higher amount\
+-   Higher merchant risk\
+-   Out-of-bounds distance\
+-   High transaction velocity\
+-   Low device reputation
+
+------------------------------------------------------------------------
+
+### 8. Print Most Suspicious Transactions
+
+```{r}
+df %>%
+  arrange(desc(score)) %>%
+  slice(1:15)
+```
+
+These represent the most abnormal behavior across multiple dimensions.
+
+------------------------------------------------------------------------
+
+## Summary & Business Interpretation
+
+Isolation Forest in fraud analytics:
+
+-   Flags **behavior that deviates from customer norms**\
+-   Useful for pre-screening before rule-based or analyst review\
+-   Helps detect evolving fraud patterns not captured by rules\
+-   Imbalanced classes do not harm the model\
+-   Supports many dimensions (amount, risk, device, geography)
+
+
+------------------------------------------------------------------------

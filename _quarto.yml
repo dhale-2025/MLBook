@@ -4,8 +4,8 @@ project:
 
 book:
   title: "Machine Learning with R and Python"
-  author: "Don Hale"
-  date: "09/22/2025"
+  author: "Dr Hale"
+  date: "11/21/2025"
   chapters:
     - index.qmd
     - introduction.qmd
@@ -22,7 +22,8 @@ book:
     - naive-bayes-python.qmd
     - model-agnostic-interpretability-r.qmd
     - model-agnostic-interpretability-python.qmd
-    - support-vector-machines.qmd
+    - clustering.qmd
+    - isolation-forest.qmd
 
 # ---------------------------------------------------------------------
 # Execution defaults for both R + Python chapters

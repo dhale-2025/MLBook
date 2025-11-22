@@ -1,0 +1,297 @@
+---
+title: "Clustering with K-means, DBSCAN, and Hierarchical R Version"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Learning Objectives
+
+By the end of this section, you will be able to:
+
+- Apply K-means, DBSCAN, and Hierarchical clustering.
+- Interpret common graphs.
+- Produce parallel coordinates plots for each clustering solution.
+- Compare cluster assignments to true Iris species.
+
+---
+
+## Setup
+
+```{r}
+library(tidyverse)
+library(factoextra)
+library(cluster)
+library(dbscan)
+library(NbClust)
+library(GGally)   # for parallel coordinate plots
+set.seed(4321)
+```
+
+---
+
+## Dataset
+
+```{r}
+data(iris)
+iris_num <- iris %>% select(where(is.numeric))
+iris_scaled <- scale(iris_num)
+head(iris_scaled)
+```
+
+### Explanation  
+We extract the **numeric features** of the Iris dataset and scale them so that all variables contribute equally. Scaling is crucial because distance-based clustering is sensitive to variable magnitude.
+
+---
+
+## PCA Visualization
+
+```{r}
+pca <- prcomp(iris_scaled)
+fviz_pca_ind(pca, geom="point", title="PCA Visualization of Iris")
+```
+
+### Explanation  
+A PCA scatterplot allows us to see the **structure of high-dimensional data** in two dimensions. If clusters exist naturally, PCA often reveals them visually.
+
+---
+
+## PART 1 — Determining k for K-means
+
+### Elbow Plot
+
+```{r}
+fviz_nbclust(iris_scaled, kmeans, method="wss") +
+  labs(title="Elbow Method (WSS vs k)")
+```
+
+#### Explanation  
+The elbow plot shows how total within-cluster variation decreases as k increases.  
+We select the k where improvement slows down — the “elbow.”
+
+---
+
+### Silhouette Plot
+
+```{r}
+fviz_nbclust(iris_scaled, kmeans, method="silhouette") +
+  labs(title="Silhouette Method")
+```
+
+#### Explanation  
+The silhouette method evaluates how well-separated clusters are.  
+Higher values indicate clearer boundaries. The optimal k maximizes silhouette width.
+
+---
+
+### Gap Statistic
+
+```{r}
+set.seed(4321)
+gap <- clusGap(iris_scaled, FUN=kmeans, nstart=25, K.max=10, B=30)
+fviz_gap_stat(gap)
+```
+
+#### Explanation  
+The gap statistic compares cluster dispersion to what would be expected if no clustering existed.  
+A large "gap" indicates strong underlying cluster structure.
+
+---
+
+### NBClust
+
+```{r}
+set.seed(4321)
+nb_res <- NbClust(iris_scaled, distance="euclidean",
+                  min.nc=2, max.nc=10, method="kmeans")
+
+best_k <- nb_res$Best.nc[1]
+best_k
+```
+
+```{r}
+vote_dist <- as.data.frame(table(nb_res$Best.nc[1, ]))
+
+ggplot(vote_dist, aes(Var1, Freq)) +
+  geom_col(fill="steelblue") +
+  labs(title="NbClust: Votes for k")
+```
+
+#### Explanation  
+NBClust computes 30+ indices to recommend the number of clusters.  
+We visualize the vote distribution and use the **majority vote**.
+
+---
+
+## K-means Clustering
+
+```{r}
+kmeans_fit <- kmeans(iris_scaled, centers = best_k, nstart=30)
+fviz_cluster(kmeans_fit, iris_scaled,
+             main=paste("K-means Clusters (k=", best_k, ")", sep=""))
+```
+
+### Explanation  
+K-means partitions data into **spherical** clusters using centroids.  
+The PCA visualization shows how those clusters look in reduced space.
+
+---
+
+## Compare K-means to True Species
+
+```{r}
+table(KMeans = kmeans_fit$cluster, Species = iris$Species)
+```
+
+### Explanation  
+This table shows how well K-means clusters match the true species.  
+K-means typically identifies Setosa perfectly but overlaps Versicolor and Virginica.
+
+---
+
+## Parallel Coordinates for K-means
+
+```{r}
+iris_km <- iris_num %>% mutate(Cluster = factor(kmeans_fit$cluster))
+GGally::ggparcoord(iris_km, columns = 1:4, groupColumn = "Cluster",
+                   title="Parallel Coordinates: K-means Clusters")
+```
+
+### Explanation  
+Parallel coordinate plots show **variable profiles** across clusters.  
+K-means clusters should show distinct shape patterns if clustering is meaningful.
+
+---
+
+## PART 2 — Hierarchical Clustering
+
+### Dendrogram
+
+```{r}
+d <- dist(iris_scaled)
+hc_complete <- hclust(d, method="complete")
+fviz_dend(hc_complete, k=3, rect=TRUE,
+          main="Hierarchical Clustering (Complete Linkage)")
+```
+
+#### Explanation  
+Hierarchical clustering builds a **tree structure** showing merging of points/clusters.  
+Cutting the dendrogram at height = 3 yields three clusters.
+
+---
+
+### Cut into 3 Clusters and Compare
+
+```{r}
+hc_clusters <- cutree(hc_complete, k=3)
+table(Hierarchical = hc_clusters, Species = iris$Species)
+```
+
+#### Explanation  
+Hierarchical clustering does not require pre-specifying k — we “cut” the dendrogram.  
+This table shows how hierarchical groupings align with real species.
+
+---
+
+### PCA Visualization of Hierarchical Clusters
+
+```{r}
+fviz_cluster(list(data=iris_scaled, cluster=hc_clusters),
+             geom="point",
+             main="Hierarchical Clusters (k=3)")
+```
+
+#### Explanation  
+A PCA scatterplot shows how hierarchical clusters spread in low-dimensional space.  
+Complete linkage tends to produce compact clusters.
+
+---
+
+### Parallel Coordinates for Hierarchical
+
+```{r}
+iris_hc <- iris_num %>% mutate(Cluster = factor(hc_clusters))
+GGally::ggparcoord(iris_hc, columns = 1:4, groupColumn = "Cluster",
+                   title="Parallel Coordinates: Hierarchical Clusters")
+```
+
+### Explanation  
+Parallel coordinates allow us to compare variable patterns across hierarchical clusters.
+
+---
+
+## PART 3 — DBSCAN
+
+### kNN Distance Plot
+
+```{r}
+minPts <- 2 * ncol(iris_scaled)
+kNNdistplot(iris_scaled, k=minPts)
+abline(h=0.9, lty=2)
+```
+
+#### Explanation  
+The kNN plot helps choose eps by showing the distance to each point’s k-th neighbor.  
+The “knee” in the curve is the suggested eps threshold.
+
+---
+
+### Fit DBSCAN
+
+```{r}
+db_fit <- dbscan(iris_scaled, eps=0.9, minPts=minPts)
+db_fit
+```
+
+#### Explanation  
+DBSCAN groups high-density regions and labels low-density points as **noise (cluster 0)**.
+
+---
+
+### DBSCAN Clusters in PCA Space
+
+```{r}
+fviz_cluster(list(data=iris_scaled, cluster=db_fit$cluster),
+             geom="point",
+             ellipse.type="convex",
+             main="DBSCAN Clusters")
+```
+
+#### Explanation  
+DBSCAN finds **arbitrary-shaped clusters** that density-based methods capture better than K-means.
+
+---
+
+### Compare DBSCAN to True Species
+
+```{r}
+table(DBSCAN = db_fit$cluster, Species = iris$Species)
+```
+
+#### Explanation  
+DBSCAN often segments Setosa well but may merge Versicolor and Virginica depending on eps.
+
+---
+
+### Parallel Coordinates for DBSCAN
+
+```{r}
+iris_db <- iris_num %>% mutate(Cluster = factor(db_fit$cluster))
+GGally::ggparcoord(iris_db, columns = 1:4, groupColumn = "Cluster",
+                   title="Parallel Coordinates: DBSCAN Clusters")
+```
+
+#### Explanation  
+Parallel coordinates show how DBSCAN clusters differ in variable space and highlight noise points.
+
+---
+
+---
+
+

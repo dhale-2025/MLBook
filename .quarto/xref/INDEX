@@ -78,5 +78,11 @@
   },
   "model-agnostic-interpretability-r.qmd": {
     "model-agnostic-interpretability-r.html": "5a72eaab"
+  },
+  "clustering.qmd": {
+    "clustering.html": "500affba"
+  },
+  "isolation-forest.qmd": {
+    "isolation-forest.html": "477370fe"
   }
 }
